@@ -70,7 +70,7 @@ uninstall:
 		echo "error: the 'code' (or 'code-insiders') CLI was not found on PATH."; \
 		exit 1; \
 	fi
-	$(CODE) --uninstall-extension yamd.vscode-yamd
+	$(CODE) --uninstall-extension appmonster007.vscode-yamd-ext
 
 dev:
 	@if [ -z "$(CODE)" ]; then \

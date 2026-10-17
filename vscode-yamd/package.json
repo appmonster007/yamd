@@ -1,6 +1,6 @@
 {
-  "name": "vscode-yamd",
-  "displayName": "YAMD",
+  "name": "vscode-yamd-ext",
+  "displayName": "YAMD Studio",
   "description": "Language support for YAMD: syntax highlighting, live preview, diagnostics and editing shortcuts.",
   "version": "0.1.1",
   "publisher": "appmonster007",
