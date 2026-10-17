@@ -41,7 +41,9 @@ make install
 
 If `code` isn't on PATH, run **Shell Command: Install 'code' command in PATH** from VS Code's Command Palette and try again — or build the `.vsix` with `make package` and install it by hand from the Extensions view (`...` menu → **Install from VSIX...** → `vscode-yamd/vscode-yamd-<version>.vsix`).
 
-Run `make help` for every available target (`build`, `typecheck`, `test`, `package`, `install`, `uninstall`, `dev`, `clean`).
+If the test suite fails on a wall-clock performance benchmark under system load (not a real regression), use `make install-fast` instead — it typechecks and builds but skips tests.
+
+Run `make help` for every available target (`build`, `typecheck`, `test`, `package`, `package-fast`, `install`, `install-fast`, `uninstall`, `dev`, `clean`).
 
 ### Try it out
 

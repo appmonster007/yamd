@@ -39,7 +39,7 @@ Before sending a change, run:
 make typecheck test
 ```
 
-`make package` also builds a `.vsix` and is a good final check.
+`make package` also builds a `.vsix` and is a good final check (use `make package-fast` to skip the test suite, e.g. if the wall-clock perf benchmark is flaky under load).
 
 ## Making a change
 
