@@ -57,6 +57,20 @@ Databases are `.ydb` text files (YAML, one row per list item, git-friendly) or S
 - **Open in SQLite Viewer** (console, or right-click a SQLite file) opens the file in an installed SQLite extension, or offers a Marketplace search if none is installed.
 - **Security**: queries run only in trusted workspaces, off the main thread, read-only, on an in-memory copy, with a time limit and a row limit. Databases outside the note's folder are refused. Writes log to the "YAMD Databases" output channel.
 
+## Study features
+
+Tools for coursework and academic writing. See `examples/07-study/` for a full guide and a complete worked lecture note.
+
+- **Study-aid blocks**: `:::definition`, `:::theorem`, `:::lemma`, `:::proof`, `:::example`, `:::question`, `:::remark`, `:::summary`, `:::derivation` — numbered per kind, cross-referenced with `[@def:id]`, `[@thm:id]`, etc. "YAMD: Generate Cheat Sheet" gathers them from every note in a course into one new note.
+- **Flashcards**: `:::card` (with a `---` separating question and answer), `::card[Q]{a="A"}` and `:cloze[hidden text]` deletions. "YAMD: Review Flashcards" runs SM-2 spaced-repetition review sessions; "YAMD: Toggle Quiz Mode" hides cloze answers in the preview until clicked. "YAMD: Prune Orphaned Card Data" cleans up `.yamd/srs.json` after cards are renamed or removed.
+- **Deadlines and progress**: `course:` and `due:` front matter, `{due=…}` on tasks. "YAMD: Open Study Dashboard" shows an agenda (overdue/today/this week), per-course progress, stale topics and a study heatmap.
+- **Study timer**: "YAMD: Start Study Timer" runs a Pomodoro-style focus timer in the status bar; finished sessions log to `.yamd/study-log.json` and, by default, to the daily note.
+- **Citations**: BibTeX via `bibliography: refs.bib` front matter, `[@key]` and `[@key, p. 12]` in text, `::bibliography` for the reference list. Supports APA, MLA, Chicago, IEEE and Vancouver styles (`citation-style:`). "YAMD: Add Citation" looks up a DOI, arXiv ID or ISBN.
+- **Export**: "YAMD: Export as HTML / PDF / Word (.docx) / Slides" — HTML includes a title page and table of contents; PDF opens the HTML for printing; slides split on level-1 headings.
+- **Peer review**: "YAMD: Accept All Review Changes" and "Reject All Review Changes" resolve a note's `{++ ++}`, `{-- --}`, `{~~ ~>  ~~}` and `{>> <<}` review markup (see `yamd-spec.md` §7) in one step.
+- **Templates and imports**: "YAMD: New Study Note…" (lecture notes, lab report, exam prep, reading note), "YAMD: New Reading List" (a kanban-style `.ydb`), "YAMD: Import Notes from Folder…" (Obsidian, Notion, HTML, CSV).
+- **Math symbols**: "YAMD: Insert Math Symbol" — a searchable picker of common LaTeX symbols.
+
 ## Commands and shortcuts
 
 | Command                         | macOS        | Windows / Linux |
@@ -73,6 +87,21 @@ Databases are `.ydb` text files (YAML, one row per list item, git-friendly) or S
 | YAMD: New Timestamped Note      |              |                 |
 | YAMD: Convert from Markdown     |              |                 |
 | YAMD: Open Markdown as YAMD     |              |                 |
+| YAMD: Review Flashcards         |              |                 |
+| YAMD: Open Study Dashboard      |              |                 |
+| YAMD: Start / Pause / Stop Study Timer |       |                 |
+| YAMD: New Study Note…           |              |                 |
+| YAMD: Generate Cheat Sheet      |              |                 |
+| YAMD: Export as HTML / PDF / Word (.docx) / Slides |  |          |
+| YAMD: Add Citation              |              |                 |
+| YAMD: Insert Math Symbol        |              |                 |
+| YAMD: Accept / Reject All Review Changes |     |                 |
+| YAMD: Combine Notes…            |              |                 |
+| YAMD: Import Notes from Folder… |              |                 |
+| YAMD: Insert PDF Reference      |              |                 |
+| YAMD: New Reading List          |              |                 |
+| YAMD: Prune Orphaned Card Data  |              |                 |
+| YAMD: Toggle Quiz Mode          |              |                 |
 
 The shortcuts only apply in `.yamd` files.
 
@@ -105,6 +134,10 @@ Type a prefix and accept the suggestion:
 | `yamd.sqlite.viewer`           | `""`    | Custom editor used by "Open in SQLite Viewer"             |
 | `yamd.newNote.timestampFormat` | `YYYY-MM-DD-HHmm` | File name for "New Timestamped Note"            |
 | `yamd.newNote.lang`            | `en`    | `lang` written into new notes                             |
+| `yamd.study.newCardsPerDay`    | `20`    | New (unseen) flashcards shown per review session           |
+| `yamd.study.pomodoroMinutes`   | `25`    | Default study-timer session length, in minutes             |
+| `yamd.study.logToDailyNote`    | `true`  | Append a line to the daily note when a timer session ends  |
+| `yamd.study.staleAfterDays`    | `14`    | Days without review before a topic is flagged as stale     |
 
 ## Diagnostics
 
@@ -122,6 +155,7 @@ Type a prefix and accept the suggestion:
 | `Y602` | Error    | Circular embed or include                             |
 | `Y603` | Warning  | Content before the first column of a kanban board     |
 | `Y604` | Info     | Kanban column over its `limit`                        |
+| `Y605` | Warning  | Flashcard has no answer                               |
 | `Y701` | Warning  | Broken link, embed, heading, block, image, reference or footnote |
 | `Y702` | Error    | Image without alt text or `{decorative}`              |
 | `Y703` | Error    | Table without a header row                            |
@@ -150,7 +184,6 @@ Text inside code, math and comments is never checked.
 These features are shown as readable fallbacks:
 
 - **Mermaid diagrams** are shown as code.
-- **Citations** are shown as their keys. `::bibliography` lists the cited keys.
 - **`::embed`** shows a link.
 - **`:::html`** is shown as escaped source, because the preview never runs in trusted mode. Raw HTML outside it is sanitized with GitHub's allow-list.
 
