@@ -193,9 +193,19 @@ These features are shown as readable fallbacks:
 - **Large workspaces** are indexed in a worker thread, so thousands of notes don't stall typing. The index keeps the text of small notes only and reads larger ones when it needs them. Bursts of file changes, such as a `git checkout`, are gathered and loaded together.
 - Notes over 2 MB aren't indexed, and notes over `yamd.preview.maxSizeKB` aren't previewed. The Problems panel shows at most 1,000 findings per note.
 
+## Installing
+
+Not on the Marketplace yet — install the built `.vsix` instead. From the repository root:
+
+```bash
+make install     # builds, tests, packages and installs the extension
+```
+
+See the [top-level README](../README.md#installing-the-extension) for prerequisites and what to do if `make` or the `code` CLI aren't available.
+
 ## Development
 
-Requires Node.js 20 or later.
+Requires Node.js 20 or later. From this directory (or use the equivalent `make` target from the repository root, e.g. `make test`):
 
 ```bash
 npm install
@@ -207,7 +217,7 @@ npm run package     # type-check, test and build a .vsix
 
 To try the extension, open this folder in VS Code and press F5. This opens a new window with the extension loaded and the repository root as the workspace, so you can open the files in `examples/`, starting with `examples/getting-started.yamd`.
 
-To install the packaged extension:
+To install the packaged extension by hand instead of `make install`:
 
 ```bash
 code --install-extension vscode-yamd-0.1.0.vsix

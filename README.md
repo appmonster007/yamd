@@ -27,22 +27,40 @@ the things people keep bolting onto Markdown — and nothing else.
 - **[examples/](examples/)** — a worked example for every feature, organized by topic. Start with [examples/getting-started.yamd](examples/getting-started.yamd).
 - **[openspec/](openspec/)** — the spec-driven change proposals the format and extension were built from, each with a proposal, a task list and the resulting spec deltas.
 
-## Getting started
+## Installing the extension
 
-1. Install [Node.js](https://nodejs.org) 20 or later.
-2. Open `vscode-yamd/` in VS Code and press F5 to launch the extension in a new Extension Development Host window, with this repository as the workspace.
-3. Open `examples/getting-started.yamd` and run **YAMD: Open Preview to the Side** (Cmd+K V / Ctrl+K V) to see it rendered.
-4. Browse `examples/` by topic — basics, documents, linked notes, databases, kanban, moving from Markdown, and study features — or read `yamd-spec.md` for the full reference.
-
-To build and test the extension from the command line:
+YAMD isn't on the VS Code Marketplace yet, so install it by building the `.vsix` from source. You'll need [Node.js](https://nodejs.org) 20+, [VS Code](https://code.visualstudio.com) with its `code` command on PATH, and `make` (preinstalled on macOS and Linux).
 
 ```bash
-cd vscode-yamd
-npm install
-npm run build       # generate the grammar and bundle into dist/
-npm test            # parser, renderer, linter, grammar, editing and conformance tests
-npm run package     # type-check, test and build a .vsix
+git clone https://github.com/appmonster007/yamd.git
+cd yamd
+make install
 ```
+
+`make install` builds the extension, runs the test suite, packages a `.vsix` and installs it into VS Code in one step. Reload or restart VS Code afterwards to activate it.
+
+If `code` isn't on PATH, run **Shell Command: Install 'code' command in PATH** from VS Code's Command Palette and try again — or build the `.vsix` with `make package` and install it by hand from the Extensions view (`...` menu → **Install from VSIX...** → `vscode-yamd/vscode-yamd-<version>.vsix`).
+
+Run `make help` for every available target (`build`, `typecheck`, `test`, `package`, `install`, `uninstall`, `dev`, `clean`).
+
+### Try it out
+
+1. Open any file in `examples/` in VS Code — start with [examples/getting-started.yamd](examples/getting-started.yamd).
+2. Run **YAMD: Open Preview to the Side** (Cmd+K V / Ctrl+K V) to see it rendered.
+3. Browse `examples/` by topic — basics, documents, linked notes, databases, kanban, moving from Markdown, and study features — or read `yamd-spec.md` for the full reference.
+
+### Working on the extension itself
+
+To iterate on the extension's source without reinstalling each time, open `vscode-yamd/` in VS Code and press F5 — this launches an Extension Development Host window with your changes loaded and the repository root as its workspace.
+
+```bash
+make deps       # npm install
+make build      # compile into vscode-yamd/dist/
+make typecheck
+make test
+```
+
+(Each target also works as a plain `npm` script inside `vscode-yamd/` — see [vscode-yamd/README.md](vscode-yamd/README.md#development).)
 
 ## Status
 

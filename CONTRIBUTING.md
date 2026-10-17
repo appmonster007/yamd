@@ -20,23 +20,26 @@ See [vscode-yamd/README.md](vscode-yamd/README.md) for the extension's internal 
 
 ## Development setup
 
+From the repository root, the `Makefile` wraps the extension's npm scripts:
+
 ```bash
-cd vscode-yamd
-npm install
-npm run build        # generate the grammar and bundle into dist/
-npm run typecheck
-npm test              # parser, renderer, linter, grammar, editing, conformance and migration tests
+make deps        # npm install
+make build        # generate the grammar and bundle into dist/
+make typecheck
+make test          # parser, renderer, linter, grammar, editing, conformance and migration tests
 ```
+
+(Equivalently, run the same `npm run <script>` commands from inside `vscode-yamd/`. Run `make help` for the full list of targets, including `install` for installing the built extension into VS Code.)
 
 To try the extension interactively, open `vscode-yamd/` in VS Code and press F5. This launches an Extension Development Host window with the repository root as the workspace, so you can open anything under `examples/`.
 
 Before sending a change, run:
 
 ```bash
-npm run typecheck && npm test
+make typecheck test
 ```
 
-`npm run package` also builds a `.vsix` and is a good final check.
+`make package` also builds a `.vsix` and is a good final check.
 
 ## Making a change
 
