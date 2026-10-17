@@ -19,6 +19,9 @@ type BacklinkNode =
   | { kind: 'link'; path: string; item: Backlink }
   | { kind: 'mention'; target: string; item: Mention };
 
+/** How long the editor must be idle before unlinked mentions are searched. */
+const MENTION_DELAY_MS = 800;
+
 class BacklinksView implements vscode.TreeDataProvider<BacklinkNode> {
   private readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
@@ -26,6 +29,9 @@ class BacklinksView implements vscode.TreeDataProvider<BacklinkNode> {
   private linked: Backlink[] = [];
   private mentions: Mention[] = [];
   visible = false;
+  private mentionTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The note and index state the current mentions were computed for. */
+  private mentionKey = '';
 
   constructor(private readonly index: WorkspaceIndex) {}
 
@@ -35,9 +41,28 @@ class BacklinksView implements vscode.TreeDataProvider<BacklinkNode> {
     if (doc) this.target = notePath(doc.uri);
     if (!this.target) return;
     this.linked = this.index.store.backlinks(this.target);
-    // Unlinked mentions scan every note's text, so they're only computed while the view is visible.
-    this.mentions = this.visible ? this.index.store.unlinkedMentions(this.target) : [];
     this.changed.fire();
+    this.scheduleMentions();
+  }
+
+  /**
+   * Unlinked mentions search every note's text, so they run only while the view is visible, a moment
+   * after the last change, and not again for the same note until the index changes.
+   */
+  private scheduleMentions() {
+    clearTimeout(this.mentionTimer);
+    if (!this.visible || !this.target) {
+      this.mentions = [];
+      return;
+    }
+    const target = this.target;
+    this.mentionTimer = setTimeout(() => {
+      const key = `${target}\n${this.index.store.revision}`;
+      if (key === this.mentionKey) return;
+      this.mentionKey = key;
+      this.mentions = this.index.store.unlinkedMentions(target);
+      this.changed.fire();
+    }, MENTION_DELAY_MS);
   }
 
   getChildren(node?: BacklinkNode): BacklinkNode[] {

@@ -24,6 +24,15 @@ import type { YamdDocument } from '../core/types';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath } from '../workspace/index';
 
+/** What a note's database results were built from. */
+interface Deps {
+  files: Set<string>;
+  /** The note has queries over the notes in its folder. */
+  notes: boolean;
+  /** The note names a database that couldn't be found. */
+  unresolved: boolean;
+}
+
 export interface SlotResult {
   key: string;
   node: DbNode;
@@ -88,26 +97,66 @@ export class DatabaseService implements vscode.Disposable {
   private readonly loadedMtime = new Map<string, number>();
   private readonly slots = new Map<string, Map<string, SlotState>>();
   private readonly disposables: vscode.Disposable[] = [this.changed, this.log];
-  private textTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly textTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  // What each note's results depend on, so a change re-runs only the notes it can affect, and
+  // results are reused when neither the note's queries nor their data changed.
+  private readonly deps = new Map<string, Deps>();
+  private readonly fileVersions = new Map<string, number>();
+  private notesVersion = 0;
+  /** Counts every database file event, for notes that name a database that doesn't exist yet. */
+  private fileEvents = 0;
+  private readonly resultCache = new Map<string, { signature: string; stamp: string; results: SlotResult[] }>();
 
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly index?: WorkspaceIndex,
   ) {
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.{ydb,sqlite,sqlite3,db}');
-    const fire = (uri: vscode.Uri) => this.changed.fire(uri.fsPath);
+    const fire = (uri: vscode.Uri) => this.fire(uri.fsPath);
     this.disposables.push(
       watcher,
       watcher.onDidChange(fire),
       watcher.onDidCreate(fire),
       watcher.onDidDelete(fire),
       vscode.workspace.onDidChangeTextDocument((e) => {
-        if (!e.document.uri.fsPath.endsWith('.ydb')) return;
-        clearTimeout(this.textTimer);
-        this.textTimer = setTimeout(() => this.changed.fire(e.document.uri.fsPath), 300);
+        const file = e.document.uri.fsPath;
+        if (!file.endsWith('.ydb')) return;
+        // Typing in a database file is reported once it pauses, per file.
+        clearTimeout(this.textTimers.get(file));
+        this.textTimers.set(
+          file,
+          setTimeout(() => {
+            this.textTimers.delete(file);
+            this.fire(file);
+          }, 300),
+        );
       }),
-      ...(index ? [index.onDidChange(() => this.changed.fire('notes:'))] : []),
+      ...(index ? [index.onDidChange(() => this.fire('notes:'))] : []),
     );
+  }
+
+  /** Records that data changed, then tells listeners. */
+  private fire(path: string) {
+    if (path === 'notes:') this.notesVersion++;
+    else {
+      this.fileVersions.set(path, (this.fileVersions.get(path) ?? 0) + 1);
+      this.fileEvents++;
+    }
+    this.changed.fire(path);
+  }
+
+  /** Whether a change to `path` (a database file, or `notes:`) can change this note's results. */
+  affects(doc: vscode.TextDocument, path: string): boolean {
+    const d = this.deps.get(doc.uri.toString());
+    if (!d) return false;
+    return d.unresolved || (path === 'notes:' ? d.notes : d.files.has(path));
+  }
+
+  /** A string that changes when anything the note's results depend on changes. */
+  private stamp(d: Deps): string {
+    const files = [...d.files].map((f) => `${f}:${this.fileVersions.get(f) ?? 0}`).join('|');
+    return `${files}|${d.notes ? this.notesVersion : ''}|${d.unresolved ? this.fileEvents : ''}`;
   }
 
   // ---- Worker ----
@@ -185,7 +234,7 @@ export class DatabaseService implements vscode.Disposable {
   }
 
   /** Relations of a `.ydb` database, each checked against the document's folder. */
-  private async relations(ref: DatabaseRef, text: string, docFile: string): Promise<Record<string, RelationSource>> {
+  private async relations(ref: DatabaseRef, text: string, docFile: string, deps: Deps): Promise<Record<string, RelationSource>> {
     const out: Record<string, RelationSource> = {};
     const loaded = loadYdb(text).db;
     for (const p of loaded?.properties ?? []) {
@@ -193,6 +242,7 @@ export class DatabaseService implements vscode.Disposable {
       const file = path.resolve(path.dirname(ref.file), p.database);
       if (!existsSync(file) || !inside(path.dirname(docFile), file, fsAccess)) continue;
       const [target, table] = p.database.split('#');
+      deps.files.add(file);
       const related: DatabaseRef = { file, table, kind: file.endsWith('.ydb') ? 'ydb' : 'sqlite', written: target ?? '' };
       const source = await this.source(related);
       if ('code' in source) continue;
@@ -203,18 +253,42 @@ export class DatabaseService implements vscode.Disposable {
 
   // ---- Documents ----
 
-  /** Runs every view and query in a document. In Restricted Mode nothing is read. */
+  /**
+   * Runs every view and query in a document. In Restricted Mode nothing is read. Results are reused
+   * while the note's queries and everything they read are unchanged, so typing in a paragraph
+   * doesn't re-run its queries.
+   */
   async runDocument(doc: vscode.TextDocument, parsed: YamdDocument = parse(doc.getText()), interactive = false): Promise<SlotResult[]> {
     const nodes = dbNodes(parsed);
-    if (!nodes.length) return [];
+    if (!nodes.length) {
+      this.deps.delete(doc.uri.toString());
+      return [];
+    }
     if (!vscode.workspace.isTrusted) {
       return nodes.map((node) => ({ key: node.key, node, html: viewError('Queries are disabled in Restricted Mode.', 'Restricted') }));
     }
     const docFile = doc.uri.fsPath;
     const aliases = databaseAliases(parsed.frontMatter?.data);
-    const slots = this.slots.get(doc.uri.toString()) ?? new Map<string, SlotState>();
-    this.slots.set(doc.uri.toString(), slots);
     const { maxRows } = settings();
+    const docKey = doc.uri.toString();
+    const cacheKey = `${docKey}|${interactive}`;
+    const signature = JSON.stringify([nodes.map((n) => [n.key, n.kind, n.ref, n.sql, n.resultView, n.attrs?.values]), aliases, maxRows, today()]);
+    const cached = this.resultCache.get(cacheKey);
+    const known = this.deps.get(docKey);
+    if (cached && known && cached.signature === signature && cached.stamp === this.stamp(known)) return cached.results;
+
+    const deps: Deps = { files: new Set(), notes: false, unresolved: false };
+    // Views of the same database in one note share one read of its file.
+    const loads = new Map<string, Promise<Source | { code: string; message: string }>>();
+    const load = (ref: DatabaseRef) => {
+      const key = `${ref.file}#${ref.table ?? ''}`;
+      let p = loads.get(key);
+      if (!p) loads.set(key, (p = this.source(ref)));
+      return p;
+    };
+    const relationCache = new Map<string, Promise<Record<string, RelationSource>>>();
+    const slots = this.slots.get(docKey) ?? new Map<string, SlotState>();
+    this.slots.set(docKey, slots);
     const results: SlotResult[] = [];
     for (const node of nodes) {
       const fail = (code: string, message: string): SlotResult => ({
@@ -231,19 +305,23 @@ export class DatabaseService implements vscode.Disposable {
             results.push(fail('Y850', 'Name a database: ::db[alias or path].'));
             continue;
           }
+          deps.notes = true;
           source = { type: 'notes', tables: this.notesTables(docFile) };
         } else {
           const r = resolveDatabase(docFile, node.ref, aliases, fsAccess);
           if (!r.ok) {
+            // A missing database may be created later, so any database file event re-runs this note.
+            if (r.code === 'Y850') deps.unresolved = true;
             results.push(fail(r.code, r.message));
             continue;
           }
           ref = r.ref;
+          deps.files.add(ref.file);
           if (node.kind === 'view' && ref.kind === 'sqlite' && !ref.table) {
             results.push(fail('Y850', `"${node.ref}" is a SQLite file. Name a table for a view, for example "${node.ref}#contacts".`));
             continue;
           }
-          const loaded = await this.source(ref);
+          const loaded = await load(ref);
           if ('code' in loaded) {
             results.push(fail(loaded.code, loaded.message));
             continue;
@@ -260,13 +338,14 @@ export class DatabaseService implements vscode.Disposable {
             ref: node.ref ?? '',
             source,
             attrs,
-            relations: source.type === 'ydb' ? await this.relations(ref, source.text, docFile) : undefined,
+            relations: source.type === 'ydb' ? await this.cachedRelations(relationCache, ref, source.text, docFile, deps) : undefined,
             interactive: interactive && vscode.workspace.fs.isWritableFileSystem('file') !== false,
             today: today(),
             month: state?.month,
             maxRows,
           });
-          const schema = (await this.run({ kind: 'schema', source })).schema;
+          // The view job returns its schema; asking for it again is only for views that failed.
+          const schema = result.schema ?? (await this.run({ kind: 'schema', source })).schema;
           const merged = schema ? ({ ...(schema.views[attrString(node.attrs, 'view') ?? ''] ?? {}) } as SavedView) : {};
           for (const k of ['filter', 'group', 'type'] as const) {
             const v = attrString(node.attrs, k);
@@ -285,7 +364,15 @@ export class DatabaseService implements vscode.Disposable {
         results.push(fail('Y851', err instanceof Error ? err.message : String(err)));
       }
     }
+    this.deps.set(docKey, deps);
+    this.resultCache.set(cacheKey, { signature, stamp: this.stamp(deps), results });
     return results;
+  }
+
+  private cachedRelations(cache: Map<string, Promise<Record<string, RelationSource>>>, ref: DatabaseRef, text: string, docFile: string, deps: Deps) {
+    let p = cache.get(ref.file);
+    if (!p) cache.set(ref.file, (p = this.relations(ref, text, docFile, deps)));
+    return p;
   }
 
   // ---- Writes from the preview ----
@@ -299,7 +386,7 @@ export class DatabaseService implements vscode.Disposable {
       const [y, mo] = base.split('-').map(Number) as [number, number];
       const d = new Date(Date.UTC(y, mo - 1 + (m.delta ?? 0), 1));
       slot.month = d.toISOString().slice(0, 7);
-      this.changed.fire(slot.ref.file);
+      this.fire(slot.ref.file);
       return;
     }
     const prop = m.prop ? slot.properties.find((p) => p.name === m.prop) : undefined;
@@ -351,7 +438,7 @@ export class DatabaseService implements vscode.Disposable {
   private async applyYdb(file: string, edit: YdbEdit | null): Promise<boolean> {
     if (!edit) {
       void vscode.window.showWarningMessage('YAMD: The database changed; the preview has been refreshed.');
-      this.changed.fire(file);
+      this.fire(file);
       return false;
     }
     const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
@@ -419,7 +506,7 @@ export class DatabaseService implements vscode.Disposable {
     const loaded = this.loadedMtime.get(ref.file);
     if (loaded !== undefined && statSync(ref.file).mtimeMs !== loaded) {
       const reload = await vscode.window.showWarningMessage(`${name} changed on disk since YAMD loaded it. Reload it before editing.`, 'Reload');
-      if (reload) this.changed.fire(ref.file);
+      if (reload) this.fire(ref.file);
       return false;
     }
     if (!this.allowedWrites.has(ref.file)) {
@@ -437,7 +524,7 @@ export class DatabaseService implements vscode.Disposable {
     renameSync(temp, ref.file);
     this.loadedMtime.set(ref.file, statSync(ref.file).mtimeMs);
     this.log.appendLine(`${new Date().toISOString()} wrote ${ref.file} (${result.changes ?? 0} change(s))`);
-    this.changed.fire(ref.file);
+    this.fire(ref.file);
     return true;
   }
 
@@ -507,7 +594,7 @@ export class DatabaseService implements vscode.Disposable {
 
   dispose() {
     void this.worker?.terminate();
-    clearTimeout(this.textTimer);
+    for (const t of this.textTimers.values()) clearTimeout(t);
     for (const d of this.disposables) d.dispose();
   }
 }

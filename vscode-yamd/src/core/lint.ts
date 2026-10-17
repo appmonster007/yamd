@@ -210,8 +210,13 @@ class Linter {
 
   private noteSummary(path: string): NoteSummary | null {
     if (!this.summaries.has(path)) {
-      const text = this.options.notes?.lookup.read(path);
-      this.summaries.set(path, text === undefined ? null : summarize(path, text));
+      const lookup = this.options.notes?.lookup;
+      const known = lookup?.summary?.(path);
+      if (known) this.summaries.set(path, known);
+      else {
+        const text = lookup?.read(path);
+        this.summaries.set(path, text === undefined ? null : summarize(path, text));
+      }
     }
     return this.summaries.get(path) ?? null;
   }

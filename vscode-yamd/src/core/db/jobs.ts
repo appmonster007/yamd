@@ -174,7 +174,7 @@ function view(SQL: SqlJsStatic, job: Extract<Job, { kind: 'view' }>): JobResult 
       resolveImage: (src) => `yamd-cover:${src}`,
     });
     const boardProblem = settings.type === 'board' && /class="db-error"/.test(html) ? { code: 'Y855' as const, message: /<\/span> ([^<]*)<\/div>/.exec(html)?.[1] ?? 'Invalid board.' } : undefined;
-    return { html, problem: boardProblem };
+    return { html, problem: boardProblem, schema: o.schema };
   } finally {
     o.db.close();
   }

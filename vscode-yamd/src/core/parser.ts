@@ -765,7 +765,40 @@ function assignHeadingIds(doc: YamdDocument): void {
   });
 }
 
+/**
+ * Recently parsed documents, newest last. One edit makes the index, diagnostics, preview, link
+ * provider and outline all parse the same text, so they share one parse. Documents are never
+ * modified after parsing, which is what makes sharing safe.
+ */
+const CACHE_ENTRIES = 16;
+/** Total source characters kept, so a few huge documents can't hold all the memory. */
+const CACHE_CHARS = 8_000_000;
+const cache = new Map<string, YamdDocument>();
+let cachedChars = 0;
+
+/** Parses `source`, reusing the result of an earlier parse of the same text. Don't modify the result. */
 export function parse(source: string): YamdDocument {
+  const hit = cache.get(source);
+  if (hit) {
+    // Move to the newest position.
+    cache.delete(source);
+    cache.set(source, hit);
+    return hit;
+  }
+  const doc = parseUncached(source);
+  if (source.length <= CACHE_CHARS / 2) {
+    cache.set(source, doc);
+    cachedChars += source.length;
+    for (const [key] of cache) {
+      if (cache.size <= CACHE_ENTRIES && cachedChars <= CACHE_CHARS) break;
+      cache.delete(key);
+      cachedChars -= key.length;
+    }
+  }
+  return doc;
+}
+
+export function parseUncached(source: string): YamdDocument {
   const rawLines = source.split('\n');
   const lineStarts: number[] = [];
   const lines: string[] = [];

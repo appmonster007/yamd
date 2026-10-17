@@ -37,7 +37,10 @@ export class DatabaseDiagnostics implements vscode.Disposable {
       vscode.workspace.onDidChangeTextDocument((e) => this.schedule(e.document)),
       vscode.workspace.onDidCloseTextDocument((d) => this.collection.delete(d.uri)),
       vscode.workspace.onDidGrantWorkspaceTrust(() => this.all()),
-      db.onDidChange(() => this.all()),
+      // Only notes whose queries read the changed data are checked again.
+      db.onDidChange((path) => {
+        for (const d of vscode.workspace.textDocuments) if (d.languageId === 'yamd' && db.affects(d, path)) this.schedule(d);
+      }),
     );
     this.all();
   }
@@ -97,7 +100,7 @@ export class DatabaseDiagnostics implements vscode.Disposable {
       const line = fm ? parsed.lines.findIndex((l, i) => i > fm.line && i < fm.endLine && new RegExp(`^\\s+${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`).test(l)) : -1;
       add(r.code, r.message, doc.lineAt(Math.max(line, 0)).range);
     }
-    for (const r of await this.db.runDocument(doc, parsed)) {
+    for (const r of await this.db.runDocument(doc, parsed, vscode.workspace.isTrusted)) {
       if (!r.problem) continue;
       const start = doc.positionAt(r.node.range.start);
       const range = r.node.kind === 'inline' ? new vscode.Range(start, doc.positionAt(r.node.range.end)) : doc.lineAt(start.line).range;

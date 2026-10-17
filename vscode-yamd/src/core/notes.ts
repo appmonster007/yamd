@@ -23,6 +23,8 @@ export interface NoteLookup {
   byName(name: string): string[];
   /** Notes with the alias `alias` (lower-cased). */
   byAlias(alias: string): string[];
+  /** The already-built summary of a note, if the lookup keeps them (saves parsing it again). */
+  summary?(path: string): NoteSummary | undefined;
 }
 
 export interface Resolved {
@@ -350,7 +352,16 @@ export class NoteStore implements NoteLookup {
   private readonly names = new Map<string, Set<string>>();
   private readonly aliasMap = new Map<string, Set<string>>();
   private version = 0;
-  private resolvedCache: { version: number; links: Map<string, (Resolved | null)[]> } | undefined;
+  /** Changes when a note or alias is added or removed, which is what link resolution depends on. */
+  private nameVersion = 0;
+  private resolvedCache:
+    | {
+        version: number;
+        links: Map<string, (Resolved | null)[]>;
+        entries: Map<string, { summary: NoteSummary; names: number; resolved: (Resolved | null)[] }>;
+      }
+    | undefined;
+  private tagCache: Map<string, Set<string>> | undefined;
 
   /**
    * @param roots workspace folders, longest match wins in `root()`
@@ -363,6 +374,11 @@ export class NoteStore implements NoteLookup {
 
   get size(): number {
     return this.notes.size;
+  }
+
+  /** Changes whenever any note is added, changed or removed. */
+  get revision(): number {
+    return this.version;
   }
 
   paths(): string[] {
@@ -386,6 +402,9 @@ export class NoteStore implements NoteLookup {
     this.addTo(this.names, posix.basename(path).toLowerCase(), path);
     for (const a of summary.aliases) this.addTo(this.aliasMap, a.toLowerCase(), path);
     this.version++;
+    // Links resolve by name and alias, so they only need redoing when those change.
+    if (!existing || !sameList(existing.summary.aliases, summary.aliases)) this.nameVersion++;
+    if (!existing || !sameList(existing.summary.tags, summary.tags)) this.tagCache = undefined;
     return summary;
   }
 
@@ -394,6 +413,8 @@ export class NoteStore implements NoteLookup {
     this.unlink(path);
     this.notes.delete(path);
     this.version++;
+    this.nameVersion++;
+    this.tagCache = undefined;
   }
 
   private unlink(path: string) {
@@ -435,12 +456,25 @@ export class NoteStore implements NoteLookup {
     return resolveNote(this, target, from);
   }
 
-  /** Resolution of every link of every note, cached until the store changes. */
+  /**
+   * Resolution of every link of every note. Each note's result is kept until that note's summary
+   * changes or the set of names and aliases does, so typing in one note re-resolves only its links.
+   */
   private resolvedLinks(): Map<string, (Resolved | null)[]> {
     if (this.resolvedCache?.version === this.version) return this.resolvedCache.links;
+    const old = this.resolvedCache?.entries ?? new Map();
+    const entries = new Map<string, { summary: NoteSummary; names: number; resolved: (Resolved | null)[] }>();
     const links = new Map<string, (Resolved | null)[]>();
-    for (const [path, { summary }] of this.notes) links.set(path, summary.links.map((l) => this.resolveLink(l, path)));
-    this.resolvedCache = { version: this.version, links };
+    for (const [path, { summary }] of this.notes) {
+      const kept = old.get(path);
+      const entry =
+        kept && kept.summary === summary && kept.names === this.nameVersion
+          ? kept
+          : { summary, names: this.nameVersion, resolved: summary.links.map((l) => this.resolveLink(l, path)) };
+      entries.set(path, entry);
+      links.set(path, entry.resolved);
+    }
+    this.resolvedCache = { version: this.version, links, entries };
     return links;
   }
 
@@ -470,8 +504,10 @@ export class NoteStore implements NoteLookup {
 
   /** Each tag with the notes that use it. */
   tags(): Map<string, Set<string>> {
+    if (this.tagCache) return this.tagCache;
     const out = new Map<string, Set<string>>();
     for (const [path, { summary }] of this.notes) for (const t of summary.tags) this.addTo(out, t, path);
+    this.tagCache = out;
     return out;
   }
 
@@ -579,6 +615,10 @@ export class NoteStore implements NoteLookup {
     }
     return out;
   }
+}
+
+function sameList(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
 function lineText(text: string, line: number): string {

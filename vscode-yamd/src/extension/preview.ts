@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { parse, render, sanitizeUrl } from '../core';
 import type { RenderOptions } from '../core';
 import { embedResolver } from '../core/embeds';
-import { highlight, renderMath } from '../core/rich';
+
 import { addCard, moveCard, renameCard, toggleTask } from '../core/kanbanEdit';
 import type { LineEdit } from '../core/kanbanEdit';
 import { resolveNote, splitTarget } from '../core/notes';
@@ -13,6 +13,7 @@ import type { WorkspaceIndex } from '../workspace/index';
 import { notePath, noteUri } from '../workspace/index';
 import type { DatabaseService, DbMessage } from './databases';
 import { fileResolver } from './diagnostics';
+import { highlight, renderMath } from './richLoader';
 
 const DEBOUNCE_MS = 150;
 
@@ -54,7 +55,13 @@ export class PreviewManager implements vscode.Disposable {
   ) {
     this.disposables.push(
       // Views and queries re-run when their data changes.
-      ...(db ? [db.onDidChange(() => this.scheduleFill())] : []),
+      ...(db
+        ? [
+            db.onDidChange((changed) => {
+              if (this.document && db.affects(this.document, changed)) this.scheduleFill();
+            }),
+          ]
+        : []),
       vscode.workspace.onDidChangeTextDocument((e) => {
         if (e.document === this.document) this.schedule();
       }),
@@ -97,6 +104,7 @@ export class PreviewManager implements vscode.Disposable {
 
   private setDocument(doc: vscode.TextDocument) {
     if (!this.panel) return;
+    if (this.document !== doc) this.lastHtml = undefined;
     this.document = doc;
     this.panel.title = `Preview ${path.basename(doc.uri.path)}`;
     this.panel.webview.options = { ...this.panel.webview.options, localResourceRoots: this.resourceRoots(doc) };
@@ -148,10 +156,16 @@ export class PreviewManager implements vscode.Disposable {
     }
     const parsed = parse(doc.getText());
     const html = render(parsed, options);
+    // An edit that doesn't change the output (front matter, comments) leaves the page as it is,
+    // which also keeps filled database views in place.
+    if (html === this.lastHtml) return;
+    this.lastHtml = html;
     void panel.webview.postMessage({ type: 'update', html });
     void this.fill(doc, parsed);
   }
 
+  /** The HTML last sent to the webview, so identical renders aren't sent again. */
+  private lastHtml: string | undefined;
   private fillTimer: ReturnType<typeof setTimeout> | undefined;
   private fillGeneration = 0;
 
@@ -179,6 +193,8 @@ export class PreviewManager implements vscode.Disposable {
 
   private async onMessage(m: FromWebview) {
     if (m.type === 'ready') {
+      // A new webview has an empty page.
+      this.lastHtml = undefined;
       this.update();
       return;
     }

@@ -9,7 +9,8 @@ import { NoteStore } from '../core/notes';
 
 /** Notes larger than this are skipped. */
 const MAX_BYTES = 2 * 1024 * 1024;
-const BATCH = 50;
+/** Notes loaded between pauses. Parsing is synchronous, so a small batch keeps the editor responsive. */
+const BATCH = 10;
 const EDIT_DEBOUNCE_MS = 300;
 const CHANGE_DEBOUNCE_MS = 100;
 

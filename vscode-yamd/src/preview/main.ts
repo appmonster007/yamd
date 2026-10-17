@@ -40,6 +40,8 @@ function update(html: string) {
   const y = window.scrollY;
   root.innerHTML = html;
   addCopyButtons(root);
+  // Database views keep showing their last result until fresh data arrives, so typing doesn't blank them.
+  for (const [key, cached] of fills) applyFill(key, cached);
   restoreCollapsed();
   restoreFocus();
   window.scrollTo({ top: y });
@@ -369,19 +371,29 @@ function postDb(el: Element, message: Record<string, unknown>) {
   vscode.postMessage({ type: 'db', key: slotKey(el), ...message });
 }
 
+/** The last HTML received for each database view or query. */
+const fills = new Map<string, string>();
+
+function applyFill(key: string, html: string) {
+  const slot = root.querySelector<HTMLElement>(`.db-slot[data-db-key="${CSS.escape(key)}"]`);
+  if (!slot) return;
+  slot.innerHTML = html;
+  slot.classList.add('filled');
+  const state = viewState.get(key);
+  if (state?.sort) applySort(slot, state.sort.prop, state.sort.desc);
+  if (state?.search) {
+    const input = slot.querySelector<HTMLInputElement>('.db-search');
+    if (input) input.value = state.search;
+    applySearch(slot, state.search);
+  }
+}
+
 function fill(items: { key: string; html: string }[]) {
+  // The host sends every view of the note, so views that no longer exist can be forgotten.
+  fills.clear();
   for (const { key, html } of items) {
-    const slot = root.querySelector<HTMLElement>(`.db-slot[data-db-key="${CSS.escape(key)}"]`);
-    if (!slot) continue;
-    slot.innerHTML = html;
-    slot.classList.add('filled');
-    const state = viewState.get(key);
-    if (state?.sort) applySort(slot, state.sort.prop, state.sort.desc);
-    if (state?.search) {
-      const input = slot.querySelector<HTMLInputElement>('.db-search');
-      if (input) input.value = state.search;
-      applySearch(slot, state.search);
-    }
+    fills.set(key, html);
+    applyFill(key, html);
   }
 }
 

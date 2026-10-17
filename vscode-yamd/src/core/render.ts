@@ -50,13 +50,12 @@ const CALLOUT_TITLES: Record<string, string> = {
 
 const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
 
+const NEEDS_ESCAPE = /[&<>"']/;
+const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+/** Most strings have nothing to escape, so they are returned as they are; the rest take one pass. */
 export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return NEEDS_ESCAPE.test(s) ? s.replace(/[&<>"']/g, (c) => ESCAPES[c] as string) : s;
 }
 
 /** Applies the URL scheme allow-list from yamd-spec.md section 9. Returns null if the URL is unsafe. */
@@ -461,19 +460,26 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     }
   }
 
+  /** The document's headings (not board columns), found once however many contents boxes use them. */
+  private outline: Extract<Block, { type: 'heading' }>[] | undefined;
+
   private toc(depth: number, line: number): string {
+    if (!this.outline) {
+      const found: Extract<Block, { type: 'heading' }>[] = [];
+      walkBlocks(this.doc.blocks, (b) => {
+        if (b.type === 'heading' && !b.inBoard) found.push(b);
+      });
+      this.outline = found;
+    }
     const headings: { level: number; id: string; html: string }[] = [];
     // A single H1 is the document's title, which the contents don't need to repeat.
-    let h1s = 0;
-    walkBlocks(this.doc.blocks, (b) => {
-      if (b.type === 'heading' && !b.inBoard && b.level === 1) h1s++;
-    });
-    walkBlocks(this.doc.blocks, (b) => {
-      if (b.type === 'heading' && !b.inBoard && b.level <= depth && !(b.level === 1 && h1s === 1)) {
+    const h1s = this.outline.filter((b) => b.level === 1).length;
+    for (const b of this.outline) {
+      if (b.level <= depth && !(b.level === 1 && h1s === 1)) {
         const text = plainText(b.children, (path) => lookupVariable(this.doc.frontMatter, path));
         headings.push({ level: b.level, id: b.id, html: escapeHtml(text) });
       }
-    });
+    }
     if (headings.length === 0) return '';
     const min = Math.min(...headings.map((h) => h.level));
     let html = '';

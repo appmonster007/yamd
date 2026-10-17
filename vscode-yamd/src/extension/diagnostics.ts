@@ -13,6 +13,8 @@ const SEVERITY: Record<Severity, vscode.DiagnosticSeverity> = {
 };
 
 const DEBOUNCE_MS = 300;
+/** Checks against other notes can wait: they only change when some other note does. */
+const CROSS_NOTE_DELAY_MS = 800;
 
 /**
  * Builds the `fileExists` callback for a document: relative paths resolve from its folder first,
@@ -33,12 +35,15 @@ export function fileResolver(doc: vscode.TextDocument): ((p: string) => string |
 export class DiagnosticsProvider implements vscode.Disposable {
   private readonly collection = vscode.languages.createDiagnosticCollection('yamd');
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** When each waiting note will be checked (ms since the epoch). */
+  private readonly due = new Map<string, number>();
   private readonly disposables: vscode.Disposable[] = [this.collection];
 
   constructor(private readonly index?: WorkspaceIndex) {
     this.disposables.push(
       // Links into other notes can break or heal when those notes change.
-      ...(index ? [index.onDidChange(() => this.updateAll())] : []),
+      // They're rechecked after things settle, once for all the changes in a burst.
+      ...(index ? [index.onDidChange(() => this.scheduleAll())] : []),
       vscode.workspace.onDidOpenTextDocument((d) => this.update(d)),
       vscode.workspace.onDidChangeTextDocument((e) => this.schedule(e.document)),
       vscode.workspace.onDidCloseTextDocument((d) => this.clear(d)),
@@ -53,16 +58,26 @@ export class DiagnosticsProvider implements vscode.Disposable {
     for (const d of vscode.workspace.textDocuments) this.update(d);
   }
 
-  private schedule(doc: vscode.TextDocument) {
+  private scheduleAll() {
+    for (const d of vscode.workspace.textDocuments) this.schedule(d, CROSS_NOTE_DELAY_MS);
+  }
+
+  private schedule(doc: vscode.TextDocument, delay = DEBOUNCE_MS) {
     if (doc.languageId !== 'yamd') return;
     const key = doc.uri.toString();
+    const due = Date.now() + delay;
+    const waiting = this.due.get(key);
+    // Typing restarts the wait; a slower request (another note changed) never delays an earlier one.
+    if (waiting !== undefined && waiting <= due && delay !== DEBOUNCE_MS) return;
     clearTimeout(this.timers.get(key));
+    this.due.set(key, due);
     this.timers.set(
       key,
       setTimeout(() => {
         this.timers.delete(key);
+        this.due.delete(key);
         this.update(doc);
-      }, DEBOUNCE_MS),
+      }, delay),
     );
   }
 
@@ -93,6 +108,7 @@ export class DiagnosticsProvider implements vscode.Disposable {
     const key = doc.uri.toString();
     clearTimeout(this.timers.get(key));
     this.timers.delete(key);
+    this.due.delete(key);
     this.collection.delete(doc.uri);
   }
 

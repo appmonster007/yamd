@@ -41,6 +41,15 @@ const contexts = await Promise.all([
     format: 'iife',
     target: 'es2022',
   }),
+  // Syntax highlighting and math, loaded by the extension when a preview first needs them.
+  esbuild.context({
+    ...shared,
+    entryPoints: ['src/core/rich.ts'],
+    outfile: 'dist/rich.js',
+    platform: 'node',
+    format: 'cjs',
+    target: 'node20',
+  }),
   esbuild.context({
     ...shared,
     entryPoints: ['src/extension/dbWorker.ts'],
