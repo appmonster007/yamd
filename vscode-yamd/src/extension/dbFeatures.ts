@@ -2,6 +2,7 @@ import { existsSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../core';
+import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { JobResult, Source } from '../core/db/jobs';
 import { databaseAliases, DB_EXTENSIONS, resolveDatabase, SQLITE_EXTENSIONS, ydbTableName } from '../core/db/scope';
 import { renderResult } from '../core/db/views';
@@ -83,7 +84,17 @@ export class DatabaseDiagnostics implements vscode.Disposable {
       return;
     }
     const version = doc.version;
-    const parsed = parse(doc.getText());
+    const text = doc.getText();
+    // Notes with no database views or queries don't need to be parsed here at all.
+    if (!/::db\[|:query\[|^databases:|^ {0,3}(?:`{3,}|~{3,})[ \t]*query/m.test(text)) {
+      this.collection.delete(doc.uri);
+      return;
+    }
+    if (text.length >= WARM_MIN_CHARS) {
+      await warmParse(text, () => doc.version === version);
+      if (doc.isClosed || doc.version !== version) return;
+    }
+    const parsed = parse(text);
     const diags: vscode.Diagnostic[] = [];
     const add = (code: string, message: string, range: vscode.Range, severity = vscode.DiagnosticSeverity.Error) => {
       const d = new vscode.Diagnostic(range, message, severity);

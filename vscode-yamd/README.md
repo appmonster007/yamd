@@ -98,6 +98,7 @@ Type a prefix and accept the suggestion:
 | `yamd.dailyNotes.format`       | `YYYY-MM-DD` | Daily note file name format                          |
 | `yamd.dailyNotes.template`     | `""`    | Template for new daily notes, e.g. `templates/daily.yamd` |
 | `yamd.templates.folder`        | `templates` | Folder for "Insert Template"; not indexed             |
+| `yamd.preview.maxSizeKB`       | `8192`  | Notes larger than this aren't previewed                   |
 | `yamd.queries.timeout`         | `2`     | Seconds before a document query is stopped (Y952)         |
 | `yamd.queries.maxRows`         | `500`   | Most rows a view or query shows                           |
 | `yamd.databases.maxFileSize`   | `100`   | Megabytes; larger database files aren't loaded for previews |
@@ -152,6 +153,12 @@ These features are shown as readable fallbacks:
 - **Citations** are shown as their keys. `::bibliography` lists the cited keys.
 - **`::embed`** shows a link.
 - **`:::html`** is shown as escaped source, because the preview never runs in trusted mode. Raw HTML outside it is sanitized with GitHub's allow-list.
+
+## Large notes and workspaces
+
+- **Large notes** (over about 30 KB) are parsed in chunks that are cached, so an edit re-parses only the few kilobytes around it instead of the whole file. Notes over 150 KB are parsed ahead of time in short slices, so opening one doesn't freeze the editor, and the preview waits a little longer to update as a note gets bigger. A note with unusual structure (for example definitions inside quotes or lists) is parsed whole, which is slower but gives the same result.
+- **Large workspaces** are indexed in a worker thread, so thousands of notes don't stall typing. The index keeps the text of small notes only and reads larger ones when it needs them. Bursts of file changes, such as a `git checkout`, are gathered and loaded together.
+- Notes over 2 MB aren't indexed, and notes over `yamd.preview.maxSizeKB` aren't previewed. The Problems panel shows at most 1,000 findings per note.
 
 ## Development
 

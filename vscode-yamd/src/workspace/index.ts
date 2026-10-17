@@ -2,11 +2,12 @@
  * The workspace note index: every `.yamd` note, kept fresh from file watchers and unsaved edits.
  * Cross-note logic lives in `NoteStore` (src/core/notes.ts); this file only feeds it.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import * as vscode from 'vscode';
 import { NoteStore } from '../core/notes';
+import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { ScanRequest, ScanResponse } from './indexWorker';
 
 /** Notes larger than this are skipped. */
@@ -15,6 +16,9 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const BATCH = 10;
 /** Notes sent to the index worker at a time. */
 const WORKER_CHUNK = 100;
+/** Changed notes are gathered for this long before loading, and more than `BULK_LOAD` of them use the worker. */
+const LOAD_BATCH_MS = 150;
+const BULK_LOAD = 8;
 const EDIT_DEBOUNCE_MS = 300;
 const CHANGE_DEBOUNCE_MS = 100;
 
@@ -45,10 +49,10 @@ export class WorkspaceIndex implements vscode.Disposable {
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.yamd');
     this.disposables.push(
       watcher,
-      watcher.onDidCreate((uri) => void this.load(uri)),
+      watcher.onDidCreate((uri) => this.enqueue(uri)),
       watcher.onDidChange((uri) => {
         // Open documents are tracked through their edits instead.
-        if (!this.openDocument(uri)) void this.load(uri);
+        if (!this.openDocument(uri)) this.enqueue(uri);
       }),
       watcher.onDidDelete((uri) => this.remove(uri)),
       vscode.workspace.onDidChangeTextDocument((e) => this.scheduleEdit(e.document)),
@@ -56,7 +60,7 @@ export class WorkspaceIndex implements vscode.Disposable {
       vscode.workspace.onDidRenameFiles((e) => {
         for (const f of e.files) {
           this.removeTree(f.oldUri);
-          void this.load(f.newUri);
+          this.enqueue(f.newUri);
         }
       }),
       vscode.workspace.onDidChangeWorkspaceFolders(() => void this.rebuild()),
@@ -76,7 +80,35 @@ export class WorkspaceIndex implements vscode.Disposable {
 
   private newStore(): NoteStore {
     const roots = (vscode.workspace.workspaceFolders ?? []).map((f) => notePath(f.uri));
-    return new NoteStore(roots.length ? roots : [''], (p) => existsSync(p));
+    return new NoteStore(roots.length ? roots : [''], (p) => existsSync(p), { reader: (p) => this.readText(p) });
+  }
+
+  /** Recently read large notes, by path, with the modification time they were read at. */
+  private readonly recentReads = new Map<string, { mtime: number; text: string }>();
+
+  /**
+   * The current text of a note the index doesn't keep in memory: the open editor's (which may have
+   * unsaved changes), or else the file's. A few recent reads are remembered, as embedding or
+   * searching the same large note repeats them.
+   */
+  private readText(p: string): string | undefined {
+    const open = vscode.workspace.textDocuments.find((d) => d.uri.scheme === 'file' && notePath(d.uri) === p);
+    if (open) return open.getText();
+    try {
+      const mtime = statSync(p).mtimeMs;
+      const known = this.recentReads.get(p);
+      if (known?.mtime === mtime) {
+        this.recentReads.delete(p);
+        this.recentReads.set(p, known);
+        return known.text;
+      }
+      const text = readFileSync(p, 'utf8');
+      this.recentReads.set(p, { mtime, text });
+      if (this.recentReads.size > 4) this.recentReads.delete(this.recentReads.keys().next().value as string);
+      return text;
+    } catch {
+      return undefined;
+    }
   }
 
   rebuild(): Promise<void> {
@@ -232,11 +264,50 @@ export class WorkspaceIndex implements vscode.Disposable {
       key,
       setTimeout(() => {
         this.editTimers.delete(key);
-        if (doc.isClosed) return;
-        this.store.set(notePath(doc.uri), doc.getText());
-        this.fire();
+        void this.storeEdit(doc);
       }, EDIT_DEBOUNCE_MS),
     );
+  }
+
+  /** Notes changed on disk, waiting to be loaded together. */
+  private readonly pendingLoads = new Set<string>();
+  private loadTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /**
+   * Notes that change on disk (a `git checkout`, a sync, a folder copy) arrive as a burst of
+   * events. They're gathered for a moment and loaded together, and a big batch goes to the worker.
+   */
+  private enqueue(uri: vscode.Uri) {
+    if (uri.scheme !== 'file' || !uri.path.endsWith('.yamd')) return;
+    this.pendingLoads.add(notePath(uri));
+    clearTimeout(this.loadTimer);
+    this.loadTimer = setTimeout(() => void this.flushLoads(), LOAD_BATCH_MS);
+  }
+
+  private async flushLoads() {
+    const paths = [...this.pendingLoads];
+    this.pendingLoads.clear();
+    const generation = this.scanGeneration;
+    const open = new Set(vscode.workspace.textDocuments.map((d) => notePath(d.uri)));
+    const disk = paths.filter((p) => !open.has(p) && !this.excluded(noteUri(p)));
+    // A few notes are quicker to load here than to start a worker for.
+    const rest = disk.length > BULK_LOAD ? await this.scanInWorker(disk, generation, () => undefined) : disk;
+    if (generation !== this.scanGeneration) return;
+    for (const p of [...rest, ...paths.filter((q) => open.has(q))]) await this.load(noteUri(p), false);
+    this.fire();
+  }
+
+  /** Adds an edited note to the index. A large one is parsed ahead in short slices first. */
+  private async storeEdit(doc: vscode.TextDocument) {
+    if (doc.isClosed) return;
+    const text = doc.getText();
+    const version = doc.version;
+    if (text.length >= WARM_MIN_CHARS) {
+      await warmParse(text, () => doc.version === version);
+      if (doc.isClosed || doc.version !== version) return;
+    }
+    this.store.set(notePath(doc.uri), text);
+    this.fire();
   }
 
   private remove(uri: vscode.Uri) {
@@ -258,6 +329,7 @@ export class WorkspaceIndex implements vscode.Disposable {
 
   dispose() {
     clearTimeout(this.changeTimer);
+    clearTimeout(this.loadTimer);
     for (const t of this.editTimers.values()) clearTimeout(t);
     for (const d of this.disposables) d.dispose();
   }

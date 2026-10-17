@@ -1,7 +1,8 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { existsSync } from 'node:fs';
-import { parse, render, sanitizeUrl } from '../core';
+import { escapeHtml, parse, render, sanitizeUrl } from '../core';
+import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { RenderOptions } from '../core';
 import { embedResolver } from '../core/embeds';
 
@@ -16,6 +17,8 @@ import { fileResolver } from './diagnostics';
 import { highlight, renderMath } from './richLoader';
 
 const DEBOUNCE_MS = 150;
+/** The most a very large note adds to the wait (about 3 MB of text reaches it). */
+const MAX_EXTRA_DEBOUNCE_MS = 1500;
 
 /** A card as the webview saw it: its first line and the hash of its source when rendered. */
 interface CardRef {
@@ -72,7 +75,7 @@ export class PreviewManager implements vscode.Disposable {
           this.setDocument(editor.document);
         }
       }),
-      vscode.workspace.onDidGrantWorkspaceTrust(() => this.update()),
+      vscode.workspace.onDidGrantWorkspaceTrust(() => void this.update()),
       vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
         if (e.textEditor.document === this.document && e.visibleRanges[0]) {
           void this.panel?.webview.postMessage({ type: 'scroll', line: e.visibleRanges[0].start.line });
@@ -108,7 +111,7 @@ export class PreviewManager implements vscode.Disposable {
     this.document = doc;
     this.panel.title = `Preview ${path.basename(doc.uri.path)}`;
     this.panel.webview.options = { ...this.panel.webview.options, localResourceRoots: this.resourceRoots(doc) };
-    this.update();
+    void this.update();
   }
 
   private resourceRoots(doc: vscode.TextDocument): vscode.Uri[] {
@@ -120,13 +123,36 @@ export class PreviewManager implements vscode.Disposable {
 
   private schedule() {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.update(), DEBOUNCE_MS);
+    // Bigger notes take longer to render and send, so they wait longer after the last keystroke.
+    const length = this.document ? this.document.offsetAt(new vscode.Position(this.document.lineCount, 0)) : 0;
+    const delay = DEBOUNCE_MS + Math.min(MAX_EXTRA_DEBOUNCE_MS, Math.floor(length / 2000));
+    this.timer = setTimeout(() => void this.update(), delay);
   }
 
-  private update() {
+  private async update(): Promise<void> {
     const panel = this.panel;
     const doc = this.document;
     if (!panel || !doc) return;
+    const text = doc.getText();
+    const version = doc.version;
+
+    const limit = vscode.workspace.getConfiguration('yamd.preview').get<number>('maxSizeKB', 8192) * 1024;
+    if (text.length > limit) {
+      const mb = (text.length / 1048576).toFixed(1);
+      this.lastHtml = undefined;
+      void panel.webview.postMessage({
+        type: 'update',
+        full: true,
+        html: `<div class="db-error" role="alert"><span class="db-error-code">Large file</span> This note is ${mb} MB, which is over <code>yamd.preview.maxSizeKB</code>. Raise that setting to preview it.</div>`,
+      });
+      return;
+    }
+    // A large note is parsed ahead of time in short slices, so the editor stays responsive while it loads.
+    if (text.length >= WARM_MIN_CHARS) {
+      await warmParse(text, () => doc.version === version);
+      // The note changed while that ran; its own update is already on the way.
+      if (doc.version !== version || this.document !== doc || this.panel !== panel) return;
+    }
     const docResolver = fileResolver(doc);
     const root = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath;
     // Images resolve from the folder of the note they appear in, which differs inside embeds.
@@ -154,8 +180,15 @@ export class PreviewManager implements vscode.Disposable {
     if (this.index && doc.uri.scheme === 'file') {
       options.resolveEmbed = embedResolver(this.index.store, notePath(doc.uri), (p) => optionsFor(p));
     }
-    const parsed = parse(doc.getText());
-    const html = render(parsed, options);
+    const parsed = parse(text);
+    let html: string;
+    try {
+      html = render(parsed, options);
+    } catch (err) {
+      // A note too large or too odd to render shouldn't take the extension host down with it.
+      const reason = err instanceof Error ? err.message : String(err);
+      html = `<div class="db-error" role="alert"><span class="db-error-code">Error</span> This note could not be rendered: ${escapeHtml(reason)}</div>`;
+    }
     // An edit that doesn't change the output (front matter, comments) leaves the page as it is,
     // which also keeps filled database views in place.
     if (html === this.lastHtml && !this.forceNext) return;
@@ -199,7 +232,7 @@ export class PreviewManager implements vscode.Disposable {
     if (m.type === 'ready') {
       // A new webview has an empty page.
       this.lastHtml = undefined;
-      this.update();
+      void this.update();
       return;
     }
     if (m.type === 'db') {
@@ -289,7 +322,7 @@ export class PreviewManager implements vscode.Disposable {
    */
   private forceUpdate() {
     this.forceNext = true;
-    this.update();
+    void this.update();
   }
 
   private shell(webview: vscode.Webview): string {

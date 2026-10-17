@@ -211,7 +211,11 @@ class PropertiesView implements vscode.WebviewViewProvider {
 }
 
 function parseFrontMatter(text: string) {
-  return extractFrontMatter(text.split('\n').map((l) => l.replace(/\r$/, '')));
+  // Only the front matter is read, not every line of a possibly huge note.
+  if (!text.startsWith('---')) return null;
+  const end = /\r?\n---[ \t]*(?:\r?\n|$)/.exec(text.slice(3));
+  const block = end ? text.slice(0, 3 + end.index + end[0].length) : text.slice(0, 20_000);
+  return extractFrontMatter(block.split('\n').map((l) => l.replace(/\r$/, '')));
 }
 
 /** Front matter values as JSON-safe data (dates become `YYYY-MM-DD`). */

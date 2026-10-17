@@ -183,3 +183,91 @@ describe('unlinked mentions', () => {
     assert.deepEqual(s.unlinkedMentions('roadmap.yamd').map((m) => m.from), ['a.yamd']);
   });
 });
+
+describe('heading IDs', () => {
+  /** The straightforward version the registry replaces. */
+  function naive(used: Set<string>, base: string): string {
+    const root = base || 'section';
+    let id = root;
+    for (let n = 2; used.has(id); n++) id = `${root}-${n}`;
+    used.add(id);
+    return id;
+  }
+
+  test('give the same IDs as counting up from -2 each time, including collisions', async () => {
+    const { SlugRegistry } = await import('../src/core/slug');
+    let seed = 42;
+    const random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+    const names = ['a', 'a-2', 'a-3', 'b', '', 'a-2-2', 'section', 'section-2'];
+    for (let round = 0; round < 200; round++) {
+      const registry = new SlugRegistry();
+      const used = new Set<string>();
+      for (const reserved of ['b-2', 'a-4']) if (random() < 0.5) (registry.reserve(reserved), used.add(reserved));
+      for (let i = 0; i < 40; i++) {
+        const name = names[Math.floor(random() * names.length)] as string;
+        assert.equal(registry.unique(name), naive(used, name), `round ${round} step ${i} name ${name}`);
+      }
+    }
+  });
+});
+
+describe('memory of the note index', () => {
+  const small = (n: number) => `# Note ${n}\n\nSee [[target]].\n`;
+  const large = (n: number) => `# Big ${n}\n\nSee [[target]] and Target here.\n\n${'filler line of text\n'.repeat(400)}`;
+
+  test('large notes do not keep their text, but can be read when needed', () => {
+    const disk = new Map<string, string>();
+    let reads = 0;
+    const s = new NoteStore([''], () => false, { keepTextBelow: 1000, reader: (p) => (reads++, disk.get(p)) });
+    disk.set('big.yamd', large(1));
+    s.set('big.yamd', large(1));
+    s.set('small.yamd', small(1));
+    s.set('target.yamd', '# Target');
+    assert.equal(reads, 0);
+    assert.equal(s.read('small.yamd'), small(1));
+    assert.equal(s.read('big.yamd'), large(1));
+    assert.equal(reads, 1);
+  });
+
+  test('backlinks list large notes without reading them', () => {
+    let reads = 0;
+    const s = new NoteStore([''], () => false, { keepTextBelow: 1000, reader: () => (reads++, undefined) });
+    s.set('big.yamd', large(1));
+    s.set('target.yamd', '# Target');
+    const links = s.backlinks('target.yamd');
+    assert.deepEqual(links.map((b) => [b.from, b.text]), [['big.yamd', 'See [[target]] and Target here.']]);
+    assert.equal(reads, 0);
+  });
+
+  test('an unchanged large note is recognized without its text', () => {
+    const s = new NoteStore([''], () => false, { keepTextBelow: 1000 });
+    const text = large(2);
+    const first = s.set('big.yamd', text);
+    assert.equal(s.set('big.yamd', text), first);
+    assert.notEqual(s.set('big.yamd', text.replace('Big', 'Bag')), first);
+    // Added by a worker with only a size and fingerprint.
+    const summary = summarize('w.yamd', text);
+    s.setSummarized('w.yamd', { size: text.length, hash: 'x' }, summary);
+    assert.equal(s.summary('w.yamd'), summary);
+    s.setSummarized('w.yamd', { size: text.length, hash: 'x' }, summarize('w.yamd', text));
+    assert.equal(s.summary('w.yamd'), summary);
+  });
+
+  test('mentions in large notes are found through the reader', () => {
+    const disk = new Map<string, string>([['big.yamd', large(1)]]);
+    const s = new NoteStore([''], () => false, { keepTextBelow: 1000, reader: (p) => disk.get(p) });
+    s.set('target.yamd', '# Target');
+    s.set('big.yamd', large(1));
+    assert.deepEqual(s.unlinkedMentions('target.yamd').map((m) => m.from), ['big.yamd']);
+  });
+
+  test('renaming works from summaries alone', async () => {
+    const { renameEdits } = await import('../src/core/notes');
+    const s = new NoteStore([''], () => false, { keepTextBelow: 10 });
+    s.set('guide.yamd', '# Guide');
+    s.set('a.yamd', 'See [guide](guide.yamd) and [[guide]] in a long enough note.');
+    const edits = renameEdits(s, 'guide.yamd', 'docs/guide.yamd');
+    assert.deepEqual([...edits.keys()], ['a.yamd']);
+    assert.equal(edits.get('a.yamd')?.length, 1);
+  });
+});

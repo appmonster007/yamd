@@ -146,6 +146,8 @@ export interface NoteLink {
   /** The file part of the target in the source, for rename edits. */
   fileRange: Range;
   line: number;
+  /** The source line the link is on, trimmed and shortened, for listing backlinks without the note's text. */
+  snippet: string;
 }
 
 export interface NoteHeading {
@@ -229,7 +231,7 @@ export function noteLinks(doc: YamdDocument): NoteLink[] {
       const lead = inner.length - inner.trimStart().length;
       const parts = splitTarget(target);
       const start = n.range.start + 2 + lead;
-      links.push({ kind: 'wiki', target, ...parts, range: n.range, fileRange: { start, end: start + parts.file.length }, line: lineOf(doc, n.range.start) });
+      links.push({ kind: 'wiki', target, ...parts, range: n.range, fileRange: { start, end: start + parts.file.length }, line: lineOf(doc, n.range.start), snippet: '' });
     } else if (n.type === 'embed') {
       const inner = src.slice(n.range.start + 3, n.range.end - 2);
       const lead = inner.length - inner.trimStart().length;
@@ -243,6 +245,7 @@ export function noteLinks(doc: YamdDocument): NoteLink[] {
         range: n.range,
         fileRange: { start, end: start + n.file.length },
         line: lineOf(doc, n.range.start),
+        snippet: '',
       });
     } else if ((n.type === 'link' && n.kind === 'inline') || (n.type === 'image' && n.label === undefined)) {
       const href = n.type === 'link' ? n.href : n.src;
@@ -268,9 +271,11 @@ export function noteLinks(doc: YamdDocument): NoteLink[] {
         range: n.range,
         fileRange: { start: destStart, end: destStart + written.length },
         line: lineOf(doc, n.range.start),
+        snippet: '',
       });
     }
   });
+  for (const l of links) l.snippet = (doc.lines[l.line] ?? '').trim().slice(0, 200);
   return links;
 }
 
@@ -342,8 +347,33 @@ export interface Mention {
 }
 
 interface Entry {
-  text: string;
+  /** The note's text, kept only for small notes; larger ones are read when needed (see `reader`). */
+  text?: string;
+  size: number;
+  hash: string;
   summary: NoteSummary;
+}
+
+/** Characters of unkept notes read from disk in one search for unlinked mentions. */
+const MENTION_READ_BUDGET = 20_000_000;
+
+/** Notes up to this many characters keep their text in the store; larger ones don't, to bound memory. */
+export const KEEP_TEXT_BELOW = 64 * 1024;
+
+export interface StoreOptions {
+  /** Reads a note's current text (an open editor's, or the file's). Used for notes whose text isn't kept. */
+  reader?: (path: string) => string | undefined;
+  keepTextBelow?: number;
+}
+
+/** A cheap fingerprint of a text, to notice an unchanged note whose text isn't kept. */
+export function fingerprint(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
 }
 
 /** Notes in memory, with the lookups resolution needs and cross-note queries. */
@@ -372,6 +402,7 @@ export class NoteStore implements NoteLookup {
   constructor(
     private readonly roots: string[] = [''],
     private readonly fileExists: (path: string) => boolean = () => false,
+    private readonly options: StoreOptions = {},
   ) {}
 
   get size(): number {
@@ -402,20 +433,37 @@ export class NoteStore implements NoteLookup {
 
   set(path: string, text: string): NoteSummary {
     const existing = this.notes.get(path);
-    if (existing?.text === text) return existing.summary;
+    if (existing && this.sameText(existing, text)) return existing.summary;
     return this.put(path, text, summarize(path, text));
   }
 
-  /** Adds a note whose summary was already built, for example by a worker thread. */
-  setSummarized(path: string, text: string, summary: NoteSummary): void {
-    if (this.notes.get(path)?.text === text) return;
-    this.put(path, text, summary);
+  private sameText(entry: Entry, text: string): boolean {
+    if (entry.size !== text.length) return false;
+    return entry.text !== undefined ? entry.text === text : entry.hash === fingerprint(text);
+  }
+
+  /**
+   * Adds a note whose summary was already built, for example by a worker thread. The text may be
+   * given only as its size and fingerprint (a large note's text isn't sent between threads).
+   */
+  setSummarized(path: string, text: string | { size: number; hash: string }, summary: NoteSummary): void {
+    const existing = this.notes.get(path);
+    const size = typeof text === 'string' ? text.length : text.size;
+    const keep = typeof text === 'string' && size <= (this.options.keepTextBelow ?? KEEP_TEXT_BELOW);
+    const hash = typeof text === 'string' ? (keep ? '' : fingerprint(text)) : text.hash;
+    if (existing && existing.size === size && (existing.text !== undefined ? existing.text === text : existing.hash === hash)) return;
+    this.store(path, keep ? (text as string) : undefined, size, hash, summary);
   }
 
   private put(path: string, text: string, summary: NoteSummary): NoteSummary {
+    const keep = text.length <= (this.options.keepTextBelow ?? KEEP_TEXT_BELOW);
+    return this.store(path, keep ? text : undefined, text.length, keep ? '' : fingerprint(text), summary);
+  }
+
+  private store(path: string, text: string | undefined, size: number, hash: string, summary: NoteSummary): NoteSummary {
     const existing = this.notes.get(path);
     this.unlink(path);
-    this.notes.set(path, { text, summary });
+    this.notes.set(path, { text, size, hash, summary });
     this.addTo(this.names, posix.basename(path).toLowerCase(), path);
     for (const a of summary.aliases) this.addTo(this.aliasMap, a.toLowerCase(), path);
     this.version++;
@@ -454,7 +502,9 @@ export class NoteStore implements NoteLookup {
   }
 
   read(path: string): string | undefined {
-    return this.notes.get(path)?.text;
+    const entry = this.notes.get(path);
+    if (!entry) return undefined;
+    return entry.text ?? this.options.reader?.(path);
   }
 
   root(path: string): string {
@@ -515,7 +565,7 @@ export class NoteStore implements NoteLookup {
       if (!entry) continue;
       resolved.forEach((r, i) => {
         const link = entry.summary.links[i];
-        if (r?.path === path && link) out.push({ from, link, text: lineText(entry.text, link.line) });
+        if (r?.path === path && link) out.push({ from, link, text: link.snippet });
       });
     }
     return out.sort((a, b) => a.from.localeCompare(b.from) || a.link.line - b.link.line);
@@ -614,9 +664,18 @@ export class NoteStore implements NoteLookup {
     );
     const out: Mention[] = [];
     const lowered = names.map((n) => n.toLowerCase());
-    for (const [from, { text }] of this.notes) {
+    // Notes whose text isn't kept are read from disk, so only so much of that is done per search.
+    let readBudget = MENTION_READ_BUDGET;
+    for (const [from, entry] of this.notes) {
       if (from === path) continue;
       if (out.length >= limit) break;
+      let text = entry.text;
+      if (text === undefined) {
+        if (readBudget < entry.size) continue;
+        readBudget -= entry.size;
+        text = this.options.reader?.(from);
+        if (text === undefined) continue;
+      }
       // Most notes don't contain the name at all, which a substring search rules out cheaply.
       const lower = text.toLowerCase();
       if (!lowered.some((n) => lower.includes(n))) continue;
@@ -659,9 +718,6 @@ function sameList(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
-function lineText(text: string, line: number): string {
-  return (text.split('\n')[line] ?? '').trim();
-}
 
 // ---- Rename ----
 
@@ -685,9 +741,10 @@ export function renameEdits(store: NoteStore, oldPath: string, newPath: string):
   // Resolution after the move, used to check name-based links.
   const after = new NoteStore([store.root(newPath)], (p) => p === newPath || (p !== oldPath && store.has(p)));
   if (isNote) {
+    // Resolution only needs each note's name, aliases and links, so the summaries are reused as they are.
     for (const p of store.paths()) {
-      const text = store.read(p);
-      if (text !== undefined) after.set(p === oldPath ? newPath : p, text);
+      const summary = store.summary(p);
+      if (summary) after.setSummarized(p === oldPath ? newPath : p, '', { ...summary, path: p === oldPath ? newPath : p });
     }
   }
   for (const from of store.paths()) {

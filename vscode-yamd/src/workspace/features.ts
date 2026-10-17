@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse, walkBlocks } from '../core';
+import { parseIfCheap, warmParse } from '../core/parser';
 import { plainText } from '../core/inline';
 import { findBlock, findHeading, noteLinks, renameEdits, resolveNote } from '../core/notes';
 import { slugify } from '../core/slug';
@@ -16,6 +17,20 @@ export function positionIn(text: string, offset: number): vscode.Position {
   const before = text.slice(0, offset);
   const line = before.split('\n').length - 1;
   return new vscode.Position(line, offset - (before.lastIndexOf('\n') + 1));
+}
+
+/**
+ * The parse of a note if it's cheap: small, or a large one whose parsing has already been done in
+ * the background. Otherwise nothing, and the background parse is started so the next request works.
+ */
+function cheapParse(doc: vscode.TextDocument) {
+  const text = doc.getText();
+  const parsed = parseIfCheap(text);
+  if (!parsed) {
+    const version = doc.version;
+    void warmParse(text, () => doc.version === version);
+  }
+  return parsed;
 }
 
 /** The line of a heading or block in a note, for opening it there. */
@@ -124,7 +139,10 @@ class Completion implements vscode.CompletionItemProvider {
 /** Finds the link under a position and where it points. */
 function linkAt(index: WorkspaceIndex, doc: vscode.TextDocument, position: vscode.Position) {
   const offset = doc.offsetAt(position);
-  const link = noteLinks(parse(doc.getText())).find((l) => l.range.start <= offset && offset <= l.range.end);
+  // A large note that hasn't been parsed yet isn't parsed here, which would freeze the editor.
+  const parsed = cheapParse(doc);
+  if (!parsed) return undefined;
+  const link = noteLinks(parsed).find((l) => l.range.start <= offset && offset <= l.range.end);
   if (!link) return undefined;
   return { link, target: index.store.resolveLink(link, notePath(doc.uri)) };
 }
@@ -146,7 +164,9 @@ class Links implements vscode.DocumentLinkProvider, vscode.DefinitionProvider {
   provideDocumentLinks(doc: vscode.TextDocument): vscode.DocumentLink[] {
     const from = notePath(doc.uri);
     const out: vscode.DocumentLink[] = [];
-    for (const link of noteLinks(parse(doc.getText()))) {
+    const parsed = cheapParse(doc);
+    if (!parsed) return out;
+    for (const link of noteLinks(parsed)) {
       const range = new vscode.Range(doc.positionAt(link.range.start), doc.positionAt(link.range.end));
       const target = this.index.store.resolveLink(link, from);
       let uri: vscode.Uri;
@@ -176,8 +196,9 @@ class Links implements vscode.DocumentLinkProvider, vscode.DefinitionProvider {
 
 class Symbols implements vscode.DocumentSymbolProvider {
   provideDocumentSymbols(doc: vscode.TextDocument): vscode.DocumentSymbol[] {
-    const parsed = parse(doc.getText());
+    const parsed = cheapParse(doc);
     const roots: vscode.DocumentSymbol[] = [];
+    if (!parsed) return roots;
     const stack: { level: number; symbol: vscode.DocumentSymbol }[] = [];
     const headings: { level: number; text: string; line: number }[] = [];
     walkBlocks(parsed.blocks, (b) => {

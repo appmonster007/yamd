@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { lint, parse } from '../core';
+import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { LintOptions, Severity } from '../core';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath } from '../workspace/index';
@@ -13,6 +14,8 @@ const SEVERITY: Record<Severity, vscode.DiagnosticSeverity> = {
 };
 
 const DEBOUNCE_MS = 300;
+/** Most diagnostics shown for one note. */
+const MAX_DIAGNOSTICS = 1000;
 /** Checks against other notes can wait: they only change when some other note does. */
 const CROSS_NOTE_DELAY_MS = 800;
 
@@ -44,7 +47,7 @@ export class DiagnosticsProvider implements vscode.Disposable {
       // Links into other notes can break or heal when those notes change.
       // They're rechecked after things settle, once for all the changes in a burst.
       ...(index ? [index.onDidChange(() => this.scheduleAll())] : []),
-      vscode.workspace.onDidOpenTextDocument((d) => this.update(d)),
+      vscode.workspace.onDidOpenTextDocument((d) => void this.update(d)),
       vscode.workspace.onDidChangeTextDocument((e) => this.schedule(e.document)),
       vscode.workspace.onDidCloseTextDocument((d) => this.clear(d)),
       vscode.workspace.onDidChangeConfiguration((e) => {
@@ -55,7 +58,7 @@ export class DiagnosticsProvider implements vscode.Disposable {
   }
 
   private updateAll() {
-    for (const d of vscode.workspace.textDocuments) this.update(d);
+    for (const d of vscode.workspace.textDocuments) void this.update(d);
   }
 
   private scheduleAll() {
@@ -76,12 +79,12 @@ export class DiagnosticsProvider implements vscode.Disposable {
       setTimeout(() => {
         this.timers.delete(key);
         this.due.delete(key);
-        this.update(doc);
+        void this.update(doc);
       }, delay),
     );
   }
 
-  private update(doc: vscode.TextDocument) {
+  private async update(doc: vscode.TextDocument): Promise<void> {
     if (doc.languageId !== 'yamd' || doc.isClosed) return;
     const config = vscode.workspace.getConfiguration('yamd.diagnostics', doc.uri);
     if (!config.get<boolean>('enabled', true)) {
@@ -89,11 +92,20 @@ export class DiagnosticsProvider implements vscode.Disposable {
       return;
     }
     const ignore = new Set(config.get<string[]>('ignore', []));
+    const text = doc.getText();
+    const version = doc.version;
+    // A large note is parsed ahead of time in short slices, so checking it doesn't freeze the editor.
+    if (text.length >= WARM_MIN_CHARS) {
+      await warmParse(text, () => doc.version === version);
+      if (doc.version !== version || doc.isClosed) return;
+    }
     const resolve = fileResolver(doc);
     const options: LintOptions = resolve ? { fileExists: (p) => resolve(p) !== undefined } : {};
     if (this.index && doc.uri.scheme === 'file') options.notes = { lookup: this.index.store, path: notePath(doc.uri) };
-    const results = lint(parse(doc.getText()), options)
+    const results = lint(parse(text), options)
       .filter((d) => !ignore.has(d.code))
+      // A huge note can have thousands of findings; the Problems panel stays usable with the first ones.
+      .slice(0, MAX_DIAGNOSTICS)
       .map((d) => {
         const range = new vscode.Range(doc.positionAt(d.range.start), doc.positionAt(Math.max(d.range.end, d.range.start)));
         const diag = new vscode.Diagnostic(range, d.message, SEVERITY[d.severity]);

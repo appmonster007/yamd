@@ -497,6 +497,12 @@
           "type": "string",
           "default": "",
           "description": "Custom editor (view type) used by \"Open in SQLite Viewer\". Set when you choose one."
+        },
+        "yamd.preview.maxSizeKB": {
+          "type": "number",
+          "default": 8192,
+          "minimum": 64,
+          "description": "Notes larger than this many kilobytes aren't previewed, to keep the editor responsive. Large notes are parsed in small steps and only the parts you edit are parsed again."
         }
       }
     },

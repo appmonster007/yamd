@@ -2,7 +2,7 @@
 // Parsing is synchronous, so doing thousands of notes on the host would stall typing and the UI.
 import { readFileSync, statSync } from 'node:fs';
 import { parentPort } from 'node:worker_threads';
-import { summarize } from '../core/notes';
+import { KEEP_TEXT_BELOW, fingerprint, summarize } from '../core/notes';
 import type { NoteSummary } from '../core/notes';
 
 /** Notes larger than this are skipped, as in the host. */
@@ -14,7 +14,10 @@ export interface ScanRequest {
   paths: string[];
 }
 
-export type ScanItem = { path: string; text: string; summary: NoteSummary } | { path: string; skipped: 'large' | 'unreadable' };
+export type ScanItem =
+  /** `text` is a small note's text, or just its size and fingerprint for a large one. */
+  | { path: string; text: string | { size: number; hash: string }; summary: NoteSummary }
+  | { path: string; skipped: 'large' | 'unreadable' };
 
 export interface ScanResponse {
   id: number;
@@ -30,7 +33,8 @@ parentPort?.on('message', (m: ScanRequest) => {
         continue;
       }
       const text = readFileSync(path, 'utf8');
-      items.push({ path, text, summary: summarize(path, text) });
+      const summary = summarize(path, text);
+      items.push({ path, text: text.length <= KEEP_TEXT_BELOW ? text : { size: text.length, hash: fingerprint(text) }, summary });
     } catch {
       items.push({ path, skipped: 'unreadable' });
     }
