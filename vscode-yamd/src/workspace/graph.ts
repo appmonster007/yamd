@@ -1,19 +1,19 @@
 import * as vscode from 'vscode';
 import type { GraphEdge, GraphNode } from '../core/notes';
+import { GRAPH_BODY } from '../graph/markup';
 import type { WorkspaceIndex } from './index';
 import { notePath, noteUri } from './index';
 
 type FromGraph =
   | { type: 'ready' }
   | { type: 'open'; id: string }
-  | { type: 'settings'; mode: 'global' | 'local'; depth: number; filter: string };
+  | { type: 'settings'; mode: 'global' | 'local'; depth: number };
 
 /** The graph view: a canvas drawn by `dist/graph.js`, fed with nodes and edges from the index. */
 export class GraphPanel implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private mode: 'global' | 'local' = 'global';
   private depth = 1;
-  private filter = '';
   private focus: string | undefined;
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -60,7 +60,6 @@ export class GraphPanel implements vscode.Disposable {
     else if (m.type === 'settings') {
       this.mode = m.mode;
       this.depth = Math.max(1, Math.min(5, Math.round(m.depth) || 1));
-      this.filter = m.filter;
       this.post();
     } else if (m.type === 'open') {
       if (m.id.startsWith('missing:')) {
@@ -73,21 +72,17 @@ export class GraphPanel implements vscode.Disposable {
     }
   }
 
-  private data(): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  /** The notes and links to draw, each note with the path and folder the view groups and describes it by. */
+  private data(): { nodes: (GraphNode & { path: string; folder: string })[]; edges: GraphEdge[] } {
     const store = this.index.store;
-    let graph = this.mode === 'local' && this.focus ? store.localGraph(this.focus, this.depth) : store.graph();
-    const f = this.filter.trim().toLowerCase();
-    if (f) {
-      const keep = (n: GraphNode) =>
-        n.id === this.focus ||
-        (f.startsWith('#')
-          ? n.tags.some((t) => t.toLowerCase() === f.slice(1) || t.toLowerCase().startsWith(`${f.slice(1)}/`))
-          : vscode.workspace.asRelativePath(noteUri(n.id)).toLowerCase().includes(f) || n.label.toLowerCase().includes(f));
-      const nodes = graph.nodes.filter(keep);
-      const ids = new Set(nodes.map((n) => n.id));
-      graph = { nodes, edges: graph.edges.filter((e) => ids.has(e.source) && ids.has(e.target)) };
-    }
-    return graph;
+    const graph = this.mode === 'local' && this.focus ? store.localGraph(this.focus, this.depth) : store.graph();
+    const nodes = graph.nodes.map((n) => {
+      // Notes that don't exist yet have no path.
+      const path = n.missing ? '' : vscode.workspace.asRelativePath(noteUri(n.id), false).split('\\').join('/');
+      const slash = path.lastIndexOf('/');
+      return { ...n, path, folder: slash === -1 ? '' : path.slice(0, slash) };
+    });
+    return { nodes, edges: graph.edges };
   }
 
   /** The graph revision last sent, so typing that doesn't change the graph sends nothing. */
@@ -110,34 +105,20 @@ export class GraphPanel implements vscode.Disposable {
       focus: this.focus ?? null,
       mode: this.mode,
       depth: this.depth,
-      filter: this.filter,
     });
   }
 
   private html(webview: vscode.Webview): string {
     const nonce = Array.from({ length: 24 }, () => Math.random().toString(36)[2]).join('');
     const script = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'graph.js'));
+    const css = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'graph.css'));
     // No network origins: the graph works fully offline.
-    const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'`;
+    const csp = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'`;
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="${csp}">
-<style>
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--vscode-editor-background); color: var(--vscode-foreground); font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); }
-#bar { position: absolute; top: 8px; left: 8px; display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 6px; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-widget-border, transparent); z-index: 1; }
-#bar select, #bar input { font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); padding: 2px 4px; }
-#depth { width: 3em; }
-#count { color: var(--vscode-descriptionForeground); }
-canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
-</style></head><body>
-<div id="bar">
-<select id="mode" aria-label="Graph mode"><option value="global">Whole workspace</option><option value="local">Active note</option></select>
-<label id="depthLabel">Depth <input id="depth" type="number" min="1" max="5" value="1"></label>
-<input id="filter" placeholder="Filter: #tag or path" aria-label="Filter by tag or path">
-<span id="count"></span>
-</div>
-<canvas id="graph" aria-label="Note graph"></canvas>
-<script nonce="${nonce}" src="${script}"></script>
-</body></html>`;
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="${css}">
+</head><body>${GRAPH_BODY}<script nonce="${nonce}" src="${script}"></script></body></html>`;
   }
 
   dispose() {

@@ -1,0 +1,190 @@
+/* Styles for the note graph view. Colors come from the active VS Code theme. */
+
+:root {
+  --fg: var(--vscode-foreground);
+  --muted: var(--vscode-descriptionForeground);
+  --accent: var(--vscode-textLink-foreground);
+  --focus: var(--vscode-focusBorder);
+  --card-bg: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --card-border: var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35)));
+  --hover: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+  --input-bg: var(--vscode-input-background);
+  --input-fg: var(--vscode-input-foreground);
+  --input-border: var(--vscode-input-border, transparent);
+}
+
+* { box-sizing: border-box; }
+
+/* The `hidden` attribute must win over the display values set below. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--vscode-editor-background);
+  color: var(--fg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+}
+
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 1px solid var(--focus); outline-offset: -1px; }
+
+canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+canvas.over-node { cursor: pointer; }
+canvas.dragging { cursor: grabbing; }
+
+/* ---- Floating cards ---- */
+
+.card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+#toolbar { top: 10px; left: 10px; right: 10px; max-width: max-content; flex-wrap: wrap; }
+#actions { top: 10px; right: 10px; }
+
+/* ---- Controls ---- */
+
+.segmented { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(128, 128, 128, 0.15); }
+.segmented button {
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.segmented button:hover { color: var(--fg); }
+.segmented button[aria-pressed="true"] { color: var(--fg); background: var(--vscode-editor-background); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+
+.stepper { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); }
+.stepper output { min-width: 1.4em; text-align: center; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon-button:hover { color: var(--fg); background: var(--hover); }
+.icon-button[aria-pressed="true"], .icon-button[aria-expanded="true"] { color: var(--fg); background: var(--hover); }
+.icon-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.search { position: relative; display: inline-flex; align-items: center; }
+.search svg { position: absolute; left: 7px; width: 14px; height: 14px; fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linecap: round; pointer-events: none; }
+.search input {
+  width: 190px;
+  min-height: 26px;
+  padding: 2px 8px 2px 26px;
+  color: var(--input-fg);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 5px;
+}
+.search input:focus { outline: none; border-color: var(--focus); }
+.search input::placeholder { color: var(--vscode-input-placeholderForeground, var(--muted)); }
+
+.count { padding: 0 8px 0 4px; color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.divider { width: 1px; align-self: stretch; margin: 3px 2px; background: var(--card-border); }
+
+/* ---- Settings panel ---- */
+
+#settings {
+  top: 52px;
+  right: 10px;
+  width: 232px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 10px 12px 12px;
+  max-height: calc(100% - 64px);
+  overflow-y: auto;
+}
+#settings[hidden] { display: none; }
+#settings h2 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+#settings section + section { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border); }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
+.field label { cursor: pointer; }
+.field select {
+  min-height: 24px;
+  padding: 1px 4px;
+  color: var(--input-fg);
+  background: var(--vscode-dropdown-background, var(--input-bg));
+  border: 1px solid var(--vscode-dropdown-border, var(--input-border));
+  border-radius: 4px;
+}
+.field input[type="checkbox"] { margin: 0; accent-color: var(--focus); }
+.slider { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 3px 0; }
+.slider input { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--focus); }
+.slider output { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.link-button { margin-top: 10px; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; }
+.link-button:hover { text-decoration: underline; }
+
+/* ---- Legend, tooltip, empty state ---- */
+
+#legend {
+  left: 10px;
+  bottom: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  max-width: 220px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+#legend[hidden] { display: none; }
+#legend .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#legend .row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#legend .swatch { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+#legend .swatch.hollow { background: none; border: 1.5px dashed var(--muted); }
+#legend .note { margin-top: 2px; color: var(--muted); }
+
+#tooltip {
+  position: absolute;
+  z-index: 3;
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--vscode-editorHoverWidget-background, var(--card-bg));
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--card-border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  font-size: 12px;
+}
+#tooltip[hidden] { display: none; }
+#tooltip .title { font-weight: 600; font-size: 13px; }
+#tooltip .path { color: var(--muted); overflow-wrap: anywhere; }
+#tooltip .meta { margin-top: 3px; color: var(--muted); }
+#tooltip .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+#tooltip .tag { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+
+#empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  color: var(--muted);
+  pointer-events: none;
+}
+#empty[hidden] { display: none; }
+#empty strong { color: var(--fg); font-size: 14px; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
