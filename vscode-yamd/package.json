@@ -2,7 +2,7 @@
   "name": "vscode-yamd",
   "displayName": "YAMD",
   "description": "Language support for YAMD: syntax highlighting, live preview, diagnostics and editing shortcuts.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "appmonster007",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -219,7 +219,7 @@
       },
       {
         "command": "yamd.newNote",
-        "title": "New Note\u2026",
+        "title": "New Note…",
         "shortTitle": "YAMD Note",
         "category": "YAMD",
         "icon": "$(new-file)"
@@ -257,7 +257,7 @@
       },
       {
         "command": "yamd.newStudyNote",
-        "title": "New Study Note\u2026",
+        "title": "New Study Note…",
         "category": "YAMD"
       },
       {
@@ -307,12 +307,12 @@
       },
       {
         "command": "yamd.combineNotes",
-        "title": "Combine Notes\u2026",
+        "title": "Combine Notes…",
         "category": "YAMD"
       },
       {
         "command": "yamd.importFolder",
-        "title": "Import Notes from Folder\u2026",
+        "title": "Import Notes from Folder…",
         "category": "YAMD"
       },
       {
