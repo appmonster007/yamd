@@ -8,7 +8,7 @@ interface VsCodeApi {
 declare function acquireVsCodeApi(): VsCodeApi;
 
 type ToWebview =
-  | { type: 'update'; html: string }
+  | { type: 'update'; html: string; full?: boolean }
   | { type: 'scroll'; line: number }
   | { type: 'fill'; items: { key: string; html: string }[] };
 
@@ -36,12 +36,56 @@ function scrollToLine(line: number) {
   requestAnimationFrame(() => (syncing = false));
 }
 
-function update(html: string) {
+/** The top-level blocks of the last page received, as HTML, in the order they are in `root`. */
+let lastBlocks: string[] = [];
+
+/**
+ * Shows new HTML by replacing only the top-level blocks that changed. Typing in one paragraph then
+ * leaves every other block alone, so images don't reload, open `<details>` stay open, selections and
+ * scroll position survive, and a long note doesn't re-layout. `full` replaces everything, which a
+ * refused edit needs in order to undo changes the page made ahead of the source.
+ */
+function update(html: string, full = false) {
   const y = window.scrollY;
-  root.innerHTML = html;
-  addCopyButtons(root);
-  // Database views keep showing their last result until fresh data arrives, so typing doesn't blank them.
-  for (const [key, cached] of fills) applyFill(key, cached);
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  const incoming = Array.from(template.content.children);
+  const incomingHtml = incoming.map((el) => el.outerHTML);
+  const current = Array.from(root.children);
+
+  if (full || current.length !== lastBlocks.length) {
+    // The page and the record of it disagree, or a full refresh was asked for.
+    root.replaceChildren(...incoming);
+    lastBlocks = incomingHtml;
+    addCopyButtons(root);
+    for (const [key, cached] of fills) applyFill(key, cached);
+  } else {
+    // Keep the blocks that start and end the same, and swap only the ones in between.
+    let head = 0;
+    while (head < lastBlocks.length && head < incomingHtml.length && lastBlocks[head] === incomingHtml[head]) head++;
+    let tail = 0;
+    while (
+      tail < lastBlocks.length - head &&
+      tail < incomingHtml.length - head &&
+      lastBlocks[lastBlocks.length - 1 - tail] === incomingHtml[incomingHtml.length - 1 - tail]
+    ) {
+      tail++;
+    }
+    const removed = current.slice(head, current.length - tail);
+    const added = incoming.slice(head, incoming.length - tail);
+    const anchor = current[current.length - tail] ?? null;
+    for (const el of removed) el.remove();
+    for (const el of added) root.insertBefore(el, anchor);
+    lastBlocks = incomingHtml;
+    for (const el of added) {
+      addCopyButtons(el);
+      // Database views keep showing their last result until fresh data arrives, so typing doesn't blank them.
+      for (const slot of matching<HTMLElement>(el, '.db-slot')) {
+        const cached = fills.get(slot.dataset['dbKey'] ?? '');
+        if (cached !== undefined) applyFill(slot.dataset['dbKey'] ?? '', cached);
+      }
+    }
+  }
   restoreCollapsed();
   restoreFocus();
   window.scrollTo({ top: y });
@@ -49,8 +93,14 @@ function update(html: string) {
 
 // ---- Code blocks ----
 
+/** `scope` itself and the elements inside it that match `selector`. */
+function matching<T extends HTMLElement>(scope: ParentNode, selector: string): T[] {
+  const inside = Array.from(scope.querySelectorAll<T>(selector));
+  return scope instanceof HTMLElement && scope.matches(selector) ? [scope as T, ...inside] : inside;
+}
+
 function addCopyButtons(scope: ParentNode) {
-  for (const block of Array.from(scope.querySelectorAll<HTMLElement>('.code-block'))) {
+  for (const block of matching<HTMLElement>(scope, '.code-block')) {
     if (block.querySelector(':scope > .code-copy')) continue;
     const button = document.createElement('button');
     button.type = 'button';
@@ -316,7 +366,7 @@ root.addEventListener('dblclick', (event) => {
 
 window.addEventListener('message', (event: MessageEvent<ToWebview>) => {
   const m = event.data;
-  if (m.type === 'update') update(m.html);
+  if (m.type === 'update') update(m.html, m.full);
   else if (m.type === 'fill') fill(m.items);
   else if (m.type === 'scroll' && !syncing) scrollToLine(m.line);
 });

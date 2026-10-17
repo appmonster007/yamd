@@ -354,6 +354,8 @@ export class NoteStore implements NoteLookup {
   private version = 0;
   /** Changes when a note or alias is added or removed, which is what link resolution depends on. */
   private nameVersion = 0;
+  private graphVersion = 0;
+  private graphCache: { key: string; graph: { nodes: GraphNode[]; edges: GraphEdge[] } } | undefined;
   private resolvedCache:
     | {
         version: number;
@@ -381,6 +383,11 @@ export class NoteStore implements NoteLookup {
     return this.version;
   }
 
+  /** Changes only when something the graph shows does: notes, titles, tags or links. */
+  get graphRevision(): number {
+    return this.graphVersion;
+  }
+
   paths(): string[] {
     return [...this.notes.keys()];
   }
@@ -396,8 +403,18 @@ export class NoteStore implements NoteLookup {
   set(path: string, text: string): NoteSummary {
     const existing = this.notes.get(path);
     if (existing?.text === text) return existing.summary;
+    return this.put(path, text, summarize(path, text));
+  }
+
+  /** Adds a note whose summary was already built, for example by a worker thread. */
+  setSummarized(path: string, text: string, summary: NoteSummary): void {
+    if (this.notes.get(path)?.text === text) return;
+    this.put(path, text, summary);
+  }
+
+  private put(path: string, text: string, summary: NoteSummary): NoteSummary {
+    const existing = this.notes.get(path);
     this.unlink(path);
-    const summary = summarize(path, text);
     this.notes.set(path, { text, summary });
     this.addTo(this.names, posix.basename(path).toLowerCase(), path);
     for (const a of summary.aliases) this.addTo(this.aliasMap, a.toLowerCase(), path);
@@ -405,6 +422,7 @@ export class NoteStore implements NoteLookup {
     // Links resolve by name and alias, so they only need redoing when those change.
     if (!existing || !sameList(existing.summary.aliases, summary.aliases)) this.nameVersion++;
     if (!existing || !sameList(existing.summary.tags, summary.tags)) this.tagCache = undefined;
+    if (!existing || graphKey(existing.summary) !== graphKey(summary)) this.graphVersion++;
     return summary;
   }
 
@@ -415,6 +433,7 @@ export class NoteStore implements NoteLookup {
     this.version++;
     this.nameVersion++;
     this.tagCache = undefined;
+    this.graphVersion++;
   }
 
   private unlink(path: string) {
@@ -520,6 +539,15 @@ export class NoteStore implements NoteLookup {
 
   /** The link graph. Unresolved wikilinks and embeds become missing nodes named by their target. */
   graph(): { nodes: GraphNode[]; edges: GraphEdge[] } {
+    // The graph only changes with titles, tags, link targets and the set of names, not with every edit.
+    const key = `${this.graphVersion}:${this.nameVersion}`;
+    if (this.graphCache?.key === key) return this.graphCache.graph;
+    const graph = this.buildGraph();
+    this.graphCache = { key, graph };
+    return graph;
+  }
+
+  private buildGraph(): { nodes: GraphNode[]; edges: GraphEdge[] } {
     const nodes = new Map<string, GraphNode>();
     const edges: GraphEdge[] = [];
     const seen = new Set<string>();
@@ -585,8 +613,13 @@ export class NoteStore implements NoteLookup {
       'giu',
     );
     const out: Mention[] = [];
+    const lowered = names.map((n) => n.toLowerCase());
     for (const [from, { text }] of this.notes) {
       if (from === path) continue;
+      if (out.length >= limit) break;
+      // Most notes don't contain the name at all, which a substring search rules out cheaply.
+      const lower = text.toLowerCase();
+      if (!lowered.some((n) => lower.includes(n))) continue;
       const lines = text.split('\n');
       let offset = 0;
       let fence: string | null = null;
@@ -615,6 +648,11 @@ export class NoteStore implements NoteLookup {
     }
     return out;
   }
+}
+
+/** What a note contributes to the graph: its title, tags and the targets of its links. */
+function graphKey(s: NoteSummary): string {
+  return `${s.title}\u0000${s.tags.join(',')}\u0000${s.links.map((l) => `${l.kind}:${l.file}`).join(',')}`;
 }
 
 function sameList(a: string[], b: string[]): boolean {

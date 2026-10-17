@@ -158,14 +158,18 @@ export class PreviewManager implements vscode.Disposable {
     const html = render(parsed, options);
     // An edit that doesn't change the output (front matter, comments) leaves the page as it is,
     // which also keeps filled database views in place.
-    if (html === this.lastHtml) return;
+    if (html === this.lastHtml && !this.forceNext) return;
     this.lastHtml = html;
-    void panel.webview.postMessage({ type: 'update', html });
+    const full = this.forceNext;
+    this.forceNext = false;
+    void panel.webview.postMessage({ type: 'update', html, full });
     void this.fill(doc, parsed);
   }
 
   /** The HTML last sent to the webview, so identical renders aren't sent again. */
   private lastHtml: string | undefined;
+  /** The next update replaces the whole page, even if its HTML hasn't changed. */
+  private forceNext = false;
   private fillTimer: ReturnType<typeof setTimeout> | undefined;
   private fillGeneration = 0;
 
@@ -270,13 +274,22 @@ export class PreviewManager implements vscode.Disposable {
     }
     if (!edit) {
       // The text changed since the preview rendered it; show the current state instead.
-      this.update();
+      this.forceUpdate();
       return;
     }
     const end = doc.lineAt(Math.min(edit.endLine, doc.lineCount - 1)).range.end;
     const workspaceEdit = new vscode.WorkspaceEdit();
     workspaceEdit.replace(doc.uri, new vscode.Range(edit.startLine, 0, end.line, end.character), edit.text);
-    if (!(await vscode.workspace.applyEdit(workspaceEdit))) this.update();
+    if (!(await vscode.workspace.applyEdit(workspaceEdit))) this.forceUpdate();
+  }
+
+  /**
+   * Sends the page even if it is the same as the last one. The webview may have changed its page
+   * ahead of the source (a dragged card, a ticked box), and a refused edit must undo that.
+   */
+  private forceUpdate() {
+    this.forceNext = true;
+    this.update();
   }
 
   private shell(webview: vscode.Webview): string {

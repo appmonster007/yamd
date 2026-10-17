@@ -4,13 +4,17 @@
  */
 import { existsSync } from 'node:fs';
 import * as path from 'node:path';
+import { Worker } from 'node:worker_threads';
 import * as vscode from 'vscode';
 import { NoteStore } from '../core/notes';
+import type { ScanRequest, ScanResponse } from './indexWorker';
 
 /** Notes larger than this are skipped. */
 const MAX_BYTES = 2 * 1024 * 1024;
 /** Notes loaded between pauses. Parsing is synchronous, so a small batch keeps the editor responsive. */
 const BATCH = 10;
+/** Notes sent to the index worker at a time. */
+const WORKER_CHUNK = 100;
 const EDIT_DEBOUNCE_MS = 300;
 const CHANGE_DEBOUNCE_MS = 100;
 
@@ -33,7 +37,10 @@ export class WorkspaceIndex implements vscode.Disposable {
   private changeTimer: ReturnType<typeof setTimeout> | undefined;
   private ready: Promise<void>;
 
-  constructor(private readonly log: vscode.OutputChannel) {
+  constructor(
+    private readonly log: vscode.OutputChannel,
+    private readonly extensionUri: vscode.Uri,
+  ) {
     this.store = this.newStore();
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.yamd');
     this.disposables.push(
@@ -89,22 +96,96 @@ export class WorkspaceIndex implements vscode.Disposable {
     return patterns.length ? `{${patterns.join(',')}}` : undefined;
   }
 
+  /** Counts scans, so one that was replaced by a rebuild stops writing into the old store. */
+  private scanGeneration = 0;
+
   private async scan(): Promise<void> {
     if (!vscode.workspace.workspaceFolders?.length) return;
+    const generation = ++this.scanGeneration;
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Window, title: 'YAMD: Indexing notes' },
       async (progress) => {
-        const uris = await vscode.workspace.findFiles('**/*.yamd', this.excludeGlob());
-        for (let i = 0; i < uris.length; i += BATCH) {
-          await Promise.all(uris.slice(i, i + BATCH).map((u) => this.load(u, false)));
-          progress.report({ message: `${Math.min(i + BATCH, uris.length)}/${uris.length}` });
+        const found = await vscode.workspace.findFiles('**/*.yamd', this.excludeGlob());
+        const uris = found.filter((u) => u.scheme === 'file' && !this.excluded(u));
+        // Open notes may have unsaved edits that only the editor knows about, so the host loads those.
+        const open = new Set(vscode.workspace.textDocuments.map((d) => d.uri.toString()));
+        const fromEditor = uris.filter((u) => open.has(u.toString()));
+        const fromDisk = uris.filter((u) => !open.has(u.toString())).map(notePath);
+        const total = uris.length;
+        let done = 0;
+        const report = (n: number) => {
+          done += n;
+          progress.report({ message: `${done}/${total}` });
+        };
+        const rest = await this.scanInWorker(fromDisk, generation, report);
+        // Anything the worker couldn't do (or all of it, if it couldn't start) runs here, in small batches.
+        const hostWork = [...fromEditor, ...rest.map((p) => noteUri(p))];
+        for (let i = 0; i < hostWork.length && generation === this.scanGeneration; i += BATCH) {
+          await Promise.all(hostWork.slice(i, i + BATCH).map((u) => this.load(u, false)));
+          report(Math.min(BATCH, hostWork.length - i));
           // Let the extension host handle other work between batches.
           await new Promise((resolve) => setImmediate(resolve));
         }
-        this.log.appendLine(`Indexed ${this.store.size} notes.`);
+        if (generation === this.scanGeneration) this.log.appendLine(`Indexed ${this.store.size} notes.`);
       },
     );
     this.fire();
+  }
+
+  /**
+   * Reads and parses notes in a worker thread, so a large workspace doesn't stall the editor.
+   * Returns the paths that still need loading (those after a worker failure).
+   */
+  private scanInWorker(paths: string[], generation: number, report: (n: number) => void): Promise<string[]> {
+    if (!paths.length) return Promise.resolve([]);
+    const store = this.store;
+    return new Promise((resolve) => {
+      let worker: Worker;
+      try {
+        worker = new Worker(vscode.Uri.joinPath(this.extensionUri, 'dist', 'indexWorker.js').fsPath);
+      } catch {
+        resolve(paths);
+        return;
+      }
+      let next = 0;
+      let finished = false;
+      const inFlight = new Map<number, string[]>();
+      const finish = (remaining: string[]) => {
+        if (finished) return;
+        finished = true;
+        void worker.terminate();
+        resolve(remaining);
+      };
+      const send = () => {
+        if (next >= paths.length) return;
+        const chunk = paths.slice(next, next + WORKER_CHUNK);
+        next += chunk.length;
+        const id = next;
+        inFlight.set(id, chunk);
+        worker.postMessage({ id, paths: chunk } satisfies ScanRequest);
+      };
+      worker.on('message', (m: ScanResponse) => {
+        inFlight.delete(m.id);
+        if (generation !== this.scanGeneration) return finish([]);
+        for (const item of m.items) {
+          if ('summary' in item) store.setSummarized(item.path, item.text, item.summary);
+          else if (item.skipped === 'large') this.log.appendLine(`Skipped ${item.path}: larger than 2 MB.`);
+        }
+        report(m.items.length);
+        if (next < paths.length) {
+          // Keep one chunk queued behind the one being parsed, and let the host breathe between them.
+          setImmediate(send);
+        } else if (inFlight.size === 0) finish([]);
+      });
+      // If the worker dies, the notes it hadn't returned are loaded on the host instead.
+      worker.on('error', (err) => {
+        this.log.appendLine(`Index worker failed (${err.message}); continuing on the main thread.`);
+        finish([...[...inFlight.values()].flat(), ...paths.slice(next)]);
+      });
+      worker.on('exit', () => finish([...[...inFlight.values()].flat(), ...paths.slice(next)]));
+      send();
+      send();
+    });
   }
 
   private openDocument(uri: vscode.Uri): vscode.TextDocument | undefined {

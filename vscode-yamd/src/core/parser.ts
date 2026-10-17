@@ -770,7 +770,7 @@ function assignHeadingIds(doc: YamdDocument): void {
  * provider and outline all parse the same text, so they share one parse. Documents are never
  * modified after parsing, which is what makes sharing safe.
  */
-const CACHE_ENTRIES = 16;
+const CACHE_ENTRIES = 64;
 /** Total source characters kept, so a few huge documents can't hold all the memory. */
 const CACHE_CHARS = 8_000_000;
 const cache = new Map<string, YamdDocument>();

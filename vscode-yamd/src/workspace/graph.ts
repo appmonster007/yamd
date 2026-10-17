@@ -22,7 +22,7 @@ export class GraphPanel implements vscode.Disposable {
     private readonly index: WorkspaceIndex,
   ) {
     this.disposables.push(
-      index.onDidChange(() => this.post()),
+      index.onDidChange(() => this.schedulePost()),
       vscode.window.onDidChangeActiveTextEditor((e) => {
         if (e?.document.languageId === 'yamd' && e.document.uri.scheme === 'file') {
           this.focus = notePath(e.document.uri);
@@ -46,7 +46,11 @@ export class GraphPanel implements vscode.Disposable {
       retainContextWhenHidden: true,
       localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'dist'), vscode.Uri.joinPath(this.extensionUri, 'media')],
     });
-    this.panel.onDidDispose(() => (this.panel = undefined));
+    this.panel.onDidDispose(() => {
+      this.panel = undefined;
+      this.postedRevision = -1;
+      clearTimeout(this.postTimer);
+    });
     this.panel.webview.onDidReceiveMessage((m: FromGraph) => this.onMessage(m));
     this.panel.webview.html = this.html(this.panel.webview);
   }
@@ -86,8 +90,20 @@ export class GraphPanel implements vscode.Disposable {
     return graph;
   }
 
+  /** The graph revision last sent, so typing that doesn't change the graph sends nothing. */
+  private postedRevision = -1;
+  private postTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Sends the graph when it changed, at most once in a while: it can hold thousands of notes. */
+  private schedulePost() {
+    if (!this.panel || this.index.store.graphRevision === this.postedRevision) return;
+    clearTimeout(this.postTimer);
+    this.postTimer = setTimeout(() => this.post(), 500);
+  }
+
   private post() {
     if (!this.panel) return;
+    this.postedRevision = this.index.store.graphRevision;
     void this.panel.webview.postMessage({
       type: 'data',
       ...this.data(),

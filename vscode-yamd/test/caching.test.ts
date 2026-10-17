@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { lint, render } from '../src/core';
-import { NoteStore } from '../src/core/notes';
+import { NoteStore, summarize } from '../src/core/notes';
 import type { NoteLookup } from '../src/core/notes';
 import { parse, parseUncached } from '../src/core/parser';
 import { escapeHtml } from '../src/core/render';
@@ -30,7 +30,7 @@ describe('parse cache', () => {
 
   test('old entries are dropped, not kept forever', () => {
     const first = parse('first document');
-    for (let i = 0; i < 40; i++) parse(`filler document ${i}`);
+    for (let i = 0; i < 100; i++) parse(`filler document ${i}`);
     assert.notEqual(parse('first document'), first);
   });
 });
@@ -122,5 +122,64 @@ describe('lint and other notes', () => {
     assert.deepEqual(found, ['Y701']);
     assert.ok(summaryCalls > 0);
     assert.equal(reads, 0);
+  });
+});
+
+describe('graph cache and revisions', () => {
+  const ids = (s: NoteStore) => s.graph().nodes.map((n) => n.id).sort();
+  const edges = (s: NoteStore) => s.graph().edges.map((e) => `${e.source}>${e.target}`).sort();
+
+  test('typing that changes nothing in the graph keeps the same graph', () => {
+    const s = new NoteStore();
+    s.set('a.yamd', '# A\n\n[[b]]');
+    s.set('b.yamd', '# B');
+    const graph = s.graph();
+    const revision = s.graphRevision;
+    s.set('a.yamd', '# A\n\n[[b]] with more text typed after it');
+    assert.equal(s.graphRevision, revision);
+    assert.equal(s.graph(), graph);
+  });
+
+  test('changes to links, titles, tags, notes and aliases update the graph', () => {
+    const s = new NoteStore();
+    s.set('a.yamd', '# A\n\n[[b]]');
+    s.set('b.yamd', '# B');
+    assert.deepEqual(edges(s), ['a.yamd>b.yamd']);
+
+    s.set('a.yamd', '# A\n\n[[c]]');
+    assert.deepEqual(edges(s), ['a.yamd>missing:c']);
+    s.set('c.yamd', '# C');
+    assert.deepEqual(edges(s), ['a.yamd>c.yamd']);
+
+    s.set('b.yamd', '---\ntitle: Renamed\n---');
+    assert.equal(s.graph().nodes.find((n) => n.id === 'b.yamd')?.label, 'Renamed');
+    s.set('b.yamd', '---\ntitle: Renamed\n---\n#tagged');
+    assert.deepEqual(s.graph().nodes.find((n) => n.id === 'b.yamd')?.tags, ['tagged']);
+
+    s.set('c.yamd', '---\naliases: [Gone]\n---');
+    s.set('a.yamd', '# A\n\n[[Gone]]');
+    assert.deepEqual(edges(s), ['a.yamd>c.yamd']);
+    s.delete('c.yamd');
+    assert.deepEqual(ids(s).includes('c.yamd'), false);
+    assert.deepEqual(edges(s), ['a.yamd>missing:gone']);
+  });
+
+  test('summaries built elsewhere can be added', () => {
+    const s = new NoteStore();
+    s.setSummarized('w.yamd', '# W\n\n[[x]]', summarize('w.yamd', '# W\n\n[[x]]'));
+    s.set('x.yamd', '# X');
+    assert.deepEqual(s.backlinks('x.yamd').map((b) => b.from), ['w.yamd']);
+    assert.equal(s.summary('w.yamd')?.title, 'W');
+  });
+});
+
+describe('unlinked mentions', () => {
+  test('finds mentions regardless of case and skips notes without the name', () => {
+    const s = new NoteStore();
+    s.set('roadmap.yamd', '# Roadmap');
+    s.set('a.yamd', 'The ROADMAP is late.');
+    s.set('b.yamd', 'Nothing relevant here.');
+    s.set('c.yamd', 'See [[roadmap]] only.');
+    assert.deepEqual(s.unlinkedMentions('roadmap.yamd').map((m) => m.from), ['a.yamd']);
   });
 });

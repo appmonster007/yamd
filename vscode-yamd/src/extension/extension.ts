@@ -14,7 +14,7 @@ import { registerViews } from '../workspace/views';
 
 export function activate(context: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('YAMD');
-  const index = new WorkspaceIndex(log);
+  const index = new WorkspaceIndex(log, context.extensionUri);
   const db = new DatabaseService(context.extensionUri, index);
   const preview = new PreviewManager(context.extensionUri, index, db);
   const graph = new GraphPanel(context.extensionUri, index);

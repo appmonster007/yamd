@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { parse, walkBlocks } from '../core';
 import { plainText } from '../core/inline';
 import { findBlock, findHeading, noteLinks, renameEdits, resolveNote } from '../core/notes';
+import { slugify } from '../core/slug';
 import type { NoteLink, NoteSummary } from '../core/notes';
 import { setProperty } from '../core/properties';
 import type { WorkspaceIndex } from './index';
@@ -128,9 +129,15 @@ function linkAt(index: WorkspaceIndex, doc: vscode.TextDocument, position: vscod
   return { link, target: index.store.resolveLink(link, notePath(doc.uri)) };
 }
 
+/** The line of a link's heading or block in its target note, from the index (no re-parsing). */
 function targetLine(index: WorkspaceIndex, p: string, link: NoteLink): number | undefined {
-  const text = index.store.read(p);
-  return text === undefined ? undefined : anchorLine(text, link.heading, link.blockId);
+  const summary = index.store.summary(p);
+  if (!summary) return undefined;
+  if (link.blockId !== undefined) return summary.blocks.find((b) => b.id === link.blockId)?.line;
+  if (link.heading === undefined) return undefined;
+  const wanted = link.heading.trim().toLowerCase();
+  const slug = slugify(link.heading);
+  return summary.headings.find((h) => h.id === link.heading || h.id === slug || h.text.toLowerCase() === wanted)?.line;
 }
 
 class Links implements vscode.DocumentLinkProvider, vscode.DefinitionProvider {
