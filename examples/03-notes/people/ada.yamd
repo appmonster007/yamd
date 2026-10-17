@@ -1,0 +1,18 @@
+---
+yamd: 0.1
+title: Ada Lovelace
+aliases: [Ada]
+tags: [person, team/engineering]
+role: Engineer
+email: ada@nimbus.example
+lang: en-US
+---
+
+# {{ title }}
+
+Engineer on the web team. Leads [[project-alpha]].
+
+## Notes
+
+- Prefers async updates over meetings.
+- Wrote the first draft of the launch plan: [[project-alpha#^goal]]

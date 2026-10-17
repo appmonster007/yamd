@@ -1,0 +1,60 @@
+---
+yamd: 0.1
+title: Security
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD is safe to render, even when a document comes from someone you don't trust.
+
+## HTML is sanitized
+
+HTML renders like it does on GitHub: an allow-list of tags and attributes is kept, and everything else is removed. The script, the event handler and the frame below are all dropped; only a harmless image tag is left:
+
+<script>alert("hello")</script>
+<img src=x onerror="alert(1)">
+<iframe src="https://example.com"></iframe>
+
+Allowed tags work as expected: <kbd>Ctrl</kbd>+<kbd>S</kbd>, H<sub>2</sub>O, <ins>inserted</ins>.
+
+<details>
+<summary>Click to expand</summary>
+
+Collapsible sections use GitHub's `<details>` tag.
+
+</details>
+
+Comparisons need no escaping: if a < b and c > d, then a <= b.
+
+## Trusted HTML only
+
+Styles and other HTML outside the allow-list only render inside `:::html`, and only when the renderer is in trusted mode. The preview is never in trusted mode, so this is shown as source:
+
+:::html
+<div style="color: red">Hello from HTML</div>
+:::
+
+## Allowed URLs
+
+Links and images only keep these kinds of URL:
+
+| Scheme      | Example                              |
+| ----------- | ------------------------------------ |
+| `https`     | [secure site](https://example.com)   |
+| `http`      | [plain site](http://example.com)     |
+| `mailto`    | [send email](mailto:a@example.com)   |
+| `tel`       | [phone us](tel:+15551234567)         |
+| Relative    | [the tables example](../01-basics/tables.yamd) |
+
+Images may also use `data:image` URLs:
+
+![A small gray square](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjOGM5NTlmIi8+PC9zdmc+){width=16}
+
+Anything else, such as `javascript:` links, is removed and flagged. The [diagnostics example](diagnostics.yamd) shows one.
+
+## Comments stay private
+
+%% Internal: the launch date is still under NDA. %%
+
+The comment above is removed when parsing, so it isn't in the page source either.

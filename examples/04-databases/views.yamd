@@ -1,0 +1,75 @@
+---
+yamd: 0.1
+title: Database Views
+lang: en-US
+databases:
+  tasks: data/tasks.ydb
+  projects: data/projects.ydb
+  crm: data/crm.sqlite#contacts
+---
+
+# {{ title }}
+
+This note can use the databases in its own folder and subfolders, so `data/` is in scope. The `databases:` front matter gives them short names.
+
+::toc{depth=2}
+
+## Table
+
+Every column, in the database's order:
+
+::db[tasks]
+
+Pick columns, filter rows and sort (a `-` sorts descending):
+
+::db[tasks]{columns="Title,Status,Priority,Due" filter="Status != 'Done'" sort="-Priority,Due"}
+
+Use a view saved in the database:
+
+::db[tasks]{view=Open}
+
+## Grouping
+
+::db[tasks]{view="By owner"}
+
+::db[tasks]{group=Status columns="Title,Owner,Due"}
+
+## List
+
+One line per row, with a few properties after the title:
+
+::db[tasks]{type=list columns="Owner,Due" filter="Owner = 'Ada'"}
+
+## Gallery
+
+Cards with a cover image:
+
+::db[projects]{type=gallery cover=Cover columns="Status,Lead"}
+
+## Calendar
+
+Rows placed on a month grid by their due date:
+
+::db[tasks]{type=calendar date=Due}
+
+## SQLite tables
+
+The `crm` alias points at the `contacts` table of a SQLite file:
+
+::db[crm]{view=Pipeline}
+
+A table can also be named by path without an alias:
+
+::db[data/crm.sqlite#deals]{columns="title,amount,closes_on" sort="closes_on"}
+
+## Editing in the preview
+
+In a trusted workspace you can edit these views directly:
+
+- Click a cell to edit it. Select and status cells show a dropdown, and dates show a date picker.
+- Click **New** to add a row, which gets a fresh `id`.
+- Click a column header to sort for yourself, without changing this note.
+- **Save view** writes the current sort and filter into the database as a named view.
+- Formula cells such as `Overdue`, and the `Created` and `Updated` times, are read-only.
+
+Edits to `.ydb` files can be undone in the editor. Edits to SQLite files ask for permission the first time in each session.

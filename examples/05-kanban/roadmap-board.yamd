@@ -1,0 +1,31 @@
+---
+yamd: 0.1
+title: Product Roadmap
+lang: en-US
+databases:
+  roadmap: data/roadmap.ydb
+---
+
+# {{ title }}
+
+## Board view
+
+Rows become cards, grouped by `Stage`. The columns follow the property's options, plus **No value** for rows without a stage:
+
+::db[roadmap]{view=Board}
+
+Override the saved view with attributes, for example to group by owner instead:
+
+::db[roadmap]{type=board group=Owner columns="Stage,Votes" sort="-Votes"}
+
+## What to notice
+
+- Dragging a card to another column changes that row's `Stage` in `data/roadmap.ydb`.
+- The first board has no `sort`, so you can also reorder cards within a column. That reorders the rows in the file.
+- The second board sorts by votes, so cards can only move between columns.
+- **Add card** in a column creates a row with that column's value.
+- Grouping by a multi-select property isn't allowed, and is reported as Y855.
+
+## The same data as a table
+
+::db[roadmap]{columns="Feature,Stage,Owner,Quarter,Votes" sort="-Votes"}

@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+
+# Build output of the extension (see vscode-yamd/.gitignore)
+vscode-yamd/dist/
+*.vsix

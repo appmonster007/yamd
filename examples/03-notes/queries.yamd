@@ -1,0 +1,60 @@
+---
+yamd: 0.1
+title: Notes Queries
+tags: [index]
+lang: en-US
+---
+
+# {{ title }}
+
+A query without a `db` attribute runs over the notes in this folder and its subfolders, like Obsidian's Dataview.
+
+The notes tables are `notes` (with one column per front matter key), `tags`, `links` and `tasks`.
+
+## Active projects
+
+```query {view=table}
+SELECT title AS Project, owner AS Owner, due AS Due
+FROM notes
+JOIN tags USING (path)
+WHERE tag = 'project' AND status = 'active'
+ORDER BY due
+```
+
+## Everyone on the team
+
+```query {view=list}
+SELECT title FROM notes JOIN tags USING (path) WHERE tag = 'person' ORDER BY title
+```
+
+## Open tasks across all notes
+
+```query
+SELECT path AS Note, text AS Task
+FROM tasks
+WHERE done = 0
+ORDER BY path
+```
+
+## Most linked notes
+
+```query
+SELECT target AS Note, count(*) AS Links
+FROM links
+GROUP BY target
+ORDER BY Links DESC
+LIMIT 5
+```
+
+## Inline numbers
+
+There are :query[SELECT count(*) FROM notes] notes here, with :query[SELECT count(*) FROM tasks WHERE done = 0] open tasks.
+Notes tagged meeting: :query[SELECT count(*) FROM tags WHERE tag = 'meeting'].
+
+## SQL that doesn't run
+
+A `sql` block is just code, for documentation:
+
+```sql
+SELECT * FROM notes;
+```

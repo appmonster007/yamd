@@ -1,0 +1,13 @@
+---
+yamd: 0.1
+title: Grace Hopper
+aliases: [Grace]
+tags: [person, team/research]
+role: Research lead
+email: grace@nimbus.example
+lang: en-US
+---
+
+# {{ title }}
+
+Research lead. Owns [[project-beta]] and reviews pricing for [[Alpha]].

@@ -1,0 +1,109 @@
+# A YAMD text database. It diffs and merges one row at a time in git.
+yamdb: 0.1
+name: Tasks
+
+properties:
+  Title: title
+  Status:
+    type: status
+    options: [Todo, Doing, Done]
+  Priority:
+    type: select
+    options: [Low, Medium, High]
+  Tags:
+    type: multi_select
+    options: [frontend, backend, design, docs]
+  Owner: person
+  Due: date
+  Points: number
+  Blocked: checkbox
+  Link: url
+  Project:
+    type: relation
+    database: projects.ydb
+  Overdue:
+    type: formula
+    expression: "Due < date('now') AND Status != 'Done'"
+  Created: created_time
+  Updated: updated_time
+
+views:
+  Open:
+    type: table
+    filter: "Status != 'Done'"
+    sort: [Due]
+    columns: [Title, Status, Priority, Owner, Due]
+  By owner:
+    type: table
+    group: Owner
+    columns: [Title, Status, Due]
+  Calendar:
+    type: calendar
+    date: Due
+
+rows:
+  - id: t1
+    Title: Write the launch plan
+    Status: Done
+    Priority: High
+    Tags: [docs]
+    Owner: Ada
+    Due: 2026-10-01
+    Points: 3
+    Blocked: false
+    Project: [p1]
+    Created: 2026-09-20T09:00:00Z
+    Updated: 2026-10-01T16:30:00Z
+
+  - id: t2
+    Title: Finish the sign-up flow
+    Status: Doing
+    Priority: High
+    Tags: [frontend, backend]
+    Owner: Ada
+    Due: 2026-10-20
+    Points: 8
+    Blocked: false
+    Link: https://example.com/issues/42
+    Project: [p1]
+    Created: 2026-09-25T10:00:00Z
+    Updated: 2026-10-15T11:00:00Z
+
+  - id: t3
+    Title: Design the pricing page
+    Status: Todo
+    Priority: Medium
+    Tags: [design]
+    Owner: Grace
+    Due: 2026-10-28
+    Points: 5
+    Blocked: true
+    Project: [p1]
+    Created: 2026-10-02T08:00:00Z
+    Updated: 2026-10-02T08:00:00Z
+
+  - id: t4
+    Title: Load test the API
+    Status: Todo
+    Priority: High
+    Tags: [backend]
+    Owner: Alan
+    Due: 2026-10-10
+    Points: 5
+    Blocked: false
+    Project: [p1]
+    Created: 2026-10-03T12:00:00Z
+    Updated: 2026-10-03T12:00:00Z
+
+  - id: t5
+    Title: Pick a mobile framework
+    Status: Todo
+    Priority: Low
+    Tags: [frontend]
+    Owner: Grace
+    Due: 2026-11-30
+    Points: 2
+    Blocked: false
+    Project: [p2]
+    Created: 2026-10-05T15:00:00Z
+    Updated: 2026-10-05T15:00:00Z

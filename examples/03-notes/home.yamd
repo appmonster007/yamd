@@ -1,0 +1,54 @@
+---
+yamd: 0.1
+title: Knowledge Base Home
+aliases: [Home, Start Here]
+tags: [index]
+lang: en-US
+---
+
+# {{ title }}
+
+## Tags
+
+Tag anything with `#`: #index #how-to
+Nest tags with `/`: #project/web, #project/mobile, #area/research
+Tags can also go in front matter, as in this note's `tags: [index]`.
+Numbers alone aren't tags, so issue #42 stays plain text. Neither is C# or https://example.com/#intro.
+
+## Linking by name
+
+Links resolve by file name or alias, from anywhere in the workspace:
+
+- [[project-alpha]] finds `projects/project-alpha.yamd`.
+- [[Alpha]] finds the same note through its alias.
+- [[ada]] and [[grace]] are people notes.
+- [[ideas#Pricing]] links to a heading.
+- [[ideas#^pricing-model]] links to a single paragraph (a block reference).
+- [[Weekly Review]] doesn't exist yet. Following it offers to create it.
+
+## Embeds
+
+Embed a whole note, a section, a single block, or an image:
+
+![[ideas#Pricing]]
+
+![[ideas#^pricing-model]]
+
+![[../assets/architecture.svg]]{width=360}
+
+## Block IDs
+
+End a paragraph or list item with ` ^id` to make it linkable. ^home-intro
+
+- Each block ID must be unique in its note. ^home-rule
+- Link with [[home#^home-rule]], embed with an exclamation mark in front.
+
+## Backlinks
+
+Open the YAMD sidebar while this note is active to see every note that links here. [[project-alpha]], [[project-beta]] and today's daily note all link back to this page.
+
+## More
+
+- [[queries|Notes queries]] lists notes with SQL.
+- [[2026-10-16|Today's daily note]] was created from [[templates/daily|the daily template]].
+- [[2026-10-16-standup|The standup notes]] use [[templates/meeting|the meeting template]].

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="160" viewBox="0 0 600 160" font-family="system-ui, sans-serif" font-size="16">
+  <rect width="600" height="160" fill="#f6f8fa"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="30" y="50" width="140" height="60" rx="8" fill="#ddf4ff" stroke="#0969da"/>
+  <text x="100" y="86" text-anchor="middle" fill="#0a3069">Client</text>
+  <rect x="230" y="50" width="140" height="60" rx="8" fill="#fff8c5" stroke="#9a6700"/>
+  <text x="300" y="86" text-anchor="middle" fill="#4d2d00">API Gateway</text>
+  <rect x="430" y="50" width="140" height="60" rx="8" fill="#dafbe1" stroke="#1a7f37"/>
+  <text x="500" y="86" text-anchor="middle" fill="#044f1e">Storage</text>
+  <line x1="170" y1="80" x2="228" y2="80" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="370" y1="80" x2="428" y2="80" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

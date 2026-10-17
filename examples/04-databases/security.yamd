@@ -1,0 +1,82 @@
+---
+yamd: 0.1
+title: Query Security
+lang: en-US
+databases:
+  tasks: data/tasks.ydb
+  crm: data/crm.sqlite
+  outside: ../03-notes/secrets.ydb
+---
+
+# {{ title }}
+
+:::warning {title="Refused on purpose"}
+Every block below is refused, and each one shows the diagnostic it produces in the Problems panel.
+:::
+
+Opening or previewing a document must never change data, read data outside its folder, or hang the editor. These examples show what YAMD refuses.
+
+## Restricted Mode
+
+In an untrusted workspace, no query runs and no database file is read. Every block shows "Queries are disabled in Restricted Mode".
+
+## Folder scope (Y951)
+
+A note can only use databases in its own folder or below it. The `outside` alias in the front matter points to a parent folder, so it is refused:
+
+::db[outside]
+
+Paths that climb out are refused too:
+
+::db[../05-kanban/data/roadmap.ydb]
+
+## Read-only queries (Y950)
+
+Document queries can only read. A write is refused before it runs:
+
+```query {db=tasks}
+DELETE FROM tasks WHERE Status = 'Done'
+```
+
+Only one statement is allowed, so this can't sneak a write in after a read:
+
+```query {db=crm}
+SELECT 1; DROP TABLE contacts
+```
+
+Statements that reach other files or change settings are blocked:
+
+```query {db=crm}
+ATTACH '/etc/passwd' AS secrets
+```
+
+```query {db=crm}
+PRAGMA writable_schema = ON
+```
+
+## Filter injection (Y950)
+
+A filter is wrapped in a read-only query, so this can't delete anything:
+
+::db[tasks]{filter="1=1); DELETE FROM tasks; --"}
+
+## Time limit (Y952)
+
+Queries stop after 2 seconds:
+
+```query {db=tasks}
+WITH RECURSIVE forever(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM forever)
+SELECT count(*) FROM forever
+```
+
+## Data is always text
+
+If a value contains HTML, it is shown as text, never run. Even this query only produces a harmless string:
+
+```query {db=tasks}
+SELECT '<img src=x onerror=alert(1)>' AS Payload
+```
+
+## Writes
+
+Edits made in the preview are fixed operations, such as "set this cell", with values passed as parameters. A value like `x'); DROP TABLE tasks; --` is stored exactly as typed. The first write to a SQLite file in each session asks for permission, and every write is logged in the **YAMD Databases** output channel.

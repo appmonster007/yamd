@@ -1,0 +1,89 @@
+---
+yamd: 0.1
+title: YAMD Examples
+author: YAMD
+lang: en-US
+---
+
+# {{ title }}
+
+Each file in this folder shows one area of YAMD. Open any of them and run **YAMD: Open Preview to the Side** (:kbd[Cmd+K V]) to see the rendered result.
+
+Start with the [guided tour](getting-started.yamd), then explore by topic.
+
+::toc{depth=2}
+
+## Status key
+
+| Status    | Meaning                                                                 |
+| --------- | ----------------------------------------------------------------------- |
+| Available | Works in the current extension                                          |
+
+## Basics
+
+| Example                                                     | Shows                                                               | Status    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- | --------- |
+| [Text and paragraphs](01-basics/text-and-paragraphs.yamd)   | Line breaks, emphasis family, spans, escaping                       | Available |
+| [Headings and lists](01-basics/headings-and-lists.yamd)     | Heading IDs, bullets, numbering, nesting, tasks                     | Available |
+| [Links and images](01-basics/links-and-images.yamd)         | Inline, reference, bare and wiki links; images, figures             | Available |
+| [Tables](01-basics/tables.yamd)                             | Pipe tables, alignment, captions, colspan, list tables              | Available |
+| [Code and math](01-basics/code-and-math.yamd)               | Fences with attributes, diagrams, inline and block math             | Available |
+
+## Documents
+
+| Example                                                                     | Shows                                                    | Status    |
+| --------------------------------------------------------------------------- | -------------------------------------------------------- | --------- |
+| [Front matter and variables](02-documents/front-matter-and-variables.yamd)  | Reserved keys, `vars`, built-ins, escaping               | Available |
+| [Directives](02-documents/directives.yamd)                                  | Callouts, details, columns, figures, TOC, includes       | Available |
+| [Footnotes and citations](02-documents/footnotes-and-citations.yamd)        | Footnotes, inline notes, citations, cross-references     | Available |
+| [Review and comments](02-documents/review-and-comments.yamd)                | Tracked changes and hidden comments                      | Available |
+| [Security](02-documents/security.yamd)                                      | Sanitized HTML, URL allow-list, trusted mode             | Available |
+| [Diagnostics](02-documents/diagnostics.yamd)                                | A deliberately broken file that triggers every check     | Available |
+
+## Linked notes
+
+| Example                                                  | Shows                                                         | Status  |
+| -------------------------------------------------------- | ------------------------------------------------------------- | ------- |
+| [Knowledge base home](03-notes/home.yamd)                | Tags, embeds, block references, aliases                       | Available |
+| [Notes queries](03-notes/queries.yamd)                   | Dataview-style SQL over notes in the folder                   | Available |
+| [Daily note](03-notes/daily/2026-10-16.yamd)             | A daily note created from a template                          | Available |
+| [Meeting template](03-notes/templates/meeting.yamd)      | Template placeholders such as `{{@date}}`                     | Available |
+
+## Databases
+
+| Example                                                  | Shows                                                         | Status  |
+| -------------------------------------------------------- | ------------------------------------------------------------- | ------- |
+| [Database views](04-databases/views.yamd)                | Table, list, gallery and calendar views of `.ydb` files       | Available |
+| [Queries](04-databases/queries.yamd)                     | Query blocks and inline queries over `.ydb` and SQLite        | Available |
+| [Query security](04-databases/security.yamd)             | Queries that YAMD refuses to run, and why                     | Available |
+
+## Kanban
+
+| Example                                                  | Shows                                                         | Status  |
+| -------------------------------------------------------- | ------------------------------------------------------------- | ------- |
+| [Sprint board](05-kanban/sprint-board.yamd)              | A standalone board written as headings and tasks              | Available |
+| [Roadmap board](05-kanban/roadmap-board.yamd)            | A board view of a database                                    | Available |
+
+## Moving from Markdown
+
+| Example                                                  | Shows                                                         | Status    |
+| -------------------------------------------------------- | ------------------------------------------------------------- | --------- |
+| [GitHub-style README](06-markdown/github-readme.yamd)    | A Markdown README that works unchanged                        | Available |
+| [Differences from Markdown](06-markdown/differences.yamd) | Every case that renders differently, and the fix             | Available |
+
+## Folder layout
+
+```text
+examples/
+  getting-started.yamd      guided tour of the basics
+  refs.bib                  bibliography used by the citation examples
+  assets/                   images used by the examples
+  01-basics/                core syntax
+  02-documents/             document-level features
+  03-notes/                 linked notes
+  04-databases/             databases and queries
+    data/                   tasks.ydb, projects.ydb, crm.sqlite
+  05-kanban/                kanban boards
+    data/                   roadmap.ydb
+  06-markdown/              moving from Markdown
+```

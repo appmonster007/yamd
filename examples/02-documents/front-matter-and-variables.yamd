@@ -1,0 +1,73 @@
+---
+yamd: 0.1
+title: Release Notes
+author: [Ada Lovelace, Grace Hopper]
+date: 2026-10-16
+lang: en-US
+toc: false
+# Comments are allowed in front matter, because it is YAML.
+vars:
+  product: Nimbus
+  version: 2.4.0
+  released: October 2026
+  links:
+    docs: https://nimbus.example/docs
+    status: https://status.nimbus.example
+  limits:
+    storage: 10 GB
+    upload: 250 MB
+# Keys YAMD doesn't reserve are kept for tools and queries.
+status: published
+reviewers: [Alan, Barbara]
+---
+
+# {{ product }} {{ version }}
+
+Released {{ released }} by {{ author }}, dated {{ date }}.
+
+## Front matter
+
+Front matter is YAML between `---` lines at the very top of the file. These keys are reserved:
+
+| Key            | Used for                                      |
+| -------------- | --------------------------------------------- |
+| `yamd`         | The spec version the document targets         |
+| `title`        | The document title                            |
+| `author`       | One name or a list                            |
+| `date`         | An ISO 8601 date                              |
+| `lang`         | The language, for screen readers              |
+| `vars`         | Values to insert with `{{ name }}`            |
+| `bibliography` | A BibTeX or CSL-JSON file for citations       |
+| `toc`          | `true` to add a table of contents             |
+
+Any other key, such as `status` above, is kept for tools and queries.
+
+## Variables
+
+Insert values from `vars` with double braces:
+
+- Product: {{ product }}
+- Version: {{ version }}
+- Storage per user: {{ limits.storage }}, uploads up to {{ limits.upload }}
+- Docs: {{ links.docs }}
+
+Built-in variables come from the reserved keys: {{ title }}, {{ author }}, {{ date }}.
+
+Spaces inside the braces are optional: {{version}} and {{ version }} are the same.
+
+## Where variables don't apply
+
+- In code: `{{ version }}` stays as written.
+- In code blocks:
+
+  ```bash
+  echo "{{ version }}"
+  ```
+
+- When escaped: \{{ version }}
+
+## Upgrade note
+
+:::note {title="Before you upgrade"}
+Back up your data before upgrading. See {{ links.status }} for live status.
+:::

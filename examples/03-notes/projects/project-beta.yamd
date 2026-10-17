@@ -1,0 +1,21 @@
+---
+yamd: 0.1
+title: Project Beta
+aliases: [Beta, Mobile App]
+tags: [project, project/mobile]
+status: planning
+owner: Grace
+due: 2027-03-01
+lang: en-US
+---
+
+# {{ title }}
+
+The mobile companion app. Owner: [[grace]]. Back to [[home]].
+
+It builds on the offline design in [[ideas#^offline-first]] and shares the API with [[Alpha]].
+
+## Tasks
+
+- [ ] Pick a cross-platform framework #project/mobile
+- [ ] Design the offline sync protocol

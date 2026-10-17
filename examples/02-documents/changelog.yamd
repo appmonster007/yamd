@@ -1,0 +1,16 @@
+---
+yamd: 0.1
+title: Changelog
+lang: en-US
+---
+
+# {{ title }}
+
+## 2.4.0 {#v2-4-0}
+
+- Added list tables and review markup.
+- Removed the `--legacy` flag.
+
+## 2.3.0 {#v2-3-0}
+
+- Faster sync on large folders.

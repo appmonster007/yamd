@@ -1,0 +1,85 @@
+---
+yamd: 0.1
+title: Code and Math
+lang: en-US
+---
+
+# {{ title }}
+
+## Inline code
+
+Use `backticks` for code. Nothing inside is interpreted: `**not bold**`, `{{ not_a_variable }}`, `$not math$`.
+To show a backtick, use more backticks around it: `` a`b `` or ``` `` ```.
+
+## Fenced code
+
+Fence code with three backticks or tildes, and name the language to get highlighting. (Indenting by four spaces also makes a code block, as in Markdown, but it can't name a language.)
+
+```typescript
+export function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+```
+
+Tildes work too:
+
+~~~json
+{ "name": "yamd", "version": "0.1.0" }
+~~~
+
+## Code block attributes
+
+Add a title and other attributes after the language:
+
+```python {title="fibonacci.py" highlight=3}
+def fib(n):
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    return a
+```
+
+## Fences inside fences
+
+Use a longer fence to show a fence:
+
+````yamd
+```js
+console.log("nested");
+```
+````
+
+## Diagrams
+
+Mermaid blocks are standard. Renderers without diagram support show the source:
+
+```mermaid
+sequenceDiagram
+  Author->>Editor: Types YAMD
+  Editor->>Preview: Renders HTML
+  Preview-->>Author: Shows the result
+```
+
+## Inline math
+
+Einstein wrote $E = mc^2$. The area of a circle is $A = \pi r^2$.
+Money isn't math: it costs $5, or $10 with shipping.
+An opening `$` must be followed by a non-space, and the closing `$` must not be followed by a digit.
+
+## Block math
+
+$$
+\int_0^1 x^2 \, dx = \frac{1}{3}
+$$
+
+Label a block to number it and refer to it:
+
+$$ {#eq:euler}
+e^{i\pi} + 1 = 0
+$$
+
+$$ {#eq:sum}
+\sum_{k=1}^{n} k = \frac{n(n+1)}{2}
+$$
+
+[@eq:euler] is Euler's identity, and [@eq:sum] is Gauss's sum.

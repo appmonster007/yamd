@@ -1,0 +1,71 @@
+---
+yamd: 0.1
+title: Text and Paragraphs
+lang: en-US
+---
+
+# {{ title }}
+
+## Line breaks
+
+What you type is what you get.
+Each new line in the source is a new line in the output.
+No trailing spaces, no backslashes.
+
+A blank line starts a new paragraph.
+
+Roses are red
+Violets are blue
+YAMD keeps line breaks
+Exactly where you put them, too
+
+## Emphasis
+
+| Write          | Get              |
+| -------------- | ---------------- |
+| `*italic*` or `_italic_`   | *italic*         |
+| `**bold**` or `__bold__`   | **bold**         |
+| `***both***`               | ***both***       |
+| `++underline++`            | ++underline++    |
+| `~~strike~~` or `~strike~` | ~~strike~~       |
+| `==highlight==`            | ==highlight==    |
+| `H_{2}O`                   | H_{2}O           |
+| `x^{2}` or `x^2`           | x^{2}            |
+| `e^{i\pi}`, `10^-3`        | e^{i\pi}, 10^-3  |
+
+Subscripts and superscripts use LaTeX's `_{...}` and `^{...}`. They attach to the character before them, so `a _{b}` stays text. A plain number needs no braces: `x^2`, `10^-3`.
+
+Markers nest: **bold with *italic* inside**, ==highlighted **and bold**==, ++underlined ~~and struck~~++.
+Asterisks work inside words: un**believ**able, super*cali*fragilistic. Underscores don't, as in GFM.
+Bold can touch the next word: **YAMD**rocks.
+
+## Things that stay literal
+
+The rule is simple: an opening marker is followed by a non-space, and a closing marker is preceded by one.
+
+- Arithmetic: 2 * 3 * 4 = 24, and 10 ~ 11
+- Languages: C++ and C++, a == b
+- Code-style names: snake_case_name, file_name_here, MAX_VALUE
+- A lone marker: * or ** or ++
+- File paths: ~/projects and ~ alone
+
+## Spans
+
+Wrap any phrase in brackets and add attributes to style it:
+
+- [Red text]{color=red}
+- [A hex color]{color="#0969da"}
+- [Muted text]{.muted}
+- [Centered phrase]{align=center}
+- [Anchored phrase]{#anchored} that you can [link to](#anchored)
+
+## Escaping
+
+A backslash makes any punctuation literal:
+
+- \*not italic\* and \*\*not bold\*\*
+- \# not a heading, \[not a link\](nope)
+- \{{ not a variable }} and \{#not .attributes}
+- \$5 is money, and \%% isn't a comment
+
+A backslash before a letter is just a backslash: C:\Users\ada.

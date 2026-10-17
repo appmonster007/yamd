@@ -1,0 +1,123 @@
+---
+yamd: 0.1
+title: Directives
+lang: en-US
+---
+
+# {{ title }}
+
+Directives are YAMD's only extension mechanism. There are three forms:
+
+- Containers wrap blocks: `:::name {attrs}` … `:::`
+- Leaves are one line: `::name[label]{attrs}`
+- Inline directives sit in text: `:name[content]{attrs}`
+
+::toc{depth=2}
+
+## Callouts
+
+:::note
+A note adds helpful context.
+:::
+
+:::tip
+Tips suggest a better way to do something.
+:::
+
+:::warning {title="Back up first"}
+Warnings point out risks. This one has a custom title.
+:::
+
+:::danger
+Danger callouts are for data loss or security problems.
+:::
+
+Callouts can hold any blocks:
+
+:::tip {title="Keyboard shortcuts"}
+| Action        | Shortcut          |
+| ------------- | ----------------- |
+| Open preview  | :kbd[Cmd+K V]     |
+| Bold          | :kbd[Cmd+B]       |
+
+- Shortcuts only apply in `.yamd` files.
+:::
+
+## Collapsible sections
+
+:::details {summary="Show the full changelog"}
+- Added list tables
+- Added review markup
+- Fixed numbering after code blocks
+:::
+
+## Nesting
+
+Use more colons on the outer container to nest:
+
+::::warning {title="Before you deploy"}
+Check both of these:
+
+:::details {summary="Database migrations"}
+Run `nimbus migrate --dry-run` first.
+:::
+
+:::details {summary="Feature flags"}
+Turn on new flags for internal users only.
+:::
+::::
+
+## Columns
+
+::::columns
+:::column
+### Markdown
+- Many flavors
+- Invisible line breaks
+- HTML for layout
+:::
+:::column
+### YAMD
+- One spec
+- Enter means a new line
+- Directives for layout
+:::
+::::
+
+## Figures
+
+A `:::figure` can wrap any content, not just images:
+
+:::figure {caption="Build pipeline stages" #fig:pipeline}
+1. Lint
+2. Test
+3. Package
+4. Publish
+:::
+
+[@fig:pipeline] lists the stages.
+
+## Includes
+
+Pull another file into this one:
+
+::include[changelog.yamd]
+
+## Embeds
+
+::embed[https://www.youtube.com/watch?v=dQw4w9WgXcQ]{width=640}
+
+## Page breaks
+
+Force a new page when printing or exporting to PDF:
+
+::pagebreak
+
+## Inline directives
+
+- Keys: press :kbd[Cmd+Shift+P] to open the command palette.
+- Abbreviations: :abbr[WASM]{title="WebAssembly"} runs in the browser.
+
+## Unknown directives
+
+Tools ignore directives they don't know, but still show the content. Vendor directives start with `x-` so they never clash with future standard ones. See the [diagnostics example](diagnostics.yamd) for what the editor reports.

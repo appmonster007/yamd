@@ -1,0 +1,63 @@
+---
+yamd: 0.1
+title: Links and Images
+lang: en-US
+---
+
+# {{ title }}
+
+## Links
+
+- Inline: [YAMD on the web](https://yamd.example "The YAMD home page")
+- Reference: [the CommonMark spec][commonmark], and [again][CommonMark] (labels ignore case)
+- Collapsed reference: [CommonMark][]
+- Angle brackets: <https://example.com/a(b)c>
+- Email: <mailto:hello@yamd.example>
+
+[commonmark]: https://spec.commonmark.org "CommonMark"
+
+## Bare links
+
+Bare URLs always become links: https://yamd.example/docs.
+Trailing punctuation stays outside the link: see https://yamd.example/faq, or https://yamd.example/help!
+Balanced parentheses stay inside: https://en.wikipedia.org/wiki/Markdown_(disambiguation)
+To show a URL without linking it, use code: `https://not.a.link`.
+
+## Links between documents
+
+- Relative path: [the tables example](tables.yamd)
+- A section in another file: [table captions](tables.yamd#captions)
+- Wikilink: [[tables]]
+- Wikilink to a section, with a label: [[tables#Captions|captions in tables]]
+- Wikilink to another folder: [[../02-documents/directives]]
+- A section in this document: [[#images]] or [the images section](#images)
+
+## Images
+
+Images take attributes for size and alignment:
+
+![The YAMD team logo](../assets/team.svg){width=160}
+
+![The YAMD team logo, centered](../assets/team.svg){width=200 align=center}
+
+A reference-style image:
+
+![The YAMD team logo, again][logo]
+
+[logo]: ../assets/team.svg
+
+### Figures
+
+An image alone in its paragraph with a `caption` becomes a numbered figure:
+
+![Requests go from the client through the gateway to storage](../assets/architecture.svg){caption="Request flow" #fig:flow width=480}
+
+![The YAMD team](../assets/team.svg){caption="Our team" #fig:team width=240 align=center}
+
+Refer to figures by label: [@fig:flow] shows the request path, and [@fig:team] shows the team.
+
+### Decorative images
+
+Images need alt text. Purely decorative ones say so explicitly:
+
+![](../assets/divider.svg){decorative}

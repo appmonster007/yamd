@@ -1,0 +1,114 @@
+---
+yamd: 0.1
+title: Headings and Lists
+lang: en-US
+---
+
+# {{ title }}
+
+## Headings
+
+Headings use `#` to `######` followed by a space. There is no underline style, so `---` is always a horizontal rule.
+
+### Generated IDs
+
+Every heading gets an ID from its text. This section's ID is `generated-ids`, so you can [link to it](#generated-ids).
+
+### Explicit IDs {#stable-id}
+
+Add `{#id}` at the end of a heading to fix its ID. Links to it keep working even if you rename the heading: [jump to the explicit ID](#stable-id).
+
+### Duplicates
+
+Repeated headings get a number suffix.
+
+#### Example
+
+The first one is `example`.
+
+#### Example
+
+The second one is `example-2`: [first](#example), [second](#example-2).
+
+---
+
+## Bullet lists
+
+`-`, `*` and `+` all work. As in GFM, changing the marker starts a new list, so this is two lists. Without the blank line between them, YAMD adds an info note (Y212) in case the change was a typo:
+
+- Apples
+- Bananas
+
+* Carrots
+* Leeks
+
+Nesting follows indentation, by any amount:
+
+- Fruit
+  - Citrus
+      - Lemon
+      - Lime
+  - Berries
+- Vegetables
+
+A list can start right after a paragraph line:
+- no blank line needed
+- before the first item
+
+## Numbered lists
+
+The list starts at the first number you type; the rest are numbered in order, whatever numbers you type:
+
+1. First
+1. Second
+1. Third
+
+A code block or quote indented under an item stays in that item, and numbering continues:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://example.com/yamd.git
+   ```
+
+2. Install dependencies:
+
+   > Needs Node.js 20 or later.
+
+3. Run the tests.
+
+Only a list starting at 1 can interrupt a paragraph, so a year at the start of a line stays text:
+1984. A great year for computing.
+
+To start a new paragraph with a number and a period, escape it: 1984\. A great year.
+
+A list after a blank line can start anywhere:
+
+10. Tenth
+11. Eleventh
+
+## Task lists
+
+- [x] Write the spec
+- [x] Build the parser
+- [ ] Ship the extension
+  - [ ] Package the `.vsix`
+  - [ ] Write release notes
+
+1. [x] Numbered tasks work too
+2. [ ] Like this one
+
+## Rich list items
+
+- **Paragraphs**: an item can hold several paragraphs.
+
+  Indent the next paragraph under the item.
+
+- **Quotes**:
+  > A quote inside a list item.
+
+- **Tables**:
+
+  | Key | Value |
+  | --- | ----- |
+  | a   | 1     |

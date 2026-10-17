@@ -1,0 +1,41 @@
+---
+yamd: 0.1
+title: Review and Comments
+lang: en-US
+---
+
+# {{ title }}
+
+%% This whole line is a comment. It never reaches the output, not even the HTML source. %%
+
+%%
+Comments can span several lines.
+TODO: add a section on exporting.
+%%
+
+## Author comments
+
+Write notes to yourself inline %% like this one %% and they disappear from the output.
+Use them for TODOs, sources and reminders.
+
+## Tracked changes
+
+Reviewers suggest edits with review markup:
+
+| Write                     | Means                        |
+| ------------------------- | ---------------------------- |
+| `{++added++}`             | Insert text                  |
+| `{--removed--}`           | Delete text                  |
+| `{~~old~>new~~}`          | Replace text                 |
+| `{==text==}{>>note<<}`    | Comment on text              |
+| `{>>note<<}`              | Standalone comment           |
+
+## A document under review
+
+Our service stores data in {--two--}{++three++} regions.
+Customers can export data as {~~CSV~>CSV or JSON~~} at any time.
+{==Backups run every hour.==}{>>Is this still hourly after the migration? — Grace<<}
+Support is available {++around the clock++} in English and Spanish.
+{>>Should we mention German support? — Alan<<}
+
+Formatting works inside suggestions: {++**bold** additions++} and {--*italic* removals--}.

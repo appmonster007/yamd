@@ -1,0 +1,95 @@
+---
+yamd: 0.1
+title: Database Queries
+lang: en-US
+databases:
+  tasks: data/tasks.ydb
+  crm: data/crm.sqlite
+---
+
+# {{ title }}
+
+Queries are SQLite SQL. A `.ydb` database is a table named after its file, so `data/tasks.ydb` is the table `tasks`.
+
+## Query blocks
+
+Results render as a table by default:
+
+```query {db=tasks}
+SELECT Title, Owner, Due
+FROM tasks
+WHERE Status != 'Done'
+ORDER BY Due
+```
+
+As a list, using the first column:
+
+```query {db=tasks view=list}
+SELECT Title FROM tasks WHERE Priority = 'High' AND Status != 'Done'
+```
+
+As a single value:
+
+```query {db=tasks view=value}
+SELECT sum(Points) FROM tasks WHERE Status = 'Done'
+```
+
+## Working with property types
+
+`multi_select` and `relation` values are JSON arrays, `checkbox` is 0 or 1, and dates are ISO 8601 text:
+
+```query {db=tasks}
+SELECT Title, json_each.value AS Tag
+FROM tasks, json_each(tasks.Tags)
+WHERE json_each.value IN ('frontend', 'backend')
+```
+
+```query {db=tasks}
+SELECT Title, Owner FROM tasks WHERE Blocked = 1
+```
+
+Formulas are columns like any other:
+
+```query {db=tasks}
+SELECT Title, Due FROM tasks WHERE Overdue
+```
+
+## Points by owner
+
+```query {db=tasks}
+SELECT Owner,
+       count(*) AS Tasks,
+       sum(Points) AS Points,
+       sum(Status = 'Done') AS Finished
+FROM tasks
+GROUP BY Owner
+ORDER BY Points DESC
+```
+
+## SQLite: joins across tables
+
+```query {db=crm}
+SELECT c.name AS Contact, c.company AS Company, d.title AS Deal, d.amount AS Amount
+FROM deals d
+JOIN contacts c ON c.id = d.contact_id
+ORDER BY d.closes_on
+```
+
+```query {db=crm}
+SELECT stage AS Stage, count(*) AS Contacts, sum(value) AS "Pipeline value"
+FROM contacts
+GROUP BY stage
+```
+
+## Inline queries
+
+Open tasks: :query[SELECT count(*) FROM tasks WHERE Status != 'Done']{db=tasks}.
+Won revenue: $:query[SELECT sum(value) FROM contacts WHERE stage = 'won']{db=crm}.
+
+## Documentation SQL
+
+A `sql` block never runs, so you can show SQL safely:
+
+```sql
+DELETE FROM tasks WHERE Status = 'Done';
+```

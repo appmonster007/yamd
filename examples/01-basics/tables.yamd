@@ -1,0 +1,88 @@
+---
+yamd: 0.1
+title: Tables
+lang: en-US
+---
+
+# {{ title }}
+
+## Pipe tables
+
+Leading and trailing pipes are required, and so is the separator row under the header:
+
+| Name  | Role     |
+| ----- | -------- |
+| Ada   | Engineer |
+| Alan  | Research |
+
+The source columns don't need to line up:
+
+| Fruit | Color |
+|---|---|
+| Apple | Red |
+| Banana | Yellow |
+
+## Alignment
+
+| Left     | Center   | Right |
+| :------- | :------: | ----: |
+| a        | b        |     1 |
+| longer a | longer b |   100 |
+
+## Formatting in cells
+
+| Feature         | Example                              |
+| --------------- | ------------------------------------ |
+| Emphasis        | **bold**, *italic*, ==mark==         |
+| Code with pipes | `a | b` and `x || y`                 |
+| Escaped pipe    | this \| that                         |
+| Links           | [YAMD](https://yamd.example)         |
+| Tasks           | done, not done                       |
+
+## Captions
+
+{caption="Quarterly revenue" #tbl:revenue}
+| Quarter | Revenue |
+| ------- | ------: |
+| Q1      |   $1.2M |
+| Q2      |   $1.5M |
+| Q3      |   $1.9M |
+
+[@tbl:revenue] shows steady growth.
+
+## Merged cells
+
+| Plan       | Monthly | Yearly |
+| ---------- | ------: | -----: |
+| Free       |      $0 |     $0 |
+| Pro        |     $12 |   $120 |
+| Enterprise | Talk to sales {colspan=2} |
+
+## List tables
+
+When cells need lists, several paragraphs or code, write the table as a list. Each top-level item is a row and each nested item is a cell:
+
+:::table {header=1 caption="Supported platforms" #tbl:platforms}
+- - Platform
+  - Notes
+  - Status
+- - macOS
+  - Apple silicon and Intel.
+    Universal binary.
+  - Supported
+- - Windows
+  - Requirements:
+    - Windows 10 or later
+    - x64 or ARM64
+  - Supported
+- - Linux
+  - Install with:
+
+    ```bash
+    sudo apt install yamd
+    ```
+  - Beta
+- - Mobile apps are planned for next year {colspan=3}
+:::
+
+[@tbl:platforms] uses a list table.

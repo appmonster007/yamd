@@ -1,0 +1,30 @@
+---
+yamd: 0.1
+title: Project Alpha
+aliases: [Alpha, Web Launch]
+tags: [project, project/web]
+status: active
+owner: Ada
+due: 2026-12-01
+lang: en-US
+---
+
+# {{ title }}
+
+Launch the web app. Owner: [[ada]]. Back to [[home]].
+
+## Goal
+
+Ship the public beta by December. ^goal
+
+## Decisions
+
+- Use per-workspace pricing, as described in [[ideas#^pricing-model]]. ^decision-pricing
+- Build sharing first: ![[ideas#^share-publish]]
+
+## Tasks
+
+- [x] Write the launch plan #planning
+- [ ] Finish the sign-up flow #project/web
+- [ ] Review the pricing page with [[grace]]
+- [ ] Load test the API

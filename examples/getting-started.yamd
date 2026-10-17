@@ -1,0 +1,203 @@
+---
+yamd: 0.1
+title: Getting Started with Nimbus
+author: [Ada Lovelace, Alan Turing]
+date: 2026-10-16
+lang: en-US
+bibliography: refs.bib
+vars:
+  product: Nimbus
+  version: 2.4.0
+  support:
+    email: help@nimbus.example
+---
+
+# {{ title }}
+
+%% Author note: update the version in front matter before each release. This line never renders. %%
+
+Welcome to **{{ product }} {{ version }}**.
+This line appears on its own line, because pressing Enter starts a new line.
+
+A blank line starts a new paragraph, just like in Markdown.
+
+::toc{depth=2}
+
+## Text formatting
+
+You can write *italic*, **bold**, ***bold italic***, ++underline++, ~~strikethrough~~ and ==highlighted== text.
+Chemistry and math work inline: H_{2}O, x^{2} and 10^-3. ~Single tildes~ strike text, as on GitHub.
+Underscores inside words are literal, so snake_case and my_variable_name are safe without escaping.
+Spacing protects you too: 2 * 3 * 4 = 24, and C++ is not underlined.
+**Bold**right next to text works as expected.
+
+Style any phrase with a span: [this is red]{color=red}, [this is muted]{.muted}.
+Press :kbd[Ctrl+S] to save. :abbr[YAMD]{title="Yet Another Markdown"} keeps it simple.
+
+<b>Safe HTML</b> renders as on GitHub; scripts and event handlers are removed. Comparisons like a < b and x > y need no escaping.
+Prices like $5 and $10 are not math, but $E = mc^2$ is.
+
+## Lists
+
+### Bullets
+
+- Use `-`, `*` or `+`
+- and keep the same marker
+- for the whole list
+  - Nest by indenting under the text
+      - deeper still
+- [x] Write the spec
+- [ ] Build the parser
+
+### Numbered steps
+
+1. Install the CLI:
+
+   ```bash {title="terminal"}
+   npm install -g nimbus-cli
+   ```
+
+2. Numbering continues after the code block.
+   This line is part of step 2.
+3. Log in:
+   > Tip: use your work email.
+4. Done!
+
+Only a list starting at 1 can interrupt a paragraph, so a year at the start of a line stays text:
+2024. Great year.
+
+{start=5}
+5. A list that intentionally starts at five
+6. and keeps counting
+
+## Links and images
+
+Bare links work everywhere: https://nimbus.example/docs
+Inline link: [Nimbus docs](https://nimbus.example/docs "Official docs").
+Reference link: [the changelog][changes].
+Link to another file: [[01-basics/tables]], a section in it: [[01-basics/tables#Captions|table captions]].
+Link to a section here: [[#tables]] or [Callouts](#callouts).
+Email us at {{ support.email }}.
+
+[changes]: https://nimbus.example/changelog
+
+![Nimbus architecture: client, API gateway and storage](assets/architecture.svg){caption="High-level architecture" #fig:arch width=600 align=center}
+
+As shown in [@fig:arch], every request passes through the gateway.
+
+![](assets/divider.svg){decorative}
+
+## Tables {#tables}
+
+{caption="Pricing plans" #tbl:pricing}
+| Plan       | Price | Command           |
+| :--------- | ----: | :---------------: |
+| Free       |    $0 | `nimbus up\|free` |
+| Pro        |   $12 | `nimbus up\|pro`  |
+| Enterprise | Contact us {colspan=2} |
+
+[@tbl:pricing] lists every plan. As in GFM, write `\|` for a pipe inside a cell, even in code.
+
+:::table {header=1 caption="Feature comparison"}
+- - Feature
+  - Details
+- - Export
+  - Supports:
+    - PDF
+    - Word
+    - HTML
+- - Sync
+  - Real-time, across all devices.
+    Works offline too.
+- - Coming soon: AI search {colspan=2}
+:::
+
+## Callouts {#callouts}
+
+:::note
+{{ product }} saves your work automatically.
+:::
+
+:::warning {title="Breaking change in 2.4"}
+The `--legacy` flag has been removed.
+Use `--compat` instead.
+:::
+
+:::details {summary="Show advanced options"}
+- `--verbose` prints debug logs
+- `--dry-run` previews changes without applying them
+:::
+
+## Layout
+
+::::columns
+:::column
+### Before
+Manual deploys, every Friday.
+:::
+:::column
+### After
+Automatic deploys on every merge.
+:::
+::::
+
+## Code and diagrams
+
+```python {title="client.py" highlight=3}
+from nimbus import Client
+
+client = Client(api_key="...")
+print(client.status())
+```
+
+```mermaid
+graph LR
+  Client --> Gateway --> Storage
+```
+
+## Math
+
+The cost grows with the number of nodes $n$:
+
+$$ {#eq:cost}
+C(n) = \sum_{i=1}^{n} \frac{1}{i^2}
+$$
+
+[@eq:cost] converges as $n$ grows.
+
+## Footnotes and citations
+
+{{ product }} uses a consistent-hashing scheme[^hash] for storage.
+Replication is configurable.^[The default is three replicas.]
+The design follows earlier work on distributed systems [@lamport1978; @dean2008, p. 4].
+
+[^hash]: Consistent hashing spreads keys across nodes.
+    Adding a node only moves a small share of keys.
+
+## Quotes
+
+> {{ product }} made our deploys boring, in the best way.
+> > Boring is the goal.
+> - Every line of a quote starts with `>`.
+
+## Reviewing changes
+
+The free plan includes {--5 GB--}{++10 GB++} of storage.
+Uploads are limited to {~~100 MB~>250 MB~~} per file.
+{==Sync runs every minute.==}{>>Is this still true after 2.4? — Alan<<}
+
+## Escaping
+
+Use a backslash for any literal symbol: \*not italic\*, \# not a heading, \{{ not a variable }}, \:::not a directive.
+
+## Embeds and includes
+
+::embed[https://www.youtube.com/watch?v=dQw4w9WgXcQ]{width=640}
+
+::include[02-documents/changelog.yamd]
+
+::pagebreak
+
+## References
+
+::bibliography

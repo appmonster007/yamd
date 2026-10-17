@@ -1,0 +1,40 @@
+# A YAMD text database. Each row is one project.
+yamdb: 0.1
+name: Projects
+
+properties:
+  Name: title
+  Status:
+    type: status
+    options: [Planning, Active, Done]
+  Lead: person
+  Cover: url
+  Started: date
+
+views:
+  All projects:
+    type: gallery
+    cover: Cover
+    sort: [Name]
+
+rows:
+  - id: p1
+    Name: Web launch
+    Status: Active
+    Lead: Ada
+    Cover: ../../assets/architecture.svg
+    Started: 2026-09-01
+
+  - id: p2
+    Name: Mobile app
+    Status: Planning
+    Lead: Grace
+    Cover: ../../assets/team.svg
+    Started: 2026-11-15
+
+  - id: p3
+    Name: Docs site
+    Status: Done
+    Lead: Alan
+    Cover: ../../assets/divider.svg
+    Started: 2026-06-10

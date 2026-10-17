@@ -1,0 +1,26 @@
+---
+yamd: 0.1
+title: Standup
+date: 2026-10-16
+tags: [meeting]
+attendees: [Ada, Grace]
+lang: en-US
+---
+
+# {{ title }}
+
+Created from [[templates/meeting|the meeting template]] on 16/10/2026 at 10:00.
+
+## Agenda
+
+1. Status of [[Alpha]]
+2. Framework choice for [[Beta]]
+
+## Decisions
+
+- Keep per-workspace pricing: ![[project-alpha#^decision-pricing]]
+
+## Action items
+
+- [ ] [[ada]]: share load test results by Monday #project/web
+- [ ] [[grace]]: shortlist two mobile frameworks #project/mobile

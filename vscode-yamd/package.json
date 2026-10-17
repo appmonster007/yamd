@@ -1,0 +1,588 @@
+{
+  "name": "vscode-yamd",
+  "displayName": "YAMD",
+  "description": "Language support for YAMD: syntax highlighting, live preview, diagnostics and editing shortcuts.",
+  "version": "0.1.0",
+  "publisher": "yamd",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "keywords": [
+    "yamd",
+    "markdown",
+    "markup",
+    "preview"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/*.yamd",
+    "onLanguage:ydb"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "yamd",
+        "aliases": [
+          "YAMD",
+          "yamd"
+        ],
+        "extensions": [
+          ".yamd"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "ydb",
+        "aliases": [
+          "YAMD Database",
+          "ydb"
+        ],
+        "extensions": [
+          ".ydb"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ydb",
+        "scopeName": "source.ydb",
+        "path": "./syntaxes/ydb.tmLanguage.json"
+      },
+      {
+        "language": "yamd",
+        "scopeName": "text.yamd",
+        "path": "./syntaxes/yamd.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.frontmatter": "yaml",
+          "meta.embedded.block.javascript": "javascript",
+          "meta.embedded.block.typescript": "typescript",
+          "meta.embedded.block.tsx": "typescriptreact",
+          "meta.embedded.block.jsx": "javascriptreact",
+          "meta.embedded.block.python": "python",
+          "meta.embedded.block.shellscript": "shellscript",
+          "meta.embedded.block.json": "json",
+          "meta.embedded.block.yaml": "yaml",
+          "meta.embedded.block.html": "html",
+          "meta.embedded.block.css": "css",
+          "meta.embedded.block.scss": "scss",
+          "meta.embedded.block.java": "java",
+          "meta.embedded.block.c": "c",
+          "meta.embedded.block.cpp": "cpp",
+          "meta.embedded.block.csharp": "csharp",
+          "meta.embedded.block.go": "go",
+          "meta.embedded.block.rust": "rust",
+          "meta.embedded.block.ruby": "ruby",
+          "meta.embedded.block.php": "php",
+          "meta.embedded.block.sql": "sql",
+          "meta.embedded.block.xml": "xml",
+          "meta.embedded.block.markdown": "markdown",
+          "meta.embedded.block.diff": "diff",
+          "meta.embedded.block.dockerfile": "dockerfile",
+          "meta.embedded.block.powershell": "powershell"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "yamd",
+        "path": "./snippets/yamd.code-snippets"
+      }
+    ],
+    "commands": [
+      {
+        "command": "yamd.openPreview",
+        "title": "Open Preview",
+        "category": "YAMD",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "yamd.openPreviewToSide",
+        "title": "Open Preview to the Side",
+        "category": "YAMD",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "yamd.toggleBold",
+        "title": "Toggle Bold",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleItalic",
+        "title": "Toggle Italic",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleUnderline",
+        "title": "Toggle Underline",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleStrikethrough",
+        "title": "Toggle Strikethrough",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleHighlight",
+        "title": "Toggle Highlight",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleCode",
+        "title": "Toggle Inline Code",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.convertFromMarkdown",
+        "title": "Convert from Markdown",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openMarkdownAsYamd",
+        "title": "Open Markdown as YAMD",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.quickSwitcher",
+        "title": "Quick Switcher",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openGraph",
+        "title": "Open Graph View",
+        "category": "YAMD",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "yamd.openLocalGraph",
+        "title": "Open Local Graph",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openTodayDailyNote",
+        "title": "Open Today's Daily Note",
+        "category": "YAMD",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "yamd.previousDailyNote",
+        "title": "Previous Daily Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.nextDailyNote",
+        "title": "Next Daily Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTemplate",
+        "title": "Insert Template",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.linkMentionFromView",
+        "title": "Link Mention",
+        "category": "YAMD",
+        "icon": "$(link)"
+      },
+      {
+        "command": "yamd.newDatabase",
+        "title": "New Database",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addDatabaseToNote",
+        "title": "Add Database to Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openInSqliteViewer",
+        "title": "Open in SQLite Viewer",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.chooseConsoleDatabase",
+        "title": "Choose SQL Console Database",
+        "category": "YAMD",
+        "icon": "$(database)"
+      },
+      {
+        "command": "yamd.newNote",
+        "title": "New Note…",
+        "shortTitle": "YAMD Note",
+        "category": "YAMD",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "yamd.newTimestampNote",
+        "title": "New Timestamped Note",
+        "category": "YAMD",
+        "icon": "$(history)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "yamd.openPreviewToSide",
+          "when": "editorLangId == yamd",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "yamd.openPreview",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.openPreviewToSide",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleBold",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleItalic",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleUnderline",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleStrikethrough",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleHighlight",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleCode",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.convertFromMarkdown",
+          "when": "editorLangId == yamd || editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openMarkdownAsYamd",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertTemplate",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.previousDailyNote",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.nextDailyNote",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.linkMentionFromView",
+          "when": "false"
+        },
+        {
+          "command": "yamd.addDatabaseToNote",
+          "when": "editorLangId == yamd"
+        }
+      ],
+      "file/newFile": [
+        {
+          "command": "yamd.newNote"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "yamd.newNote",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@5"
+        },
+        {
+          "command": "yamd.newTimestampNote",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@6"
+        },
+        {
+          "command": "yamd.openMarkdownAsYamd",
+          "when": "resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation@90"
+        },
+        {
+          "command": "yamd.openInSqliteViewer",
+          "when": "resourceExtname == .sqlite || resourceExtname == .sqlite3 || resourceExtname == .db",
+          "group": "navigation@91"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "yamd.newNote",
+          "when": "view == yamd.backlinks",
+          "group": "navigation@1"
+        },
+        {
+          "command": "yamd.newTimestampNote",
+          "when": "view == yamd.backlinks",
+          "group": "navigation@2"
+        },
+        {
+          "command": "yamd.openGraph",
+          "when": "view == yamd.backlinks",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.openTodayDailyNote",
+          "when": "view == yamd.backlinks",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.chooseConsoleDatabase",
+          "when": "view == yamd.sqlConsole",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "yamd.linkMentionFromView",
+          "when": "view == yamd.backlinks && viewItem == unlinkedMention",
+          "group": "inline"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "yamd.openPreviewToSide",
+        "key": "ctrl+k v",
+        "mac": "cmd+k v",
+        "when": "editorLangId == yamd"
+      },
+      {
+        "command": "yamd.openPreview",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleBold",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleItalic",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleUnderline",
+        "key": "ctrl+u",
+        "mac": "cmd+u",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleStrikethrough",
+        "key": "alt+s",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleHighlight",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.toggleCode",
+        "key": "ctrl+`",
+        "mac": "cmd+`",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.onEnter",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == yamd && !editorReadonly && !suggestWidgetVisible && !inlineSuggestionVisible && !editorHasMultipleSelections && vim.mode != 'Normal' && vim.mode != 'Visual' && vim.mode != 'VisualLine' && config.yamd.editor.listContinuation"
+      },
+      {
+        "command": "yamd.quickSwitcher",
+        "key": "ctrl+alt+o",
+        "mac": "cmd+alt+o"
+      }
+    ],
+    "configuration": {
+      "title": "YAMD",
+      "properties": {
+        "yamd.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report YAMD diagnostics in the Problems panel."
+        },
+        "yamd.diagnostics.ignore": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Y\\d{3}$"
+          },
+          "default": [],
+          "description": "Diagnostic codes to hide, for example [\"Y707\"]."
+        },
+        "yamd.editor.listContinuation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Continue lists when pressing Enter at the end of a list item."
+        },
+        "yamd.index.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Glob patterns (relative to the workspace folder) for notes to leave out of the index, for example \"archive/**\"."
+        },
+        "yamd.dailyNotes.folder": {
+          "type": "string",
+          "default": "daily",
+          "description": "Folder for daily notes, relative to the workspace folder."
+        },
+        "yamd.dailyNotes.format": {
+          "type": "string",
+          "default": "YYYY-MM-DD",
+          "description": "File name format for daily notes. Tokens: YYYY, MM, DD, HH, mm."
+        },
+        "yamd.dailyNotes.template": {
+          "type": "string",
+          "default": "",
+          "description": "Template for new daily notes, relative to the workspace folder, for example \"templates/daily.yamd\"."
+        },
+        "yamd.templates.folder": {
+          "type": "string",
+          "default": "templates",
+          "description": "Folder that holds templates for \"YAMD: Insert Template\". Notes in it aren't indexed."
+        },
+        "yamd.queries.timeout": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0.1,
+          "description": "Seconds a query from a document may run before it is stopped (Y952)."
+        },
+        "yamd.queries.maxRows": {
+          "type": "number",
+          "default": 500,
+          "minimum": 1,
+          "description": "Most rows a view or query shows."
+        },
+        "yamd.databases.maxFileSize": {
+          "type": "number",
+          "default": 100,
+          "description": "Database files larger than this many megabytes aren't loaded for previews."
+        },
+        "yamd.newNote.timestampFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD-HHmm",
+          "description": "File name for \"New Timestamped Note\". Tokens: YYYY, MM, DD, HH, mm."
+        },
+        "yamd.newNote.lang": {
+          "type": "string",
+          "default": "en",
+          "description": "The \"lang\" value written into new notes' front matter."
+        },
+        "yamd.sqlite.viewer": {
+          "type": "string",
+          "default": "",
+          "description": "Custom editor (view type) used by \"Open in SQLite Viewer\". Set when you choose one."
+        }
+      }
+    },
+    "viewsWelcome": [
+      {
+        "view": "yamd.backlinks",
+        "contents": "Open a YAMD note to see the notes that link to it.\n[New Note](command:yamd.newNote)\n[New Timestamped Note](command:yamd.newTimestampNote)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "yamd",
+          "title": "YAMD",
+          "icon": "media/yamd-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "yamd": [
+        {
+          "id": "yamd.backlinks",
+          "name": "Backlinks"
+        },
+        {
+          "id": "yamd.tags",
+          "name": "Tags"
+        },
+        {
+          "id": "yamd.properties",
+          "name": "Properties",
+          "type": "webview"
+        },
+        {
+          "id": "yamd.sqlConsole",
+          "name": "SQL Console",
+          "type": "webview"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build-grammar.mjs && node esbuild.mjs",
+    "watch": "node scripts/build-grammar.mjs && node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "package": "npm run typecheck && npm test && vsce package --no-dependencies --allow-missing-repository --skip-license",
+    "vscode:prepublish": "node scripts/build-grammar.mjs && node esbuild.mjs --production"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/katex": "^0.16.7",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^20.19.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/vscode": "~1.95.0",
+    "@vscode/vsce": "^4.0.0",
+    "commonmark-spec": "^0.31.2",
+    "esbuild": "^0.28.2",
+    "micromark-util-types": "^2.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2",
+    "yaml": "^2.9.1"
+  },
+  "dependencies": {
+    "d3-force": "^3.0.0",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.22",
+    "mdast-util-directive": "^3.1.1",
+    "mdast-util-from-markdown": "^2.1.0",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-gfm": "^3.1.0",
+    "mdast-util-math": "^3.0.0",
+    "micromark": "^4.0.3",
+    "micromark-extension-directive": "^4.0.0",
+    "micromark-extension-frontmatter": "^2.0.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "micromark-extension-math": "^3.1.0",
+    "micromark-util-character": "^2.1.1",
+    "micromark-util-chunked": "^2.0.1",
+    "micromark-util-classify-character": "^2.0.1",
+    "micromark-util-resolve-all": "^2.0.1",
+    "micromark-util-sanitize-uri": "^2.0.1",
+    "micromark-util-symbol": "^2.0.1",
+    "sql.js": "^1.12.0"
+  }
+}

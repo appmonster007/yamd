@@ -1,0 +1,27 @@
+---
+yamd: 0.1
+title: Product Ideas
+aliases: [Ideas, Backlog Ideas]
+tags: [ideas]
+status: active
+lang: en-US
+---
+
+# {{ title }}
+
+Raw ideas, linked from [[home]] and the [[project-alpha]] plan. #brainstorm
+
+## Pricing
+
+Charge per workspace, not per seat, so teams can invite readers for free. ^pricing-model
+
+Offer a yearly plan with two months free. ^yearly-plan
+
+## Sharing
+
+- Publish a note as a read-only web page. ^share-publish
+- Share a database view as a form for collecting rows. #project/web
+
+## Offline
+
+Everything works offline because notes are plain files. Sync is just copying files. ^offline-first

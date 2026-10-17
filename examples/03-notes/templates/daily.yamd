@@ -1,0 +1,20 @@
+---
+yamd: 0.1
+title: "{{@date:YYYY-MM-DD}}"
+tags: [daily]
+lang: en-US
+---
+
+# Daily note for {{@date}}
+
+Back to [[home]].
+
+## Plan
+
+- [ ] {{@cursor}}
+
+## Log
+
+- {{@time}} Started the day
+
+## Notes

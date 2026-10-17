@@ -1,0 +1,53 @@
+---
+yamd: 0.1
+title: Footnotes and Citations
+lang: en-US
+bibliography: ../refs.bib
+---
+
+# {{ title }}
+
+## Introduction {#sec:intro}
+
+Markdown was released in 2004 [@gruber2004] and has many dialects today.[^dialects]
+YAMD keeps its spirit but fixes its rough edges.[^1]
+
+## Footnotes {#sec:footnotes}
+
+Footnotes are numbered in the order they are first used, whatever their labels.[^zebra] The label `zebra` comes first here, so it is note 3.[^apple]
+
+You can use the same footnote twice.[^dialects]
+
+Short notes can go inline.^[Inline notes don't need a label or a definition.]
+
+A footnote can have several paragraphs.[^long]
+
+[^dialects]: CommonMark, GitHub Flavored Markdown, MultiMarkdown and Pandoc are the best known.
+[^1]: Numbers work as labels too.
+[^zebra]: This label sorts last alphabetically, but it is numbered by use.
+[^apple]: This one is numbered after `zebra`.
+[^long]: The first paragraph of a longer note.
+
+    Indent following paragraphs to keep them in the note.
+
+## Citations {#sec:citations}
+
+Cite one source [@lamport1978], several at once [@lamport1978; @dean2008], or a specific page [@knuth1984, p. 47].
+The reference list appears where you put `::bibliography`, or at the end.
+
+## Cross-references
+
+Label figures, tables, equations and sections, then refer to them with `[@label]`:
+
+- [@sec:intro] introduces the topic.
+- [@sec:citations] covers citations.
+
+$$ {#eq:pythagoras}
+a^2 + b^2 = c^2
+$$
+
+[@eq:pythagoras] is numbered automatically.
+
+## References
+
+::bibliography

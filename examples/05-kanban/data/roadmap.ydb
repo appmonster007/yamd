@@ -1,0 +1,61 @@
+# Product roadmap, shown as a board in roadmap-board.yamd.
+yamdb: 0.1
+name: Roadmap
+
+properties:
+  Feature: title
+  Stage:
+    type: status
+    options: [Idea, Planned, Building, Shipped]
+  Owner: person
+  Quarter:
+    type: select
+    options: [Q4 2026, Q1 2027, Q2 2027]
+  Votes: number
+
+views:
+  Board:
+    type: board
+    group: Stage
+    columns: [Owner, Quarter, Votes]
+
+rows:
+  - id: r1
+    Feature: Tags and backlinks
+    Stage: Building
+    Owner: Ada
+    Quarter: Q4 2026
+    Votes: 42
+
+  - id: r2
+    Feature: Databases
+    Stage: Planned
+    Owner: Grace
+    Quarter: Q1 2027
+    Votes: 57
+
+  - id: r3
+    Feature: Kanban boards
+    Stage: Planned
+    Owner: Alan
+    Quarter: Q1 2027
+    Votes: 38
+
+  - id: r4
+    Feature: Mobile app
+    Stage: Idea
+    Owner: Grace
+    Quarter: Q2 2027
+    Votes: 64
+
+  - id: r5
+    Feature: VS Code extension
+    Stage: Shipped
+    Owner: Ada
+    Quarter: Q4 2026
+    Votes: 80
+
+  - id: r6
+    Feature: Real-time collaboration
+    Stage: Idea
+    Votes: 91

@@ -1,0 +1,26 @@
+---
+yamd: 0.1
+title: "{{@title}}"
+date: "{{@date}}"
+tags: [meeting]
+attendees: []
+lang: en-US
+---
+
+# {{@title}}
+
+:::note {title="Template placeholders"}
+`{{@date}}`, `{{@time}}`, `{{@title}}` and `{{@cursor}}` are filled in when you run **YAMD: Insert Template**. They aren't variables, so they produce no warnings here.
+:::
+
+**Date:** {{@date:DD/MM/YYYY}} at {{@time}}
+
+## Agenda
+
+1. {{@cursor}}
+
+## Decisions
+
+## Action items
+
+- [ ]

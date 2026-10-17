@@ -1,0 +1,230 @@
+/* Styles for the YAMD sidebar views (Properties, SQL Console), matching VS Code's own views. */
+
+:root {
+  --fg: var(--vscode-foreground);
+  --muted: var(--vscode-descriptionForeground);
+  --border: var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35)));
+  --hover: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.12));
+  --focus: var(--vscode-focusBorder);
+  --input-bg: var(--vscode-input-background);
+  --input-fg: var(--vscode-input-foreground);
+  --input-border: var(--vscode-input-border, transparent);
+  --mono: var(--vscode-editor-font-family, ui-monospace, Menlo, monospace);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 8px 12px 16px 20px;
+  color: var(--fg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 1px solid var(--focus); outline-offset: -1px; }
+
+.muted { color: var(--muted); }
+.hint { color: var(--muted); font-size: 12px; }
+.empty { color: var(--muted); padding: 8px 0; }
+.empty p { margin: 0 0 6px; }
+
+/* ---- Controls ---- */
+
+.input, .select, .textarea {
+  width: 100%;
+  min-height: 26px;
+  padding: 3px 6px;
+  color: var(--input-fg);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 2px;
+}
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--focus); }
+.input:disabled, .select:disabled { opacity: 0.6; }
+.input::placeholder, .textarea::placeholder { color: var(--vscode-input-placeholderForeground, var(--muted)); }
+.select { padding-right: 20px; }
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.button:hover { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); }
+.button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+.button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-secondaryBackground)); }
+.button:disabled { opacity: 0.5; cursor: default; }
+.shortcut { opacity: 0.75; font-size: 11px; }
+
+/* A link-styled button for secondary actions. */
+.link {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+.link:hover { text-decoration: underline; }
+
+/* A small square button with a glyph, shown on hover in lists. */
+.icon-button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 22px;
+  text-align: center;
+}
+.icon-button:hover { color: var(--fg); background: var(--hover); }
+
+.checkbox { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.checkbox input { margin: 0; accent-color: var(--focus); }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+/* ---- Properties ---- */
+
+.note-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.properties { display: flex; flex-direction: column; gap: 2px; }
+.property {
+  display: grid;
+  grid-template-columns: minmax(70px, 38%) 1fr 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  margin: 0 -4px;
+  border-radius: 4px;
+}
+.property:hover { background: var(--hover); }
+.property-key { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--muted); }
+.property-key span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-glyph {
+  flex: none;
+  width: 16px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
+.property .input { min-height: 24px; background: transparent; border-color: transparent; }
+.property .input:hover { border-color: var(--input-border); background: var(--input-bg); }
+.property .input:focus { background: var(--input-bg); border-color: var(--focus); }
+.property input[type="checkbox"] { justify-self: start; margin: 0 6px; accent-color: var(--focus); }
+.property .icon-button { opacity: 0; }
+.property:hover .icon-button, .property .icon-button:focus-visible { opacity: 1; }
+
+.add-property { margin-top: 10px; }
+.add-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.add-form .input { grid-column: 1 / -1; }
+.add-form .actions { display: flex; gap: 6px; justify-content: flex-end; grid-column: 1 / -1; }
+
+/* ---- SQL console ---- */
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 26px;
+  padding: 3px 8px;
+  margin-bottom: 8px;
+  text-align: left;
+  color: var(--input-fg);
+  background: var(--vscode-dropdown-background, var(--input-bg));
+  border: 1px solid var(--vscode-dropdown-border, var(--input-border));
+  border-radius: 2px;
+  cursor: pointer;
+}
+.picker:hover { border-color: var(--focus); }
+.picker .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker .name.placeholder { color: var(--muted); }
+.picker .kind { font-size: 11px; color: var(--muted); }
+.picker .chevron { color: var(--muted); font-size: 10px; }
+
+.textarea {
+  display: block;
+  min-height: 96px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: var(--vscode-editor-font-size, 12px);
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+.actions-bar { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.actions-bar .spacer { flex: 1; }
+.actions-bar .select { width: auto; max-width: 120px; min-height: 24px; font-size: 12px; }
+
+.status { display: flex; align-items: baseline; gap: 6px; min-height: 18px; margin: 4px 0 6px; font-size: 12px; color: var(--muted); }
+.status.error { color: var(--vscode-errorForeground); white-space: pre-wrap; }
+.status.running::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--focus);
+  border-right-color: transparent;
+  animation: spin 0.8s linear infinite;
+  align-self: center;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.results { overflow: auto; max-height: 60vh; border: 1px solid var(--border); border-radius: 4px; }
+.results:empty { display: none; }
+.results table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.results th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  border-bottom: 1px solid var(--border);
+}
+.results th, .results td { padding: 3px 8px; white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+.results tbody tr:nth-child(even) { background: color-mix(in srgb, var(--hover) 50%, transparent); }
+.results tbody tr:hover { background: var(--hover); }
+.results td:has(> time), .results td { font-variant-numeric: tabular-nums; }
+.results a { color: var(--vscode-textLink-foreground); }
+.results .db-more, .results .db-empty { padding: 6px 8px; color: var(--muted); font-size: 12px; }

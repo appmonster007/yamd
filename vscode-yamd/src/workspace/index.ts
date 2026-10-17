@@ -1,0 +1,201 @@
+/**
+ * The workspace note index: every `.yamd` note, kept fresh from file watchers and unsaved edits.
+ * Cross-note logic lives in `NoteStore` (src/core/notes.ts); this file only feeds it.
+ */
+import { existsSync } from 'node:fs';
+import * as path from 'node:path';
+import * as vscode from 'vscode';
+import { NoteStore } from '../core/notes';
+
+/** Notes larger than this are skipped. */
+const MAX_BYTES = 2 * 1024 * 1024;
+const BATCH = 50;
+const EDIT_DEBOUNCE_MS = 300;
+const CHANGE_DEBOUNCE_MS = 100;
+
+/** The index's path for a URI: the file system path with `/` separators. */
+export function notePath(uri: vscode.Uri): string {
+  return uri.fsPath.split(path.sep).join('/');
+}
+
+export function noteUri(p: string): vscode.Uri {
+  return vscode.Uri.file(p);
+}
+
+export class WorkspaceIndex implements vscode.Disposable {
+  store: NoteStore;
+  private readonly changed = new vscode.EventEmitter<void>();
+  /** Fires (debounced) whenever notes are added, changed or removed. */
+  readonly onDidChange = this.changed.event;
+  private readonly disposables: vscode.Disposable[] = [this.changed];
+  private readonly editTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private changeTimer: ReturnType<typeof setTimeout> | undefined;
+  private ready: Promise<void>;
+
+  constructor(private readonly log: vscode.OutputChannel) {
+    this.store = this.newStore();
+    const watcher = vscode.workspace.createFileSystemWatcher('**/*.yamd');
+    this.disposables.push(
+      watcher,
+      watcher.onDidCreate((uri) => void this.load(uri)),
+      watcher.onDidChange((uri) => {
+        // Open documents are tracked through their edits instead.
+        if (!this.openDocument(uri)) void this.load(uri);
+      }),
+      watcher.onDidDelete((uri) => this.remove(uri)),
+      vscode.workspace.onDidChangeTextDocument((e) => this.scheduleEdit(e.document)),
+      vscode.workspace.onDidOpenTextDocument((d) => this.scheduleEdit(d)),
+      vscode.workspace.onDidRenameFiles((e) => {
+        for (const f of e.files) {
+          this.removeTree(f.oldUri);
+          void this.load(f.newUri);
+        }
+      }),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => void this.rebuild()),
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration('yamd.index') || e.affectsConfiguration('yamd.templates') || e.affectsConfiguration('files.exclude')) {
+          void this.rebuild();
+        }
+      }),
+    );
+    this.ready = this.scan();
+  }
+
+  /** Resolves once the first scan has finished. */
+  whenReady(): Promise<void> {
+    return this.ready;
+  }
+
+  private newStore(): NoteStore {
+    const roots = (vscode.workspace.workspaceFolders ?? []).map((f) => notePath(f.uri));
+    return new NoteStore(roots.length ? roots : [''], (p) => existsSync(p));
+  }
+
+  rebuild(): Promise<void> {
+    this.store = this.newStore();
+    this.ready = this.scan();
+    return this.ready;
+  }
+
+  private excludeGlob(): string | undefined {
+    const patterns: string[] = [];
+    const files = vscode.workspace.getConfiguration('files').get<Record<string, boolean>>('exclude', {});
+    for (const [glob, on] of Object.entries(files)) if (on) patterns.push(glob);
+    patterns.push(...vscode.workspace.getConfiguration('yamd.index').get<string[]>('exclude', []));
+    const templates = vscode.workspace.getConfiguration('yamd.templates').get<string>('folder', 'templates');
+    if (templates) patterns.push(`**/${templates.replace(/^\/+|\/+$/g, '')}/**`);
+    patterns.push('**/node_modules/**');
+    return patterns.length ? `{${patterns.join(',')}}` : undefined;
+  }
+
+  private async scan(): Promise<void> {
+    if (!vscode.workspace.workspaceFolders?.length) return;
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Window, title: 'YAMD: Indexing notes' },
+      async (progress) => {
+        const uris = await vscode.workspace.findFiles('**/*.yamd', this.excludeGlob());
+        for (let i = 0; i < uris.length; i += BATCH) {
+          await Promise.all(uris.slice(i, i + BATCH).map((u) => this.load(u, false)));
+          progress.report({ message: `${Math.min(i + BATCH, uris.length)}/${uris.length}` });
+          // Let the extension host handle other work between batches.
+          await new Promise((resolve) => setImmediate(resolve));
+        }
+        this.log.appendLine(`Indexed ${this.store.size} notes.`);
+      },
+    );
+    this.fire();
+  }
+
+  private openDocument(uri: vscode.Uri): vscode.TextDocument | undefined {
+    return vscode.workspace.textDocuments.find((d) => d.uri.toString() === uri.toString());
+  }
+
+  private excluded(uri: vscode.Uri): boolean {
+    if (!vscode.workspace.getWorkspaceFolder(uri)) return true;
+    const rel = vscode.workspace.asRelativePath(uri, false);
+    const templates = vscode.workspace.getConfiguration('yamd.templates').get<string>('folder', 'templates');
+    if (templates && (rel === templates || rel.startsWith(`${templates.replace(/\/+$/, '')}/`) || rel.includes(`/${templates}/`))) return true;
+    const globs = vscode.workspace.getConfiguration('yamd.index').get<string[]>('exclude', []);
+    return globs.some((g) => globToRegExp(g).test(rel));
+  }
+
+  private async load(uri: vscode.Uri, notify = true): Promise<void> {
+    if (uri.scheme !== 'file' || !uri.path.endsWith('.yamd') || this.excluded(uri)) return;
+    const doc = this.openDocument(uri);
+    let text: string;
+    if (doc) {
+      text = doc.getText();
+    } else {
+      try {
+        const stat = await vscode.workspace.fs.stat(uri);
+        if (stat.size > MAX_BYTES) {
+          this.log.appendLine(`Skipped ${uri.fsPath}: larger than 2 MB.`);
+          return;
+        }
+        text = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+      } catch {
+        return;
+      }
+    }
+    if (text.length > MAX_BYTES) return;
+    this.store.set(notePath(uri), text);
+    if (notify) this.fire();
+  }
+
+  private scheduleEdit(doc: vscode.TextDocument) {
+    if (doc.languageId !== 'yamd' || doc.uri.scheme !== 'file' || this.excluded(doc.uri)) return;
+    const key = doc.uri.toString();
+    clearTimeout(this.editTimers.get(key));
+    this.editTimers.set(
+      key,
+      setTimeout(() => {
+        this.editTimers.delete(key);
+        if (doc.isClosed) return;
+        this.store.set(notePath(doc.uri), doc.getText());
+        this.fire();
+      }, EDIT_DEBOUNCE_MS),
+    );
+  }
+
+  private remove(uri: vscode.Uri) {
+    this.store.delete(notePath(uri));
+    this.fire();
+  }
+
+  /** Removes a note, or every note under a folder. */
+  private removeTree(uri: vscode.Uri) {
+    const p = notePath(uri);
+    for (const note of this.store.paths()) if (note === p || note.startsWith(`${p}/`)) this.store.delete(note);
+    this.fire();
+  }
+
+  private fire() {
+    clearTimeout(this.changeTimer);
+    this.changeTimer = setTimeout(() => this.changed.fire(), CHANGE_DEBOUNCE_MS);
+  }
+
+  dispose() {
+    clearTimeout(this.changeTimer);
+    for (const t of this.editTimers.values()) clearTimeout(t);
+    for (const d of this.disposables) d.dispose();
+  }
+}
+
+/** Converts a simple glob (`*`, `**`, `?`, `{a,b}`) to a regular expression on relative paths. */
+export function globToRegExp(glob: string): RegExp {
+  let re = '';
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i] as string;
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        re += glob[i + 2] === '/' ? '(?:.*/)?' : '.*';
+        i += glob[i + 2] === '/' ? 2 : 1;
+      } else re += '[^/]*';
+    } else if (c === '?') re += '[^/]';
+    else if (c === '{') re += '(?:';
+    else if (c === '}') re += ')';
+    else if (c === ',') re += '|';
+    else re += c.replace(/[.+^$()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`);
+}

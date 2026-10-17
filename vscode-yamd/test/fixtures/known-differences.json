@@ -1,0 +1,22 @@
+{
+  "commonmark": {
+    "64": "yamd-syntax",
+    "96": "yamd-syntax",
+    "98": "yamd-syntax",
+    "548": "yamd-syntax",
+    "559": "yamd-syntax",
+    "590": "yamd-syntax",
+    "596": "sanitized-html",
+    "598": "sanitized-html",
+    "599": "sanitized-html",
+    "601": "sanitized-html",
+    "602": "gfm-extension",
+    "606": "gfm-extension",
+    "608": "gfm-extension",
+    "611": "gfm-extension",
+    "612": "gfm-extension"
+  },
+  "gfm": {
+    "628": "sanitized-html"
+  }
+}

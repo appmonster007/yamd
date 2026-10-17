@@ -1,0 +1,105 @@
+---
+yamd: 0.1
+title: Diagnostics
+vars:
+  product: Nimbus
+---
+
+# {{ title }}
+
+%%
+This file is broken on purpose. Open it with the extension installed and check the Problems panel:
+each section below triggers one diagnostic code. The front matter has no `lang`, which is Y707.
+%%
+
+## Y101: tab in indentation
+
+- A list item
+	- indented with a tab
+
+## Y201: trailing backslash
+
+A backslash at the end of a line is redundant in YAMD \
+because a newline is already a line break.
+
+## Y210: hard-wrapped paragraph
+
+This paragraph was wrapped at 72 characters by an editor, the way many
+Markdown files are written. In YAMD every line break is kept, so it renders
+as four short lines instead of one paragraph. The quick fix joins the lines
+into one.
+
+## Y212: changed bullet marker
+
+- First list
+- still the first list
+* a new list starts here, because the marker changed
+
+## Y301: missing space after hashes
+
+##Installation
+
+## Y401: line after a quote
+
+> A quote line
+without a leading `>` on this line
+
+## Y601: unknown directive
+
+:::x-acme-chart {type=bar}
+Q1: 10, Q2: 20
+:::
+
+## Y701: broken links
+
+- Missing anchor: [see setup](#setup)
+- Missing file: [[does-not-exist]]
+- Missing image: ![A chart that was deleted](chart.png)
+- Undefined reference: [the docs][docs]
+- Undefined footnote: see note[^missing]
+- Missing cross-reference: see [@fig:nothing]
+
+## Y702: image without alt text
+
+![](../assets/team.svg)
+
+## Y703: table without a header row
+
+| Ada  | Engineer |
+| Alan | Research |
+
+## Y704: skipped heading level
+
+#### This heading skips H3
+
+## Y705: second H1
+
+# Another top-level heading
+
+## Y706: vague link text
+
+For details, [click here](https://example.com).
+
+## Y801: undefined variable
+
+Welcome to {{ produkt }}.
+
+## Y901: URL scheme not allowed
+
+[Run this](javascript:alert(1))
+
+## Y603 and Y604: kanban board problems
+
+:::kanban
+This line comes before the first column, so the board can't show it.
+
+## Doing {limit=1}
+
+- Card one
+- Card two is over the column's limit
+:::
+
+## Y501: unclosed code fence
+
+```js
+// This fence is never closed, so everything below it is code.

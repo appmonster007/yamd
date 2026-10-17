@@ -1,0 +1,51 @@
+---
+yamd: 0.1
+title: Sprint 12 Board
+lang: en-US
+---
+
+# {{ title }}
+
+Each heading is a column and each task item is a card. Indented lines are the card's body. Drag cards in the preview, or focus one and press :kbd[Alt+Arrow] keys to move it. Double-click a card's title to rename it, and use the box at the bottom of a column to add a card. In tools that don't know `kanban`, the board shows as ordinary headings and task lists.
+
+:::kanban {title="Sprint 12"}
+## Backlog
+
+- [ ] Dark mode for the preview #design
+- [ ] Export a board as CSV #feature
+- [ ] Keyboard shortcut cheat sheet #docs
+
+## Todo {limit=4}
+
+- [ ] Fix login on Safari #bug {due=2026-10-10 owner=ada}
+  Users get logged out after the redirect.
+  Reproduce with Safari 18 and private browsing.
+- [ ] Write the release notes #docs {due=2026-10-23 owner=grace}
+- [ ] Add rate limiting to the API #backend {due=2026-10-30 owner=alan}
+
+## Doing {limit=2}
+
+- [ ] Sign-up flow #frontend {due=2026-10-20 owner=ada}
+  - [x] Email field
+  - [x] Password rules
+  - [ ] Confirmation page
+- [ ] Load test the API #backend {owner=alan}
+- [ ] Pricing page design #design {due=2026-10-18 owner=grace}
+
+## Review
+
+- [ ] Tag explorer view #frontend {owner=ada}
+  PR: https://example.com/pull/128
+
+## Done {complete}
+
+- [x] Launch plan #docs {owner=ada}
+- [x] Set up CI #backend {owner=alan}
+:::
+
+## What to notice
+
+- **Doing** has three cards but a limit of 2, so its header shows `3/2` as a warning.
+- **Fix login on Safari** is past its due date and not done, so its badge is red.
+- Dragging a card into **Done** ticks it, because the column has `{complete}`. Dragging it out unticks it.
+- Every move rewrites this file's text as one undoable edit.

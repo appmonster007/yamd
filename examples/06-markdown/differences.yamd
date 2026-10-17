@@ -1,0 +1,52 @@
+---
+yamd: 0.1
+title: Moving from Markdown
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD is built on GitHub Flavored Markdown, so most Markdown works unchanged; see the [GitHub-style README](github-readme.yamd). This page shows every case where the same text renders differently, and how to get the Markdown result.
+
+## The fast way
+
+Run **YAMD: Convert from Markdown** on a file, or right-click a `.md` file and choose **Open Markdown as YAMD**. Both make every fix below for you.
+
+## Line breaks
+
+In Markdown, a single newline is a space. In YAMD, it's a line break:
+
+Roses are red
+Violets are blue
+
+To get one paragraph, put it on one line. Paragraphs that look hard-wrapped get an info note (Y210) with a quick fix that joins them.
+
+## YAMD-only syntax
+
+Each of these is plain text on GitHub but means something in YAMD. A backslash keeps the Markdown result.
+
+| You write   | YAMD shows | Escaped        | Shows                     |
+| ----------- | ---------- | -------------- | ------------------------- |
+| `#ideas`    | #ideas     | `\#ideas`      | \#ideas                   |
+| `==key==`   | ==key==    | `\==key==`     | \==key==                  |
+| `++new++`   | ++new++    | `\++new++`     | \++new++                  |
+| `x^2`       | x^2        | `x\^2`         | x\^2                      |
+| `H_{2}O`    | H_{2}O     | `H\_{2}O`      | H\_{2}O                   |
+| `[[differences]]` | [[differences]] | `\[[differences]]` | \[[differences]]   |
+| `%% hi %%`  | %% hi %%   | `\%% hi %%`    | \%% hi %%                 |
+
+## Front matter
+
+A `---` on the first line starts front matter in YAMD. To begin a file with a thematic break, put a blank line before it.
+
+## Changing bullet markers
+
+As in Markdown, changing the marker starts a new list:
+
+- one list
+
+* another list
+
+## Raw HTML
+
+HTML is sanitized with GitHub's rules, so <kbd>kbd</kbd>, <sub>sub</sub> and `<details>` work, and scripts are removed.

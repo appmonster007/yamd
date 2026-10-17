@@ -1,0 +1,69 @@
+<p align="center">
+  <img src="../assets/architecture.svg" alt="Nimbus architecture" width="320">
+</p>
+
+# Nimbus
+
+A tiny key-value store for edge devices. This file is a typical GitHub README, copied into a `.yamd` file without changes. It renders the same as it does on GitHub.
+
+## Features
+
+- Embedded, with no server to run
+- Sync over HTTP when a network is available
+- Written in Rust; bindings for Python and Node.js
+
+## Install
+
+```bash
+cargo add nimbus
+```
+
+Or with Python:
+
+```python
+pip install nimbus-kv
+```
+
+## Usage
+
+```rust
+let db = nimbus::open("data.nb")?;
+db.put("greeting", "hello")?;
+```
+
+Set `NIMBUS_LOG=debug` to see what the store is doing. Keys like `user_id` and `__meta__` are fine.
+
+## Configuration
+
+| Option      | Default   | Description                  |
+| ----------- | :-------: | ---------------------------- |
+| `path`      | `data.nb` | Where the store is written   |
+| `sync_url`  | none      | Server to sync with          |
+| `max_size`  | `64 MB`   | Size limit before compaction |
+
+<details>
+<summary>Advanced options</summary>
+
+Compaction runs in the background. Set `compact_every` to change how often.
+
+</details>
+
+## Roadmap
+
+- [x] Basic put and get
+- [x] HTTP sync
+- [ ] Encryption at rest
+
+## Contributing
+
+1. Fork the repository
+2. Create a branch: `git checkout -b my-change`
+3. Open a pull request
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop the dev server. Read more at https://example.com/docs or see the [changelog](../02-documents/changelog.yamd).
+
+> **Note:** Nimbus is beta software. Back up your data.
+
+Released under the MIT license[^license].
+
+[^license]: See the LICENSE file in the repository.
