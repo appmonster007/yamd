@@ -1,3 +1,4 @@
+import { extractCards } from './study/cards';
 import { lookupVariable } from './frontmatter';
 import { buildBoard } from './kanban';
 import { NOTE_EXT, resolveNote, splitTarget, summarize } from './notes';
@@ -28,7 +29,7 @@ const VAGUE_LINK_TEXT = new Set(['click here', 'here', 'link', 'this link', 'rea
 const BLOCK_START = /^\s*(?:[-*+](?:\s|$)|\d{1,9}[.)](?:\s|$)|#|`{3}|~{3}|::|\{|\||\[\^|\$\$|%%)/;
 
 export function lint(doc: YamdDocument, options: LintOptions = {}): Diagnostic[] {
-  return new Linter(doc, options).run();
+  return [...new Linter(doc, options).run(), ...extractCards(doc, '').diagnostics];
 }
 
 function walkInline(nodes: InlineNode[], visit: (n: InlineNode) => void): void {

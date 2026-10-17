@@ -39,3 +39,13 @@ Support is available {++around the clock++} in English and Spanish.
 {>>Should we mention German support? — Alan<<}
 
 Formatting works inside suggestions: {++**bold** additions++} and {--*italic* removals--}.
+
+## Accepting and rejecting changes
+
+Run these commands from the command palette while a `.yamd` file is open:
+
+**YAMD: Accept All Review Changes** — applies every insertion, keeps the "new" side of replacements, and removes all deletions and comments. The result is clean text with no markup.
+
+**YAMD: Reject All Review Changes** — reverts to the original: removes insertions, restores deletions, keeps the "old" side of replacements, and removes comments.
+
+Both commands make a single undoable edit — press :kbd[Cmd+Z] / :kbd[Ctrl+Z] to undo.

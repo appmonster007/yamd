@@ -125,6 +125,22 @@ root.addEventListener('click', (event) => {
   });
 });
 
+// ---- Quiz mode: hidden answers (`:cloze[…]`) are shown when clicked ----
+
+function toggleCloze(target: EventTarget | null): boolean {
+  const cloze = (target as Element | null)?.closest<HTMLElement>('.cloze-hidden');
+  if (!cloze) return false;
+  cloze.classList.toggle('revealed');
+  return true;
+}
+
+root.addEventListener('click', (event) => {
+  if (toggleCloze(event.target)) event.preventDefault();
+});
+root.addEventListener('keydown', (event) => {
+  if ((event.key === 'Enter' || event.key === ' ') && toggleCloze(event.target)) event.preventDefault();
+});
+
 // ---- Task checkboxes ----
 
 root.addEventListener('change', (event) => {

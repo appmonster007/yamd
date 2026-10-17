@@ -1,0 +1,111 @@
+---
+yamd: 0.1
+title: Focus timer and study log
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+The study timer keeps you focused and automatically logs every session. Sessions accumulate into a study heatmap in the dashboard, so you can see your consistency at a glance.
+
+::toc{depth=2}
+
+---
+
+## Starting a session
+
+Run **YAMD: Start Study Timer** from the command palette.
+
+- A dropdown asks which course (if any notes have a `course:` front matter key).
+  Pick one, or choose *(no course)* for an uncategorised session.
+- The timer appears in the status bar at the bottom of the window, counting down
+  from the configured session length (default 25 minutes).
+- Click the status bar item to open the timer menu.
+
+---
+
+## The timer menu
+
+Clicking the status bar item while a session is running shows:
+
+| Option | What it does |
+| ------ | ------------ |
+| **Pause** | Freezes the countdown; time already elapsed is saved |
+| **Resume** | Continues from where it was paused |
+| **Finish and log** | Stops and logs the time you spent (minimum 1 minute) |
+| **Cancel (no log)** | Stops without logging anything |
+
+When no session is running, the menu offers to start one with the default
+length, start for a specific course, or change the session duration.
+
+---
+
+## What gets logged
+
+When a session finishes (or you choose **Finish and log**), YAMD:
+
+1. Appends a record to `.yamd/study-log.json` at the workspace root.
+2. If `yamd.study.logToDailyNote` is `true` (the default), appends a line to
+   today's daily note under a **Study log** heading:
+
+```text
+- 14:05 · 25 min · CS201
+```
+
+The daily note is created if it doesn't exist yet, and the heading is added if
+it isn't there.
+
+---
+
+## Daily note front matter
+
+Every daily note created by YAMD (whether by the timer or by the **Open Today's
+Daily Note** command) includes front matter:
+
+```yamd
+---
+title: 2026-10-17
+date: 2026-10-17
+lang: en
+---
+
+# 2026-10-17
+
+## Study log
+
+- 09:00 · 25 min · CS201
+- 14:05 · 50 min · MATH301
+```
+
+If you have a custom template set via `yamd.dailyNotes.template`, the template's
+own front matter is used instead.
+
+---
+
+## Viewing the heatmap
+
+Open the dashboard (**YAMD: Open Study Dashboard**). The heatmap shows the last
+26 weeks, Monday to Sunday. Cell colour intensity reflects minutes studied:
+
+| Shade | Minutes |
+| ----- | ------- |
+| Empty | 0 |
+| Light | 1 – 29 |
+| Medium | 30 – 59 |
+| Dark | 60 – 119 |
+| Darkest | 120+ |
+
+The streak counter shows how many consecutive days you've had at least one
+session.
+
+---
+
+## Settings
+
+| Setting | Default | What it controls |
+| ------- | ------- | ---------------- |
+| `yamd.study.pomodoroMinutes` | `25` | Default session length |
+| `yamd.study.logToDailyNote` | `true` | Append a line to today's daily note |
+
+Change these in **Settings** → search *yamd study*.

@@ -1,0 +1,91 @@
+---
+yamd: 0.1
+title: Peer review and tracked changes
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD has built-in syntax for tracked changes, based on CriticMarkup. Every suggestion lives in the plain text of the note — reviewers can add them in any editor, and you can accept or reject them all in one command.
+
+::toc{depth=2}
+
+---
+
+## Review markup syntax
+
+| Markup | Meaning | Renders as |
+| ------ | ------- | ---------- |
+| `{++added text++}` | Insert | Green, underlined |
+| `{--removed text--}` | Delete | Red, struck through |
+| `{~~old~>new~~}` | Replace | Red old + green new |
+| `{==highlighted==}{>>comment<<}` | Comment on text | Yellow highlight + margin note |
+| `{>>standalone comment<<}` | Freestanding note | Margin note |
+
+---
+
+## A document under review
+
+Here is a paragraph with all five kinds of markup applied:
+
+The {++student++} {--user--} opens the {~~dashboard~>study dashboard~~} and sees
+their {++upcoming++} deadlines.
+{==The heatmap shows 26 weeks.==}{>>Is 26 the right default? — Reviewer<<}
+Sessions are logged {++automatically++} to the daily note.
+{>>Should we mention the `logToDailyNote` setting here? — Grace<<}
+
+---
+
+## Inline comments
+
+Use `%% … %%` for hidden comments that are **never** shown in the output, not even in the HTML source. Good for TODO notes, personal reminders, or draft text you're not ready to delete.
+
+```yamd
+The mitochondrion %% add a citation here later %% is the powerhouse of the cell.
+
+%%
+TODO: expand this section before the final submission.
+%%
+```
+
+---
+
+## Accepting or rejecting all changes
+
+Run these commands from the command palette while a `.yamd` file is open:
+
+**YAMD: Accept All Review Changes**
+- Applies every insertion, keeps the "new" side of replacements, removes
+  deletion markup and all comments.
+- The result is clean text with no markup.
+
+**YAMD: Reject All Review Changes**
+- Reverts to the original: removes insertions, restores deletions, keeps the
+  "old" side of replacements, removes comments.
+- The result is clean text with no markup.
+
+Both commands make a single undoable edit (:kbd[Cmd+Z] to undo).
+
+---
+
+## Workflow for submitting work
+
+A common workflow for a student submitting to a tutor or peer reviewer:
+
+1. Write the draft in YAMD.
+2. Share the `.yamd` file (Git, email, or a shared folder).
+3. The reviewer adds `{++ ++}`, `{-- --}` and `{>> <<}` suggestions.
+4. You open the file, read the comments in the preview, and use **Accept All** or **Reject All** — or accept selectively by editing the markup directly.
+
+---
+
+## Tips
+
+- Review markup works anywhere in a note — paragraphs, headings, list items,
+  table cells.
+- Formatting works inside markup: `{++**bold** addition++}`.
+- Comments are a great place for "sources:" notes while drafting, replaced with
+  real citations before submission.
+- The VS Code diff view (`git diff`) shows markup changes as source diffs;
+  use `Accept All` to produce a clean version for the final commit.

@@ -61,6 +61,10 @@ async function openDaily(date: Date): Promise<void> {
       if (await exists(t)) text = expandPlaceholders(await readText(t), { now: date, title: name }).text;
       else void vscode.window.showWarningMessage(`YAMD: The daily note template "${template}" was not found.`);
     }
+    if (!text.trimStart().startsWith('---')) {
+      const lang = vscode.workspace.getConfiguration('yamd.newNote').get<string>('lang', 'en');
+      text = `---\ntitle: ${name}\ndate: ${formatDate(date, 'YYYY-MM-DD')}\nlang: ${lang}\n---\n\n# ${name}\n\n${text}`;
+    }
     await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(base, folder));
     await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(text));
   }
@@ -139,4 +143,37 @@ export function registerDailyNotes(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('yamd.nextDailyNote', () => stepDaily(1)),
     vscode.commands.registerCommand('yamd.insertTemplate', insertTemplate),
   );
+}
+
+/** Adds `line` under `heading` in the daily note for `date`, creating the note and heading if needed. */
+export async function appendToDailyNote(date: Date, heading: string, line: string): Promise<vscode.Uri | undefined> {
+  const base = root();
+  if (!base) return undefined;
+  const { folder, format, template } = settings();
+  const name = formatDate(date, format);
+  const uri = vscode.Uri.joinPath(base, folder, `${name}.yamd`);
+  let text = '';
+  if (await exists(uri)) text = await readText(uri);
+  else {
+    const t = template ? vscode.Uri.joinPath(base, template) : undefined;
+    if (t && (await exists(t))) text = expandPlaceholders(await readText(t), { now: date, title: name }).text;
+    if (!text.trimStart().startsWith('---')) {
+      const lang = vscode.workspace.getConfiguration('yamd.newNote').get<string>('lang', 'en');
+      text = `---\ntitle: ${name}\ndate: ${formatDate(date, 'YYYY-MM-DD')}\nlang: ${lang}\n---\n\n# ${name}\n\n${text}`;
+    }
+    await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(base, folder));
+  }
+  const lines = text.split('\n');
+  const at = lines.findIndex((l) => l.trim() === `## ${heading}`);
+  if (at === -1) {
+    text = `${text.replace(/\s*$/, '')}${text.trim() ? '\n\n' : ''}## ${heading}\n\n${line}\n`;
+  } else {
+    // After the last line of the section's list.
+    let end = at + 1;
+    for (let i = at + 1; i < lines.length && !/^#{1,6}\s/.test(lines[i] ?? ''); i++) if ((lines[i] ?? '').trim()) end = i + 1;
+    lines.splice(end, 0, ...(end === at + 1 ? ['', line] : [line]));
+    text = lines.join('\n');
+  }
+  await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(text));
+  return uri;
 }

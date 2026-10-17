@@ -186,6 +186,24 @@ The free plan includes {--5 GB--}{++10 GB++} of storage.
 Uploads are limited to {~~100 MB~>250 MB~~} per file.
 {==Sync runs every minute.==}{>>Is this still true after 2.4? — Alan<<}
 
+## Study features
+
+YAMD has a built-in set of tools for students and academic writers. Run **YAMD: Open Study Dashboard** to see your upcoming deadlines and study heatmap.
+
+| Feature | How to use it |
+| ------- | ------------- |
+| Study-aid blocks | `:::definition`, `:::theorem`, `:::proof`, etc. |
+| Flashcards | `:::card`, `::card[Q]{a="A"}`, `:cloze[answer]` |
+| Quiz mode | **YAMD: Toggle Quiz Mode** — hides cloze answers |
+| Review sessions | **YAMD: Review Flashcards** — SM-2 spaced repetition |
+| Deadlines | `due: YYYY-MM-DD` in front matter, or `{due=…}` on tasks |
+| Focus timer | **YAMD: Start Study Timer** |
+| Citations | `bibliography: refs.bib` + `[@key]` |
+| Export | **YAMD: Export as HTML / PDF / Word / Slides** |
+| Import | **YAMD: Import Notes from Folder…** (Obsidian, Notion, HTML) |
+
+See [examples/07-study/](07-study/README.yamd) for the complete guide.
+
 ## Escaping
 
 Use a backslash for any literal symbol: \*not italic\*, \# not a heading, \{{ not a variable }}, \:::not a directive.

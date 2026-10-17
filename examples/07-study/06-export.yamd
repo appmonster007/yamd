@@ -1,0 +1,130 @@
+---
+yamd: 0.1
+title: Exporting notes
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+Export any `.yamd` file to HTML, PDF, Word or a slide deck — all from the command palette, with no sign-in or server required.
+
+::toc{depth=2}
+
+---
+
+## Export as HTML
+
+**Command:** YAMD: Export as HTML
+
+Produces a self-contained `.html` file next to the note. It includes:
+
+- A **title page** with the title, author, course and date from the front matter (shown when `title:` is set)
+- A **linked table of contents** (shown when there are two or more headings)
+- Syntax-highlighted code blocks
+- KaTeX-rendered math, inlined into the HTML so it works offline
+- A print stylesheet for clean printing
+
+The HTML file is self-contained — fonts, styles and math are all embedded.
+Share it as a single file or open it in any browser.
+
+---
+
+## Export as PDF
+
+**Command:** YAMD: Export as PDF
+
+Runs **Export as HTML** first, then opens the result in your system browser.
+Use the browser's **File → Print → Save as PDF** (or :kbd[Cmd+P] on Mac,
+:kbd[Ctrl+P] on Windows/Linux) to save the PDF.
+
+The print stylesheet hides the export banner and adds page breaks after the
+title page and at appropriate points in the content.
+
+:::tip {title="Tip: page numbers"}
+Chrome and Edge include page numbers in the header/footer by default.
+Uncheck them in the print dialog if you don't want them.
+:::
+
+---
+
+## Export as Word (.docx)
+
+**Command:** YAMD: Export as Word (.docx)
+
+Produces a `.docx` file next to the note. Supported content:
+
+| YAMD | Word equivalent |
+| ---- | --------------- |
+| Headings 1–6 | Heading 1–6 styles |
+| Paragraphs | Normal style |
+| **Bold**, *italic*, `code` | Character formatting |
+| [Links](https://example.com) | Hyperlinks |
+| Tables | Word tables |
+| Task lists | Checkbox items (tick character) |
+| Block quotes | Indented paragraph |
+| Horizontal rules | Page break |
+
+Math, images and complex directives are replaced with placeholder text in the
+current version.
+
+---
+
+## Export as Slides (HTML)
+
+**Command:** YAMD: Export as Slides (HTML)
+
+Turns the note into a keyboard-navigable HTML presentation. Each **level-1 heading** starts a new slide. Alternatively, put a `---` thematic break between slides if you want multiple slides without top-level headings.
+
+Navigate with :kbd[←] / :kbd[→] or :kbd[PageUp] / :kbd[PageDown]. A slide
+counter at the bottom shows your position.
+
+The slide view respects the print stylesheet: :kbd[Cmd+P] / :kbd[Ctrl+P] prints
+one slide per page.
+
+### Structuring a slide deck
+
+```yamd
+---
+title: CS201 — Binary Search Trees
+author: Ada Lovelace
+date: 2026-10-17
+course: CS201
+---
+
+# CS201 — Binary Search Trees
+
+A 25-minute lecture.
+
+# What is a BST?
+
+A binary tree where every left child is smaller
+and every right child is larger.
+
+:::definition {title="Binary search tree" #def:bst}
+…
+:::
+
+# Operations
+
+- **Search** — $O(h)$
+- **Insert** — $O(h)$
+- **Delete** — $O(h)$
+
+# Questions?
+```
+
+---
+
+## Where the files are saved
+
+All export commands save the output file **in the same folder as the note**,
+using the note's file name with a different extension:
+
+| Command | Output file |
+| ------- | ----------- |
+| Export as HTML | `notename.html` |
+| Export as Slides | `notename-slides.html` |
+| Export as Word | `notename.docx` |
+
+A notification appears when the file is saved, with the file name.

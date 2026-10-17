@@ -1,0 +1,42 @@
+---
+yamd: 0.1
+title: Study features
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD has a complete set of tools for students: structured study blocks, flashcards with spaced repetition, deadline tracking, a focus timer, citations, export and import. Open any file in this folder and run **YAMD: Open Preview to the Side** (:kbd[Cmd+K V]) to see it rendered.
+
+::toc{depth=2}
+
+## Files in this folder
+
+| File | Shows |
+| ---- | ----- |
+| [01-study-blocks.yamd](01-study-blocks.yamd) | Definitions, theorems, proofs and cheat-sheet generation |
+| [02-flashcards.yamd](02-flashcards.yamd) | Container cards, leaf cards, cloze deletions, quiz mode |
+| [03-deadlines.yamd](03-deadlines.yamd) | Courses, due dates, deadlines and the dashboard |
+| [04-timer.yamd](04-timer.yamd) | Focus timer, session log and the study heatmap |
+| [05-citations.yamd](05-citations.yamd) | BibTeX, citation keys, locators, five styles, `[@fig:x]` cross-refs |
+| [06-export.yamd](06-export.yamd) | HTML, PDF, Word (.docx) and Slides export |
+| [07-peer-review.yamd](07-peer-review.yamd) | Review markup and accept/reject all changes |
+| [08-templates.yamd](08-templates.yamd) | New Study Note command and the four built-in templates |
+| [09-import.yamd](09-import.yamd) | Importing from Obsidian, Notion, HTML, and CSV |
+| [10-symbols.yamd](10-symbols.yamd) | Math symbol picker and common LaTeX symbols |
+| [lecture-full.yamd](lecture-full.yamd) | A complete lecture note using every feature at once |
+
+## Quick-start commands
+
+| What you want | Command |
+| ------------- | ------- |
+| Review due flashcards | **YAMD: Review Flashcards** |
+| See today's agenda and heatmap | **YAMD: Open Study Dashboard** |
+| Start a 25-min focus session | **YAMD: Start Study Timer** |
+| Generate a cheat sheet | **YAMD: Generate Cheat Sheet** |
+| Export the current note | **YAMD: Export as HTML / PDF / Word / Slides** |
+| Add a citation from DOI or ISBN | **YAMD: Add Citation** |
+| Insert a math symbol | **YAMD: Insert Math Symbol** |
+| Create a note from a template | **YAMD: New Study Note…** |
+| Import an Obsidian / Notion folder | **YAMD: Import Notes from Folder…** |
+| Toggle quiz mode (hide cloze answers) | **YAMD: Toggle Quiz Mode** |

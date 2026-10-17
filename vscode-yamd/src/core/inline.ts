@@ -1,6 +1,6 @@
 import type { InlineNode } from './types';
 
-export const KNOWN_INLINE_DIRECTIVES = new Set(['kbd', 'abbr', 'query']);
+export const KNOWN_INLINE_DIRECTIVES = new Set(['kbd', 'abbr', 'query', 'cloze']);
 
 /**
  * Concatenated visible text of inline nodes, used for alt text, slugs and link checks.

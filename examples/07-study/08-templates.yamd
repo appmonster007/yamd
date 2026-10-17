@@ -1,0 +1,110 @@
+---
+yamd: 0.1
+title: Study note templates
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+Instead of writing a note from scratch, pick a template designed for a specific
+kind of coursework. Run **YAMD: New Study Note…** from the command palette.
+
+::toc{depth=2}
+
+---
+
+## The four built-in templates
+
+### Lecture notes
+
+For recording a lecture as you go. Includes:
+- A front matter block with `tags: [lecture]` and `reviewed:` set to today
+- Sections for **Objectives**, **Notes**, **Key terms**, **Questions**,
+  **Review cards** and **Summary**
+- A sample `:::definition`, `:::question` and `::card`
+- A to-do item with a `{due=…}` attribute
+
+Best for: real-time note-taking in class, or cleaning up after a lecture.
+
+### Lab report
+
+For scientific writing. Includes:
+- Front matter with `author:`, `bibliography:` and `due:` fields
+- Sections for **Aim**, **Background**, **Method** (materials + procedure), **Results** (with a `:::table` and a `[@tbl:results]` cross-reference), **Discussion**, **Conclusion** and **References**
+- A `::bibliography` leaf at the end
+
+Best for: chemistry, biology, physics and engineering write-ups.
+
+### Exam prep
+
+For revision. Includes:
+- A topic checklist with `{due=…}` deadlines
+- `:::definition`, `:::theorem` and `:::question` blocks
+- A flashcard section
+- A study-plan Markdown table
+- A "Mistakes to avoid" section
+
+Best for: structuring revision before an exam.
+
+### Reading note
+
+For annotating a paper, book or article. Includes:
+- A `[@key]` citation placeholder in the front matter style
+- Sections for **Summary**, **Key points**, **Quotes** and **My response**
+- A `[@key, p. N]` quote attribution example
+
+Best for: academic reading, literature reviews, book notes.
+
+---
+
+## Using the command
+
+1. Open the command palette (:kbd[Cmd+Shift+P]).
+2. Run **YAMD: New Study Note…**.
+3. Pick a template from the list.
+4. Enter a title (e.g. `Sorting algorithms`).
+5. Enter a course name (e.g. `CS201`) — or leave it blank.
+6. The new note is created in the same folder as the active editor (or the
+   workspace root) and opened immediately.
+7. The cursor lands at the `{{@cursor}}` position in the template.
+
+---
+
+## Template placeholders
+
+Every template uses these placeholders, substituted automatically:
+
+| Placeholder | Replaced with |
+| ----------- | ------------- |
+| `{{@title}}` | The title you entered |
+| `{{@course}}` | The course you entered |
+| `{{@date}}` | Today's date in `YYYY-MM-DD` format |
+| `{{@cursor}}` | Where the cursor lands after creation |
+
+---
+
+## Custom templates
+
+You can also create your own templates and put them in the folder named by `yamd.templates.folder` (default: `templates`). Any `.yamd` file in that folder appears in the **YAMD: Insert Template** command's picker.
+
+Use `{{@date}}`, `{{@title}}`, `{{@cursor}}` and any other front matter
+variables in your custom templates.
+
+---
+
+## The reading list
+
+Run **YAMD: New Reading List** to create a `reading-list.ydb` database at the
+workspace root. It has columns for:
+
+| Column | Type |
+| ------ | ---- |
+| Title | Text |
+| Author | Text |
+| Course | Text |
+| Status | Status: *To read* / *Reading* / *Done* |
+| Pages | Number |
+| Due | Date |
+
+Open the database in the preview and it shows as a kanban board grouped by Status. Add rows by editing the `.ydb` file directly or through the database panel.

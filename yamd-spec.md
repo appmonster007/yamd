@@ -434,6 +434,178 @@ databases:
 
 ---
 
+### 6.3 Study-aid blocks
+
+A set of container directives for academic writing. They are numbered per kind within a note, can carry an optional `{title="…"}` and an `{#id}` for cross-referencing (§6.3.1), and are gathered by the VS Code extension for cheat-sheet generation.
+
+| Container       | Renders as  | Numbered |
+| --------------- | ----------- | -------- |
+| `:::definition` | Definition  | yes      |
+| `:::theorem`    | Theorem     | yes      |
+| `:::lemma`      | Lemma       | yes      |
+| `:::proof`      | Proof       | no       |
+| `:::example`    | Example     | yes      |
+| `:::question`   | Question    | yes      |
+| `:::remark`     | Remark      | no       |
+| `:::summary`    | Summary     | no       |
+| `:::derivation` | Derivation  | no       |
+
+```yamd
+:::theorem {title="Pythagorean theorem" #thm:pythagoras}
+For a right triangle with legs $a$, $b$ and hypotenuse $c$: $a^2 + b^2 = c^2$.
+:::
+
+:::proof
+Drop a perpendicular from the right angle…
+:::
+```
+
+#### 6.3.1 Cross-references
+
+`[@id]` or `[@prefix:key]` creates a numbered cross-reference to any block or figure with that ID. Recognised prefixes are `fig`, `tbl`, `eq`, `sec`, `def`, `thm`, `lem`, `ex`, `q`, `rem`. Keys not matching a known prefix are treated as citation keys (§6.5.2).
+
+---
+
+### 6.4 Flashcards and spaced repetition
+
+YAMD has three ways to mark content as a flashcard. The VS Code extension collects them and schedules reviews using the SM-2 algorithm; the schedule is stored in `.yamd/srs.json`.
+
+**Container card** — a block with a `---` separator between the question and the answer:
+
+```yamd
+:::card
+What is the time complexity of binary search?
+---
+$O(\log n)$ — each comparison halves the search space.
+:::
+```
+
+**Leaf card** — a one-line Q&A, useful for vocabulary or definitions:
+
+```yamd
+::card[What does "idempotent" mean?]{a="Applying the operation more than once has the same effect as once."}
+```
+
+**Cloze deletion** — hide a word or phrase inline. Each `:cloze[…]` in a paragraph becomes one card; cards in the same paragraph share a `{n=…}` group so they are shown independently:
+
+```yamd
+The :cloze[mitochondrion] is the :cloze[powerhouse] of the cell.
+
+The derivative of $\sin x$ is :cloze[$\cos x$]{n=1}.
+```
+
+- A card with no answer produces diagnostic `Y605`.
+- Each card has a stable ID: the explicit `{#id}`, or a hash of its text. Renaming a card (changing the text) produces a new ID and a new scheduling entry.
+- **Quiz mode** hides cloze answers in the preview so a note doubles as a self-test. The VS Code command `YAMD: Toggle Quiz Mode` switches it on and off.
+- **Review** (`YAMD: Review Flashcards`) shows due cards one at a time. Each is graded *Again*, *Hard*, *Good* or *Easy*; the SM-2 algorithm schedules the next date. `yamd.study.newCardsPerDay` limits how many unseen cards appear per session.
+- `YAMD: Prune Orphaned Card Data` removes scheduling data for cards that no longer exist in any note.
+
+---
+
+### 6.5 Courses, deadlines and progress
+
+Notes name a course with `course: CS101` in their front matter. Tasks and kanban cards name due dates with `{due=YYYY-MM-DD}`. The VS Code dashboard (`YAMD: Open Study Dashboard`) shows an agenda, per-course progress bars, stale topics, a study-log heatmap and the review queue.
+
+#### 6.5.1 Agenda and deadlines
+
+A note's own `due:` front matter key marks the whole note as a submission. Task items anywhere in a note can carry `{due=…}` to mark individual deliverables. The dashboard groups them into *overdue*, *today*, *this week*, *later* and *done*.
+
+#### 6.5.2 Progress
+
+Checked tasks count towards completion. A note not opened or not marked `reviewed: YYYY-MM-DD` in front matter for `yamd.study.staleAfterDays` days (default 14) is flagged as stale.
+
+---
+
+### 6.6 Study timer
+
+`YAMD: Start Study Timer` starts a focus session (default 25 minutes, configurable via `yamd.study.pomodoroMinutes`). A status-bar item counts down; clicking it shows a menu to pause, resume, finish or cancel. When the session ends at least one minute of focused time is logged. Optionally (`yamd.study.logToDailyNote: true`, default on) a line is appended to today's daily note under a **Study log** heading.
+
+---
+
+### 6.7 Citations
+
+YAMD uses BibTeX. The `bibliography:` front matter key names a `.bib` file relative to the note or the workspace root. Citations use the key from that file:
+
+```yamd
+---
+bibliography: refs.bib
+citation-style: apa   # apa (default) | mla | chicago | ieee | vancouver
+---
+
+[@turing1950] argues that a machine passes the test when…
+
+Inline note: [@dijkstra1968, p. 12].
+```
+
+- Supported locators: `p.`, `pp.`, `ch.`, `sec.`, `fig.`, `eq.`, `no.`, `vol.`, `ed.`, `trans.`; add before the comma after the key.
+- `::bibliography` (or a leaf with no label `::bibliography`) places the reference list; otherwise it appears at the end of the document.
+- `YAMD: Add Citation` looks up a DOI, arXiv ID or ISBN and appends the BibTeX entry to the note's `.bib` file. Lookup requires network access; the command falls back to a paste-box when offline.
+
+---
+
+### 6.8 Peer review summary
+
+The review-markup operators (§7) are plain text; the VS Code extension adds two commands:
+
+- `YAMD: Accept All Review Changes` — applies all insertions and deletions, removes markup.
+- `YAMD: Reject All Review Changes` — reverts to the original text, removes markup.
+
+The review panel (`YAMD: Review Flashcards` shares the panel) also shows a diff of pending changes for a quick pass.
+
+---
+
+### 6.9 Export
+
+**HTML** (`YAMD: Export as HTML`) — a self-contained HTML file with a title page (when `title:` is set), a linked table of contents, and a print stylesheet. KaTeX math and syntax-highlighted code are inlined.
+
+**PDF** (`YAMD: Export as PDF`) — the same HTML is opened in the system browser. Use File → Print → Save as PDF for the final file.
+
+**Word (.docx)** (`YAMD: Export as Word (.docx)`) — a minimal OOXML package with headings, paragraphs, bold/italic/code/links, tables and task lists.
+
+**Slides** (`YAMD: Export as Slides (HTML)`) — each level-1 heading (or a `---` thematic break) starts a new slide. The output is a single HTML file with a keyboard-navigable presentation.
+
+---
+
+### 6.10 Note templates
+
+`YAMD: New Study Note…` shows a template picker with four built-in templates: **Lecture notes**, **Lab report**, **Exam prep** and **Reading note**. Each template has placeholders `{{@date}}`, `{{@title}}`, `{{@course}}` and `{{@cursor}}` (where the cursor should land).
+
+---
+
+### 6.11 Importing from other tools
+
+`YAMD: Import Notes from Folder…` converts a folder of notes to YAMD in a chosen destination:
+
+| Source             | Converted from                            |
+| ------------------ | ----------------------------------------- |
+| Obsidian vault     | Markdown with `[[links]]`, callouts, tags |
+| Notion export      | Markdown with Notion-style callouts       |
+| HTML files         | Headings, paragraphs, lists, code, links  |
+
+CSV files can be turned into `.ydb` databases with the column types inferred from the first ten rows.
+
+---
+
+### 6.12 Reading list
+
+`YAMD: New Reading List` creates a `reading-list.ydb` database with columns for Title, Author, Course, Status (*To read* / *Reading* / *Done*), Pages and Due. It opens in the preview as a kanban board grouped by Status.
+
+---
+
+### 6.13 Math symbols
+
+`YAMD: Insert Math Symbol` opens a searchable picker of common LaTeX symbols (Greek letters, operators, arrows, set notation, logic, calculus) and inserts the selected symbol as inline math.
+
+---
+
+### 6.14 Diagnostics added by student features
+
+| Code  | Severity | Meaning                                         |
+| ----- | -------- | ----------------------------------------------- |
+| `Y605` | warning | Flashcard has no answer (§6.4)                  |
+
+---
+
 ## 7. Review markup (tracked changes)
 
 YAMD has built-in syntax for suggestions and review comments, based on CriticMarkup:
@@ -523,6 +695,7 @@ These rules are enforced by `yamd check`:
 | `Y602` | error    | Circular embed or include (§4.11, §6)                            |
 | `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
 | `Y604` | info     | Kanban column over its `limit` (§6.1)                            |
+| `Y605` | warning  | Flashcard has no answer (§6.4)                                   |
 | `Y701` | warning  | Missing link, image, anchor, reference or footnote target (§10)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |

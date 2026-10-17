@@ -1,0 +1,125 @@
+---
+yamd: 0.1
+title: Citations and references
+course: YAMD guide
+bibliography: refs.bib
+citation-style: apa
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD uses BibTeX for citations. Point a note at a `.bib` file in the front matter, cite with `[@key]`, and the extension formats the references list for you in any of five styles.
+
+::toc{depth=2}
+
+---
+
+## Setting up a bibliography
+
+Add two keys to the note's front matter:
+
+```yamd
+---
+title: My essay
+bibliography: refs.bib
+citation-style: apa
+---
+```
+
+`bibliography:` is a path to a `.bib` file, relative to the note *or* the
+workspace root. `citation-style:` is one of:
+
+| Value | Style |
+| ----- | ----- |
+| `apa` (default) | Author (Year) |
+| `mla` | Author page number |
+| `chicago` | Superscript footnote number |
+| `ieee` | `[N]` numbered reference |
+| `vancouver` | Superscript numbered |
+
+---
+
+## Citing a source
+
+Use `[@key]` anywhere in the text. The key is the BibTeX entry's identifier.
+
+This note's `refs.bib` contains an entry with key `cormen2022`. Here is a
+citation: [@cormen2022].
+
+With a locator (page, chapter, section…):
+
+```yamd
+[@cormen2022, p. 342]
+[@cormen2022, ch. 4]
+[@cormen2022, pp. 10–15]
+```
+
+Supported locators: `p.`, `pp.`, `ch.`, `sec.`, `fig.`, `eq.`, `no.`, `vol.`,
+`ed.`, `trans.`
+
+---
+
+## The reference list
+
+Put `::bibliography` where you want the list to appear. If you leave it out,
+the list is appended at the end of the document automatically.
+
+```yamd
+## References
+
+::bibliography
+```
+
+---
+
+## Cross-referencing figures, tables and equations
+
+`[@prefix:id]` creates a numbered cross-reference. The prefix tells YAMD what
+type of thing is being referenced:
+
+| Prefix | Refers to |
+| ------ | --------- |
+| `fig:` | `:::figure {#fig:x}` |
+| `tbl:` | `:::table {#tbl:x}` |
+| `eq:` | A numbered equation block |
+| `sec:` | A heading with `{#sec:x}` |
+| `def:` | `:::definition {#def:x}` |
+| `thm:` | `:::theorem {#thm:x}` |
+| `lem:` | `:::lemma {#lem:x}` |
+| `ex:` | `:::example {#ex:x}` |
+| `q:` | `:::question {#q:x}` |
+| `rem:` | `:::remark {#rem:x}` |
+
+**Example:**
+
+```yamd
+:::figure {caption="The sorting network" #fig:sort}
+![Sorting network](sort.png)
+:::
+
+See [@fig:sort] for the diagram.
+```
+
+---
+
+## Adding a citation from the internet
+
+Run **YAMD: Add Citation** from the command palette. Paste a DOI, arXiv ID or ISBN:
+
+| You enter | Where it looks |
+| --------- | -------------- |
+| `10.1145/3453483.3454023` | doi.org |
+| `2310.00024` | arxiv.org |
+| `9780262046305` | openlibrary.org |
+
+The extension fetches the BibTeX entry and appends it to the note's `.bib` file (creating `refs.bib` in the same folder if the note has no `bibliography:` key).
+
+If you're offline, the command falls back to a text box where you can paste a
+BibTeX entry manually.
+
+---
+
+## References
+
+::bibliography

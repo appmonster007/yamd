@@ -7,6 +7,8 @@ import { cardTitleSource } from './kanbanEdit';
 import { walkBlocks } from './parser';
 import { normalizeUri } from 'micromark-util-sanitize-uri';
 import { sanitizeHtml } from './sanitize';
+import { Bibliography, parseCitation } from './study/bibtex';
+import { STUDY_BY_NAME } from './study/blocks';
 import type { Attrs, Block, ContainerBlock, InlineNode, ListBlock, TableCell, YamdDocument } from './types';
 
 /** Content resolved for an embed or include. */
@@ -39,6 +41,10 @@ export interface RenderOptions {
   highlight?: (code: string, lang: string) => string | undefined;
   /** Renders TeX: returns HTML, or undefined to show the source. Output must be safe. */
   renderMath?: (tex: string, display: boolean) => string | undefined;
+  /** Resolves `[@key]` citations and fills `::bibliography`. Without it, the cited keys are listed. */
+  bibliography?: Bibliography;
+  /** Hides `:cloze[…]` answers until clicked. */
+  quiz?: boolean;
 }
 
 const CALLOUT_TITLES: Record<string, string> = {
@@ -97,6 +103,7 @@ class Renderer {
   private readonly footnoteRefCount = new Map<string, number>();
   private readonly inlineFootnotes: InlineNode[][] = [];
   private readonly citations: string[] = [];
+  private readonly studyNumbers = new WeakMap<ContainerBlock, number>();
   private figureCount = 0;
   private tableCount = 0;
   private equationCount = 0;
@@ -111,7 +118,15 @@ class Renderer {
   /** Numbers figures, tables, equations and sections in document order. */
   private number(): void {
     let sections = 0;
+    const studyCounts = new Map<string, number>();
     walkBlocks(this.doc.blocks, (b) => {
+      const study = b.type === 'container' ? STUDY_BY_NAME.get(b.name) : undefined;
+      if (b.type === 'container' && study?.numbered) {
+        const n = (studyCounts.get(study.name) ?? 0) + 1;
+        studyCounts.set(study.name, n);
+        this.studyNumbers.set(b, n);
+        if (b.attrs?.id) this.numbers.set(b.attrs.id, { kind: study.label, n });
+      }
       const img = figureImage(b);
       if (img) {
         const n = ++this.figureCount;
@@ -344,6 +359,19 @@ class Renderer {
         const heading = escapeHtml(title ?? CALLOUT_TITLES[b.name] ?? b.name);
         return `<div${this.attrs(b.attrs, b.line, ['callout', `callout-${b.name}`])} role="note"><p class="callout-title">${heading}</p>\n${this.blocks(b.children)}\n</div>`;
       }
+      case 'definition':
+      case 'theorem':
+      case 'lemma':
+      case 'proof':
+      case 'example':
+      case 'question':
+      case 'remark':
+      case 'summary':
+        return this.studyBlock(b);
+      case 'derivation':
+        return this.derivation(b);
+      case 'card':
+        return this.cardBlock(b);
       case 'details': {
         const summary = escapeHtml(attrString(b.attrs, 'summary') ?? 'Details');
         return `<details${this.attrs(b.attrs, b.line)}><summary>${summary}</summary>\n${this.blocks(b.children)}\n</details>`;
@@ -366,6 +394,33 @@ class Renderer {
       default:
         return `<div${this.attrs(b.attrs, b.line, ['directive', `directive-${b.name}`])}>\n${this.blocks(b.children)}\n</div>`;
     }
+  }
+
+  private studyBlock(b: ContainerBlock): string {
+    const kind = STUDY_BY_NAME.get(b.name);
+    const label = kind?.label ?? b.name;
+    const n = this.studyNumbers.get(b);
+    const title = attrString(b.attrs, 'title');
+    const heading = `<span class="study-label">${escapeHtml(label)}${n !== undefined ? ` ${n}` : ''}</span>${title ? ` <span class="study-name">(${escapeHtml(title)})</span>` : ''}`;
+    const end = b.name === 'proof' ? '<span class="proof-end" aria-hidden="true">∎</span>' : '';
+    return `<div${this.attrs(b.attrs, b.line, ['study', `study-${b.name}`])} role="group" aria-label="${escapeHtml(label)}"><p class="study-title">${heading}</p>\n${this.blocks(b.children)}\n${end}</div>`;
+  }
+
+  /** Lines of `lhs = rhs // reason`, aligned on the relation sign. */
+  private derivation(b: ContainerBlock): string {
+    const tex = derivationTex(b.raw);
+    const math = this.options.renderMath?.(tex, true);
+    const body = math !== undefined ? `<div class="math-display">${math}</div>` : `<code class="math">${escapeHtml(b.raw)}</code>`;
+    return `<div${this.attrs(b.attrs, b.line, ['math-block', 'derivation'])}>${body}</div>`;
+  }
+
+  /** A flashcard in a note: the question, with the answer behind a button. */
+  private cardBlock(b: ContainerBlock): string {
+    const at = b.children.findIndex((c) => c.type === 'thematicBreak');
+    const front = at === -1 ? b.children : b.children.slice(0, at);
+    const back = at === -1 ? [] : b.children.slice(at + 1);
+    const answer = back.length ? `<details class="card-answer"><summary>Show answer</summary>\n${this.blocks(back)}\n</details>` : '';
+    return `<div${this.attrs(b.attrs, b.line, ['card'])} role="group" aria-label="Flashcard"><div class="card-front">\n${this.blocks(front)}\n</div>${answer}</div>`;
   }
 
   private board(board: KanbanBoard): string {
@@ -455,6 +510,11 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
         return `<div class="db-slot db-view" data-db-key="v${b.line}" data-line="${b.line}"><div class="db-loading">Database view: <code>${escapeHtml(b.rawLabel)}</code></div></div>`;
       case 'bibliography':
         return `<section class="bibliography" data-line="${b.line}" data-bibliography></section>`;
+      case 'card': {
+        const answer = attrString(b.attrs, 'a') ?? attrString(b.attrs, 'answer');
+        const details = answer ? `<details class="card-answer"><summary>Show answer</summary><p>${escapeHtml(answer)}</p></details>` : '';
+        return `<div${this.attrs(b.attrs, b.line, ['card'])} role="group" aria-label="Flashcard"><div class="card-front"><p>${this.inline(b.label)}</p></div>${details}</div>`;
+      }
       default:
         return `<p data-line="${b.line}">${this.inline(b.label)}</p>`;
     }
@@ -626,6 +686,14 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
           const key = m[1] ?? '';
           if (!this.citations.includes(key)) this.citations.push(key);
         }
+        const bib = this.options.bibliography;
+        if (bib) {
+          const cited = parseCitation(n.raw);
+          const text = bib.cite(cited);
+          const missing = cited.some((c) => !bib.has(c.key));
+          const target = cited.length === 1 && bib.has(cited[0]?.key ?? '') ? ` href="#ref-${escapeHtml(cited[0]?.key ?? '')}"` : '';
+          return `<a class="citation${missing ? ' citation-missing' : ''}"${target}>${escapeHtml(text)}</a>`;
+        }
         return `<span class="citation">[${escapeHtml(n.raw.replace(/@/g, ''))}]</span>`;
       }
       case 'variable': {
@@ -651,6 +719,11 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
           const title = attrString(n.attrs, 'title');
           return `<abbr${title ? ` title="${escapeHtml(title)}"` : ''}>${inner}</abbr>`;
         }
+        if (n.name === 'cloze') {
+          return this.options.quiz
+            ? `<span class="cloze cloze-hidden" tabindex="0" role="button" aria-label="Hidden answer. Press to reveal."><span class="cloze-answer">${inner}</span></span>`
+            : `<span class="cloze">${inner}</span>`;
+        }
         if (n.name === 'query') return `<span class="db-slot db-inline" data-db-key="i${n.range.start}" title="${escapeHtml(this.doc.source.slice(n.range.start, n.range.end))}">…</span>`;
         return inner;
       }
@@ -660,6 +733,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
   /** The cited keys, since citations aren't resolved against a bibliography file. */
   bibliography(): string {
     if (this.citations.length === 0) return '';
+    if (this.options.bibliography) return this.options.bibliography.references();
     const items = this.citations.map((c) => `<li>${escapeHtml(c)}</li>`).join('');
     return `<p class="bibliography-note">Citations aren't resolved in the preview. Cited keys:</p><ul>${items}</ul>`;
   }
@@ -682,6 +756,24 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     }
     return `\n<section class="footnotes" role="doc-endnotes"><hr><ol>${rendered.join('\n')}</ol></section>`;
   }
+}
+
+/** TeX for a `:::derivation`: one aligned row per line, with `// reason` in a right-hand column. */
+export function derivationTex(raw: string): string {
+  const relation = /(\\(?:leq?|geq?|neq?|approx|equiv|sim|subseteq?|supseteq?|in|implies|iff|Rightarrow|to)(?![A-Za-z])|<=|>=|=|<|>)/;
+  const rows = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [expr = '', ...why] = line.split(/\s\/\/\s/);
+      const reason = why.join(' // ').trim();
+      const m = relation.exec(expr);
+      const aligned = m ? (m.index === 0 ? `{}&${expr}` : `${expr.slice(0, m.index)}&${expr.slice(m.index)}`) : `&${expr}`;
+      const text = reason ? ` && \\text{${reason.replace(/[\\{}$&#_%^~]/g, (c) => (c === '\\' ? '\\textbackslash{}' : c === '~' ? '\\textasciitilde{}' : c === '^' ? '\\textasciicircum{}' : `\\${c}`))}}` : '';
+      return aligned + text;
+    });
+  return `\\begin{aligned}\n${rows.join(' \\\\\n')}\n\\end{aligned}`;
 }
 
 export function render(doc: YamdDocument, options: RenderOptions = {}): string {

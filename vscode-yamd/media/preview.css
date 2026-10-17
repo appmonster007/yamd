@@ -664,3 +664,46 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-error-code { flex: none; font-size: 12px; }
 .db-result-list { padding-left: 1.4em; margin: 0; }
 .db-result { margin: 0; }
+
+/* ---- Study blocks, flashcards and quiz mode ---- */
+.study {
+  --study: var(--yamd-note);
+  border-left: 3px solid var(--study);
+  padding: 0.4rem 1rem;
+  margin: 1rem 0;
+  background: color-mix(in srgb, var(--study) 6%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+.study > :last-child { margin-bottom: 0; }
+.study-definition { --study: var(--yamd-note); }
+.study-theorem, .study-lemma { --study: var(--yamd-danger); }
+.study-example { --study: var(--yamd-tip); }
+.study-question { --study: var(--yamd-warning); }
+.study-summary { --study: var(--yamd-tip); border-left-style: double; border-left-width: 6px; }
+.study-proof, .study-remark { --study: var(--yamd-muted); background: none; }
+.study-proof { font-style: normal; }
+.study-title { margin: 0 0 0.3rem; font-weight: 600; }
+.study-label { color: var(--study); }
+.study-name { font-weight: 400; }
+.study-theorem > :not(.study-title), .study-lemma > :not(.study-title) { font-style: italic; }
+.proof-end { float: right; }
+.derivation .math-display { overflow-x: auto; }
+.card {
+  border: 1px solid var(--yamd-border);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  margin: 1rem 0;
+}
+.card-front > :last-child, .card-answer > :last-child { margin-bottom: 0; }
+.card-answer { margin-top: 0.5rem; border-top: 1px dashed var(--yamd-border); padding-top: 0.4rem; }
+.card-answer summary { cursor: pointer; color: var(--yamd-link); }
+.cloze { border-bottom: 1px dotted var(--yamd-muted); }
+.cloze-hidden { border-bottom: 0; cursor: pointer; border-radius: 3px; background: var(--yamd-fg); }
+.cloze-hidden .cloze-answer { visibility: hidden; }
+.cloze-hidden.revealed { background: color-mix(in srgb, var(--yamd-tip) 20%, transparent); }
+.cloze-hidden.revealed .cloze-answer { visibility: visible; }
+.cloze-hidden:focus-visible { outline: 2px solid var(--yamd-link); }
+.citation-missing { color: var(--yamd-warning); text-decoration: wavy underline; }
+.references { padding-left: 1.5rem; }
+ul.references { list-style: none; padding-left: 0; }
+ul.references li { padding-left: 2rem; text-indent: -2rem; margin: 0.4rem 0; }

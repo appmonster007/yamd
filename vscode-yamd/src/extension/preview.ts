@@ -15,6 +15,7 @@ import { notePath, noteUri } from '../workspace/index';
 import type { DatabaseService, DbMessage } from './databases';
 import { fileResolver } from './diagnostics';
 import { highlight, renderMath } from './richLoader';
+import { bibliographyFor } from '../study/bibliography';
 
 const DEBOUNCE_MS = 150;
 /** The most a very large note adds to the wait (about 3 MB of text reaches it). */
@@ -168,6 +169,7 @@ export class PreviewManager implements vscode.Disposable {
         interactive: vscode.workspace.isTrusted && vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) !== false,
         highlight,
         renderMath,
+        quiz: this.quiz,
         resolveImage: (src) => {
           if (/^(https?|data):/i.test(src)) return src;
           const file = resolve?.(decodeURIComponent(src.split(/[?#]/)[0] ?? src));
@@ -181,6 +183,7 @@ export class PreviewManager implements vscode.Disposable {
       options.resolveEmbed = embedResolver(this.index.store, notePath(doc.uri), (p) => optionsFor(p));
     }
     const parsed = parse(text);
+    if (doc.uri.scheme === 'file') options.bibliography = bibliographyFor(parsed, doc.uri.fsPath, root);
     let html: string;
     try {
       html = render(parsed, options);
@@ -201,6 +204,16 @@ export class PreviewManager implements vscode.Disposable {
 
   /** The HTML last sent to the webview, so identical renders aren't sent again. */
   private lastHtml: string | undefined;
+  /** Whether `:cloze[…]` answers are hidden (quiz mode). */
+  private quiz = false;
+
+  toggleQuiz(): boolean {
+    this.quiz = !this.quiz;
+    this.forceNext = true;
+    void this.update();
+    return this.quiz;
+  }
+
   /** The next update replaces the whole page, even if its HTML hasn't changed. */
   private forceNext = false;
   private fillTimer: ReturnType<typeof setTimeout> | undefined;

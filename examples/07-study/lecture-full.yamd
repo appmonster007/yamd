@@ -1,0 +1,209 @@
+---
+yamd: 0.1
+title: "Binary search trees"
+course: CS201
+date: 2026-10-17
+tags: [lecture, algorithms]
+reviewed: 2026-10-17
+due: 2026-11-01
+bibliography: refs.bib
+citation-style: apa
+lang: en-US
+---
+
+# Binary search trees
+
+**Course:** CS201 · **Date:** 2026-10-17 · **Lecturer:** Prof. Lin
+
+%% This is a complete example note. Open the preview with Cmd+K V and
+   run "YAMD: Toggle Quiz Mode" to hide the cloze answers. %%
+
+::toc{depth=2}
+
+---
+
+## Objectives
+
+- [ ] Understand the BST property and its implications for search {due=2026-10-24}
+- [ ] State and prove the search time complexity
+- [ ] Compare balanced and unbalanced trees
+
+---
+
+## Definitions
+
+:::definition {title="Binary tree" #def:binary-tree}
+A *binary tree* is a rooted tree where every node has at most two children,
+called the **left child** and the **right child**.
+:::
+
+:::definition {title="Binary search tree" #def:bst}
+A *binary search tree* (BST) is a binary tree $T$ such that for every node $v$:
+
+$$\text{key}(u) < \text{key}(v) \quad \forall u \in \text{left-subtree}(v)$$
+$$\text{key}(w) > \text{key}(v) \quad \forall w \in \text{right-subtree}(v)$$
+
+This is the *BST property*.
+:::
+
+The BST property means an in-order traversal visits keys in sorted order —
+see [@thm:inorder] below.
+
+---
+
+## Theorems and proofs
+
+:::theorem {title="Search complexity" #thm:bst-search}
+Search, insert and delete in a BST each run in $O(h)$ time, where $h$ is the
+height of the tree.
+:::
+
+:::proof
+Each operation descends from the root, taking one step per level and making
+a binary decision at each node. It therefore visits at most $h + 1$ nodes.
+:::
+
+:::theorem {title="In-order traversal" #thm:inorder}
+An in-order traversal of a BST visits all keys in non-decreasing order.
+:::
+
+:::proof
+By induction on the number of nodes. The base case (empty tree) is trivial.
+For a non-empty tree, the BST property guarantees all keys in the left
+subtree are smaller than the root, which are smaller than all in the right
+subtree. Applying the induction hypothesis to each subtree gives the result.
+:::
+
+:::remark
+A randomly built BST has expected height $O(\log n)$.
+An adversarially ordered input gives a degenerate tree with $h = n - 1$,
+so worst-case complexity is $O(n)$.
+For guaranteed $O(\log n)$, use a balanced variant: AVL tree, red-black tree,
+or a skip list. See [@cormen2022] for details.
+:::
+
+---
+
+## Examples
+
+:::example {title="Searching for 5" #ex:bst-search}
+Given the BST built from the sequence `[8, 3, 10, 1, 6, 14, 4, 7]`,
+search for key 5:
+
+1. 5 < 8 → go left to 3
+2. 5 > 3 → go right to 6
+3. 5 < 6 → go left to 4
+4. 5 > 4 → go right — `nil`, not found
+
+The search makes 4 comparisons. The tree's height is 3, so this is $O(h)$.
+:::
+
+:::example {title="Insertion" #ex:bst-insert}
+Insert key 5 into the same tree. Follow the same path as search — when you
+reach `nil`, attach the new node there (as the right child of 4).
+:::
+
+---
+
+## Derivation
+
+:::derivation
+**Show that insertion preserves the BST property.**
+
+Let $T$ be a BST and $k$ a new key. Insert $k$ by the standard algorithm,
+which places it at a leaf position. Call this leaf $\ell$.
+
+By construction, at every ancestor $v$ of $\ell$:
+- We went left at $v$, so $k < \text{key}(v)$, and $\ell$ is in
+  $v$'s left subtree. ✓
+- Or we went right at $v$, so $k > \text{key}(v)$, and $\ell$ is in
+  $v$'s right subtree. ✓
+
+The BST property at $\ell$ is vacuously satisfied (it has no children).
+Therefore $T$ remains a BST after insertion. $\square$
+:::
+
+---
+
+## Practice questions
+
+:::question {#q:height}
+What is the height of a BST built by inserting the keys `[5, 3, 7, 1, 4, 6, 8]`
+in that order? Draw the tree.
+:::
+
+:::question {#q:degenerate}
+Give a sequence of $n$ distinct keys whose insertion produces a BST with
+height $n - 1$. Why is this problematic in practice?
+:::
+
+---
+
+## Key terms
+
+:::definition {title="Height" #def:height}
+The *height* of a tree is the length of the longest path from the root to a leaf.
+An empty tree has height $-1$; a single node has height $0$.
+:::
+
+:::definition {title="Balanced BST" #def:balanced}
+A BST is *balanced* if the heights of the two subtrees of every node differ
+by at most 1. Examples: AVL tree, red–black tree.
+:::
+
+---
+
+## Review cards
+
+::card[What is the BST property?]{a="For every node $v$: left subtree keys < key($v$) < right subtree keys."}
+
+::card[What does an in-order BST traversal produce?]{a="The keys in sorted (non-decreasing) order."}
+
+::card[What is the worst-case height of a BST built from $n$ keys?]{a="$n - 1$, when keys are inserted in sorted order."}
+
+:::card {#card:search-complexity}
+What is the time complexity of BST search, and when is it achieved?
+
+---
+
+**$O(h)$** where $h$ is the tree's height.
+
+- Average case (random input): $O(\log n)$
+- Worst case (sorted input): $O(n)$
+- Guaranteed $O(\log n)$: use a balanced BST (AVL or red–black)
+:::
+
+**Cloze cards** — run *YAMD: Toggle Quiz Mode* to hide the answers:
+
+An in-order traversal of a BST visits keys in :cloze[sorted order].
+
+A BST built from sorted input has height :cloze[$n - 1$], giving :cloze[$O(n)$] search.
+
+The AVL tree and the :cloze[red–black tree] are balanced BST variants.
+
+---
+
+## Summary
+
+:::summary
+A binary search tree organises keys so that search, insert and delete each cost
+$O(h)$ time, where $h$ is the tree's height. On random input $h = O(\log n)$;
+on sorted input $h = O(n)$. Balanced variants (AVL, red–black) guarantee
+$O(\log n)$ regardless of insertion order. The in-order traversal visits keys
+in sorted order — a property that follows directly from the BST invariant.
+:::
+
+---
+
+## To do
+
+- [ ] Read CLRS §12.1–12.3 {due=2026-10-24}
+- [ ] Implement `search` and `insert` in Python {due=2026-10-24}
+- [ ] Solve LeetCode #700 (search) and #701 (insert) {due=2026-10-21}
+- [ ] Write up answers to [@q:height] and [@q:degenerate] {due=2026-10-28}
+
+---
+
+## References
+
+::bibliography

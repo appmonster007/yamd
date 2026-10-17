@@ -34,8 +34,19 @@ export const KNOWN_CONTAINERS = new Set([
   'table',
   'html',
   'kanban',
+  // Study blocks (§6.3) and flashcards (§6.4).
+  'definition',
+  'theorem',
+  'lemma',
+  'proof',
+  'example',
+  'question',
+  'summary',
+  'remark',
+  'derivation',
+  'card',
 ]);
-export const KNOWN_LEAVES = new Set(['toc', 'include', 'pagebreak', 'embed', 'bibliography', 'db']);
+export const KNOWN_LEAVES = new Set(['toc', 'include', 'pagebreak', 'embed', 'bibliography', 'db', 'card']);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** An mdast node, including YAMD's custom node types. */
@@ -512,7 +523,7 @@ class Adapter {
         const inner = value.slice(1, -1);
         const keys = [...inner.matchAll(/@([^\s;,\]]+)/g)].map((m) => m[1] ?? '');
         const only = keys[0] ?? '';
-        if (keys.length === 1 && /^(fig|tbl|eq|sec):/.test(only) && inner.trim() === `@${only}`) {
+        if (keys.length === 1 && /^(fig|tbl|eq|sec|def|thm|lem|ex|q|rem):/.test(only) && inner.trim() === `@${only}`) {
           return [{ type: 'crossRef', id: only, range }];
         }
         return keys.length ? [{ type: 'citation', raw: inner, range }] : [{ type: 'text', value, range }];

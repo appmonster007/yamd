@@ -78,7 +78,7 @@ const contexts = await Promise.all([
   // Scripts for the sidebar webviews.
   esbuild.context({
     ...shared,
-    entryPoints: { properties: 'src/sidebar/properties.ts', console: 'src/sidebar/console.ts' },
+    entryPoints: { properties: 'src/sidebar/properties.ts', console: 'src/sidebar/console.ts', review: 'src/study/reviewMain.ts' },
     outdir: 'dist',
     platform: 'browser',
     format: 'iife',

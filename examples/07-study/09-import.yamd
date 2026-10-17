@@ -1,0 +1,124 @@
+---
+yamd: 0.1
+title: Importing from other tools
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+If you've been using Obsidian, Notion, or any other tool that exports Markdown
+or HTML, you can convert your existing notes to YAMD in one step.
+
+::toc{depth=2}
+
+---
+
+## How to import
+
+1. Open the command palette (:kbd[Cmd+Shift+P]).
+2. Run **YAMD: Import Notes from Folder…**.
+3. Choose the source format: **Obsidian vault**, **Notion Markdown export**, or
+   **HTML files**.
+4. Pick the folder on disk that contains your notes.
+5. Enter a destination sub-folder name (or leave blank to import into the
+   workspace root).
+6. YAMD converts every file and reports how many notes were imported.
+
+---
+
+## What gets converted
+
+### From Obsidian
+
+| Obsidian syntax | YAMD equivalent |
+| --------------- | --------------- |
+| `[[WikiLink]]` | `[[WikiLink]]` (identical) |
+| `![[embed.md]]` | `![[embed.yamd]]` |
+| `![[image.png]]` | `![image](image.png)` |
+| `> [!note]` callout | `:::note` container |
+| `> [!tip]` callout | `:::tip` container |
+| `> [!warning]` callout | `:::warning` container |
+| `> [!danger]` / `[!error]` | `:::danger` container |
+| `#hashtag` inline | `#hashtag` inline (identical) |
+| `%%comment%%` | `%% comment %%` (identical) |
+| YAML front matter | YAML front matter (preserved) |
+
+Everything else (standard Markdown syntax, code fences, tables, task lists)
+carries over unchanged because YAMD is a strict superset of GFM.
+
+### From Notion
+
+Notion exports folders of Markdown files, one per page. YAMD converts:
+
+| Notion export | YAMD equivalent |
+| ------------- | --------------- |
+| `> 💡 tip` callouts | `:::tip` |
+| `> ⚠️ warning` | `:::warning` |
+| `> ❗ danger` | `:::danger` |
+| `[Link text](Page%20Name.md)` | `[Link text](Page Name.md)` (URL-decoded) |
+| Front matter injected | `---\ntitle: …\n---` |
+
+The Notion page title (from the file name or the first `# heading`) becomes the
+`title:` front matter key.
+
+### From HTML
+
+YAMD converts:
+
+| HTML | YAMD |
+| ---- | ---- |
+| `<h1>`–`<h6>` | `#`–`######` headings |
+| `<p>` | Paragraphs |
+| `<strong>` / `<b>` | `**bold**` |
+| `<em>` / `<i>` | `*italic*` |
+| `<code>` | `` `code` `` |
+| `<pre><code>` | Fenced code block |
+| `<ul>` / `<ol>` | Bullet / numbered list |
+| `<li>` with checkbox | Task list item |
+| `<a href>` | `[text](url)` |
+| `<img>` | `![alt](src)` |
+| `<table>` | Pipe table |
+| `<blockquote>` | `> blockquote` |
+
+The page `<title>` or first `<h1>` becomes the `title:` front matter key.
+
+---
+
+## CSV to database
+
+CSV files are not converted to notes — they become `.ydb` database files
+instead. Column types are inferred from the first ten data rows:
+
+| Values | Inferred type |
+| ------ | ------------- |
+| numbers | `number` |
+| `true`/`false`, `yes`/`no` | `checkbox` |
+| `YYYY-MM-DD` dates | `date` |
+| a short fixed set of strings | `select` |
+| anything else | `text` |
+
+The first column becomes the `title` property. The `.ydb` file is ready to open
+in the database view.
+
+---
+
+## After importing
+
+- Run **YAMD: Open Study Dashboard** to see all the courses and deadlines that
+  were in the imported notes' front matter.
+- Check for `Y601` diagnostics in the **Problems** panel — these flag directives
+  that didn't convert cleanly and need a manual look.
+- Wikilinks between notes work automatically because YAMD resolves them by name.
+  You don't need to update links even if files moved into sub-folders.
+
+---
+
+## What doesn't convert
+
+- Obsidian plugins (Dataview, Excalidraw, graph view settings) — no equivalent
+  yet; the raw plugin syntax is left as a comment.
+- Notion sub-pages exported as separate files are imported as separate notes —
+  parent/child relationships are not reconstructed.
+- Images and attachments are **not moved** — they stay where they are, and the
+  converted note references them with the original relative path.

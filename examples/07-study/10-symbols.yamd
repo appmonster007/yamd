@@ -1,0 +1,168 @@
+---
+yamd: 0.1
+title: Math symbol picker
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD includes a searchable picker of common LaTeX symbols. Run **YAMD: Insert
+Math Symbol** from the command palette to open it.
+
+::toc{depth=2}
+
+---
+
+## Using the picker
+
+1. Place your cursor where you want the symbol.
+2. Run **YAMD: Insert Math Symbol** (:kbd[Cmd+Shift+P] → *YAMD: Insert Math Symbol*).
+3. Type part of the symbol name (e.g. `theta`, `integral`, `arrow`).
+4. Select the symbol — it is inserted as inline math: `$\theta$`.
+
+---
+
+## Symbol reference
+
+The table below shows every symbol available in the picker. All are standard
+LaTeX and render with KaTeX in the preview.
+
+### Greek letters
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\alpha$ | `\alpha` | alpha |
+| $\beta$ | `\beta` | beta |
+| $\gamma$ | `\gamma` | gamma |
+| $\delta$ | `\delta` | delta |
+| $\epsilon$ | `\epsilon` | epsilon |
+| $\varepsilon$ | `\varepsilon` | varepsilon |
+| $\zeta$ | `\zeta` | zeta |
+| $\eta$ | `\eta` | eta |
+| $\theta$ | `\theta` | theta |
+| $\vartheta$ | `\vartheta` | vartheta |
+| $\iota$ | `\iota` | iota |
+| $\kappa$ | `\kappa` | kappa |
+| $\lambda$ | `\lambda` | lambda |
+| $\mu$ | `\mu` | mu |
+| $\nu$ | `\nu` | nu |
+| $\xi$ | `\xi` | xi |
+| $\pi$ | `\pi` | pi |
+| $\varpi$ | `\varpi` | varpi |
+| $\rho$ | `\rho` | rho |
+| $\sigma$ | `\sigma` | sigma |
+| $\tau$ | `\tau` | tau |
+| $\upsilon$ | `\upsilon` | upsilon |
+| $\phi$ | `\phi` | phi |
+| $\varphi$ | `\varphi` | varphi |
+| $\chi$ | `\chi` | chi |
+| $\psi$ | `\psi` | psi |
+| $\omega$ | `\omega` | omega |
+| $\Gamma$ | `\Gamma` | Gamma |
+| $\Delta$ | `\Delta` | Delta |
+| $\Theta$ | `\Theta` | Theta |
+| $\Lambda$ | `\Lambda` | Lambda |
+| $\Xi$ | `\Xi` | Xi |
+| $\Pi$ | `\Pi` | Pi |
+| $\Sigma$ | `\Sigma` | Sigma |
+| $\Phi$ | `\Phi` | Phi |
+| $\Psi$ | `\Psi` | Psi |
+| $\Omega$ | `\Omega` | Omega |
+
+### Binary operators
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\pm$ | `\pm` | plus-minus |
+| $\mp$ | `\mp` | minus-plus |
+| $\times$ | `\times` | times |
+| $\div$ | `\div` | div |
+| $\cdot$ | `\cdot` | cdot |
+| $\circ$ | `\circ` | circ |
+| $\oplus$ | `\oplus` | oplus |
+| $\otimes$ | `\otimes` | otimes |
+| $\wedge$ | `\wedge` | wedge (and) |
+| $\vee$ | `\vee` | vee (or) |
+
+### Relations
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\leq$ | `\leq` | less or equal |
+| $\geq$ | `\geq` | greater or equal |
+| $\neq$ | `\neq` | not equal |
+| $\approx$ | `\approx` | approx |
+| $\equiv$ | `\equiv` | equiv |
+| $\sim$ | `\sim` | sim |
+| $\propto$ | `\propto` | propto |
+| $\subset$ | `\subset` | subset |
+| $\subseteq$ | `\subseteq` | subseteq |
+| $\supset$ | `\supset` | supset |
+| $\in$ | `\in` | in |
+| $\notin$ | `\notin` | notin |
+| $\mid$ | `\mid` | mid |
+
+### Arrows
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\to$ | `\to` | to |
+| $\gets$ | `\gets` | gets |
+| $\leftrightarrow$ | `\leftrightarrow` | leftrightarrow |
+| $\Rightarrow$ | `\Rightarrow` | Rightarrow |
+| $\Leftarrow$ | `\Leftarrow` | Leftarrow |
+| $\Leftrightarrow$ | `\Leftrightarrow` | Leftrightarrow |
+| $\mapsto$ | `\mapsto` | mapsto |
+| $\uparrow$ | `\uparrow` | uparrow |
+| $\downarrow$ | `\downarrow` | downarrow |
+
+### Set notation
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\emptyset$ | `\emptyset` | emptyset |
+| $\cup$ | `\cup` | cup (union) |
+| $\cap$ | `\cap` | cap (intersection) |
+| $\setminus$ | `\setminus` | setminus |
+| $\mathbb{N}$ | `\mathbb{N}` | naturals |
+| $\mathbb{Z}$ | `\mathbb{Z}` | integers |
+| $\mathbb{Q}$ | `\mathbb{Q}` | rationals |
+| $\mathbb{R}$ | `\mathbb{R}` | reals |
+| $\mathbb{C}$ | `\mathbb{C}` | complex |
+| $\forall$ | `\forall` | forall |
+| $\exists$ | `\exists` | exists |
+| $\nexists$ | `\nexists` | nexists |
+
+### Calculus and analysis
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\infty$ | `\infty` | infty |
+| $\partial$ | `\partial` | partial |
+| $\nabla$ | `\nabla` | nabla |
+| $\int$ | `\int` | integral |
+| $\iint$ | `\iint` | double integral |
+| $\oint$ | `\oint` | contour integral |
+| $\sum$ | `\sum` | sum |
+| $\prod$ | `\prod` | product |
+| $\lim$ | `\lim` | lim |
+| $\sqrt{x}$ | `\sqrt{x}` | sqrt |
+
+### Logic
+
+| Symbol | LaTeX | Name |
+| ------ | ----- | ---- |
+| $\neg$ | `\neg` | neg (not) |
+| $\land$ | `\land` | land (and) |
+| $\lor$ | `\lor` | lor (or) |
+| $\top$ | `\top` | top (true) |
+| $\bot$ | `\bot` | bot (false) |
+| $\vdash$ | `\vdash` | vdash (entails) |
+| $\models$ | `\models` | models |
+
+---
+
+## Typing math directly
+
+You don't need the picker for simple expressions — just type LaTeX between `$` (inline) or `$$` (block). See [Code and Math](../01-basics/code-and-math.yamd) for the full math reference.

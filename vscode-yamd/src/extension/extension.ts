@@ -11,6 +11,10 @@ import { GraphPanel } from '../workspace/graph';
 import { WorkspaceIndex } from '../workspace/index';
 import { registerNewNote } from '../workspace/newNote';
 import { registerViews } from '../workspace/views';
+import { DashboardPanel } from '../study/dashboard';
+import { ReviewPanel } from '../study/review';
+import { StudyTimer } from '../study/timer';
+import { registerStudyCommands } from '../study/commands';
 
 export function activate(context: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('YAMD');
@@ -18,12 +22,16 @@ export function activate(context: vscode.ExtensionContext): void {
   const db = new DatabaseService(context.extensionUri, index);
   const preview = new PreviewManager(context.extensionUri, index, db);
   const graph = new GraphPanel(context.extensionUri, index);
-  context.subscriptions.push(log, index, db, preview, graph, new DiagnosticsProvider(index));
+  const reviewPanel = new ReviewPanel(context.extensionUri, index);
+  const dashboard = new DashboardPanel(index);
+  const timer = new StudyTimer();
+  context.subscriptions.push(log, index, db, preview, graph, new DiagnosticsProvider(index), reviewPanel, dashboard, timer);
   registerDatabaseFeatures(context, db);
   registerNoteFeatures(context, index);
   registerViews(context, index);
   registerDailyNotes(context);
   registerNewNote(context);
+  registerStudyCommands(context, index, reviewPanel, dashboard, timer);
 
   const openPreview = (toSide: boolean) => (uri?: vscode.Uri) => {
     const editor = vscode.window.activeTextEditor;
@@ -41,6 +49,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('yamd.openPreviewToSide', openPreview(true)),
     vscode.commands.registerCommand('yamd.openGraph', () => graph.show('global')),
     vscode.commands.registerCommand('yamd.openLocalGraph', () => graph.show('local')),
+    vscode.commands.registerCommand('yamd.toggleQuizInternal', () => preview.toggleQuiz()),
   );
   registerEditingCommands(context);
   registerMigration(context);

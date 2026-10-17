@@ -121,3 +121,21 @@ Force a new page when printing or exporting to PDF:
 ## Unknown directives
 
 Tools ignore directives they don't know, but still show the content. Vendor directives start with `x-` so they never clash with future standard ones. See the [diagnostics example](diagnostics.yamd) for what the editor reports.
+
+## Study-aid blocks
+
+For coursework and academic writing, YAMD provides nine additional container directives that are numbered and cross-referenceable. See the [study features guide](../07-study/01-study-blocks.yamd) for the full reference.
+
+| Container | Purpose |
+| --------- | ------- |
+| `:::definition` | Numbered definition |
+| `:::theorem` | Numbered theorem |
+| `:::lemma` | Numbered lemma |
+| `:::proof` | Proof (not numbered) |
+| `:::example` | Numbered example |
+| `:::question` | Numbered question |
+| `:::remark` | Remark (not numbered) |
+| `:::summary` | Summary (not numbered) |
+| `:::derivation` | Step-by-step derivation |
+
+Cross-reference any numbered block with `[@def:id]`, `[@thm:id]`, `[@ex:id]`, etc.

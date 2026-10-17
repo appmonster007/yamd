@@ -213,7 +213,7 @@
       },
       {
         "command": "yamd.newNote",
-        "title": "New Note…",
+        "title": "New Note\u2026",
         "shortTitle": "YAMD Note",
         "category": "YAMD",
         "icon": "$(new-file)"
@@ -223,6 +223,111 @@
         "title": "New Timestamped Note",
         "category": "YAMD",
         "icon": "$(history)"
+      },
+      {
+        "command": "yamd.reviewCards",
+        "title": "Review Flashcards",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openDashboard",
+        "title": "Open Study Dashboard",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.startStudyTimer",
+        "title": "Start Study Timer",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.pauseStudyTimer",
+        "title": "Pause Study Timer",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.stopStudyTimer",
+        "title": "Stop Study Timer",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.newStudyNote",
+        "title": "New Study Note\u2026",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.generateCheatSheet",
+        "title": "Generate Cheat Sheet",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportHtml",
+        "title": "Export as HTML",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportPdf",
+        "title": "Export as PDF",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportDocx",
+        "title": "Export as Word (.docx)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportSlides",
+        "title": "Export as Slides (HTML)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addCitation",
+        "title": "Add Citation (DOI / ISBN / URL)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertSymbol",
+        "title": "Insert Math Symbol",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.acceptAllChanges",
+        "title": "Accept All Review Changes",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.rejectAllChanges",
+        "title": "Reject All Review Changes",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.combineNotes",
+        "title": "Combine Notes\u2026",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.importFolder",
+        "title": "Import Notes from Folder\u2026",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertPdfReference",
+        "title": "Insert PDF Reference",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.newReadingList",
+        "title": "New Reading List",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.pruneCards",
+        "title": "Prune Orphaned Card Data",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleQuiz",
+        "title": "Toggle Quiz Mode",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -231,6 +336,31 @@
           "command": "yamd.openPreviewToSide",
           "when": "editorLangId == yamd",
           "group": "navigation"
+        },
+        {
+          "command": "yamd.exportHtml",
+          "group": "yamd_export@1",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.exportPdf",
+          "group": "yamd_export@2",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.exportDocx",
+          "group": "yamd_export@3",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.exportSlides",
+          "group": "yamd_export@4",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.toggleQuiz",
+          "group": "yamd_study@1",
+          "when": "resourceLangId == yamd"
         }
       ],
       "commandPalette": [
@@ -320,6 +450,11 @@
           "command": "yamd.openInSqliteViewer",
           "when": "resourceExtname == .sqlite || resourceExtname == .sqlite3 || resourceExtname == .db",
           "group": "navigation@91"
+        },
+        {
+          "command": "yamd.newStudyNote",
+          "group": "yamd@1",
+          "when": "explorerResourceIsFolder || explorerResourceIsRoot"
         }
       ],
       "view/title": [
@@ -354,6 +489,33 @@
           "command": "yamd.linkMentionFromView",
           "when": "view == yamd.backlinks && viewItem == unlinkedMention",
           "group": "inline"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "yamd.acceptAllChanges",
+          "group": "yamd_review@1",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.rejectAllChanges",
+          "group": "yamd_review@2",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.addCitation",
+          "group": "yamd_study@1",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.insertSymbol",
+          "group": "yamd_study@2",
+          "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.insertPdfReference",
+          "group": "yamd_study@3",
+          "when": "resourceLangId == yamd"
         }
       ]
     },
@@ -503,6 +665,29 @@
           "default": 8192,
           "minimum": 64,
           "description": "Notes larger than this many kilobytes aren't previewed, to keep the editor responsive. Large notes are parsed in small steps and only the parts you edit are parsed again."
+        },
+        "yamd.study.newCardsPerDay": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "description": "Maximum number of new (unseen) flashcards shown per review session."
+        },
+        "yamd.study.pomodoroMinutes": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "description": "Default study-timer session length in minutes."
+        },
+        "yamd.study.logToDailyNote": {
+          "type": "boolean",
+          "default": true,
+          "description": "Append a line to the daily note when a study-timer session finishes."
+        },
+        "yamd.study.staleAfterDays": {
+          "type": "number",
+          "default": 14,
+          "minimum": 1,
+          "description": "Number of days without a review before a topic is considered stale in the dashboard."
         }
       }
     },

@@ -1,0 +1,149 @@
+---
+yamd: 0.1
+title: Study-aid blocks
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+Study-aid blocks let you mark up structured knowledge — definitions, theorems, proofs, examples and more — so the extension can number them, render them with clear headings, and gather them from all your notes into a cheat sheet.
+
+::toc{depth=2}
+
+## The nine block types
+
+There are nine kinds of study block. Write each as a fenced container: `:::name` to open, `:::` to close.
+
+### Definition
+
+:::definition {title="Limits" #def:limit}
+Let $f$ be a function defined near $a$. We say
+
+$$\lim_{x \to a} f(x) = L$$
+
+if for every $\varepsilon > 0$ there exists $\delta > 0$ such that
+$0 < |x - a| < \delta$ implies $|f(x) - L| < \varepsilon$.
+:::
+
+### Theorem and lemma
+
+:::theorem {title="Intermediate value theorem" #thm:ivt}
+If $f$ is continuous on $[a, b]$ and $y$ is any value between $f(a)$ and $f(b)$,
+then there exists $c \in (a, b)$ such that $f(c) = y$.
+:::
+
+:::lemma {title="Squeeze lemma" #lem:squeeze}
+If $g(x) \leq f(x) \leq h(x)$ near $a$ and
+$\lim_{x\to a} g(x) = \lim_{x\to a} h(x) = L$, then $\lim_{x\to a} f(x) = L$.
+:::
+
+### Proof
+
+Proofs are not numbered. They typically follow a theorem directly.
+
+:::proof
+Let $\varepsilon > 0$. By the squeeze condition…
+*(Full proof omitted for brevity.)*
+:::
+
+### Example
+
+:::example {title="Evaluating a limit" #ex:limit-eval}
+Find $\lim_{x \to 2} (3x - 1)$.
+
+Because $3x - 1$ is a polynomial, we can substitute directly:
+
+$$\lim_{x \to 2} (3x - 1) = 3(2) - 1 = 5$$
+:::
+
+### Question
+
+Use `:::question` for practice problems or things to revisit.
+
+:::question {#q:continuity}
+Give an example of a function that is discontinuous at exactly two points.
+What is the difference between a removable and a jump discontinuity?
+:::
+
+### Remark and summary
+
+Remarks and summaries are not numbered.
+
+:::remark
+The $\varepsilon$-$\delta$ definition can be restated using sequences:
+$\lim_{x \to a} f(x) = L$ iff $f(x_n) \to L$ for every sequence $x_n \to a$.
+:::
+
+:::summary
+The limit of a function captures its behaviour near a point, independent of its value at that point. Continuity means the limit equals the value. The IVT is a first consequence of continuity on closed intervals.
+:::
+
+### Derivation
+
+Use `:::derivation` for step-by-step calculations.
+
+:::derivation
+**Derive the quadratic formula.**
+
+Start from $ax^2 + bx + c = 0$, divide by $a$:
+
+$$x^2 + \frac{b}{a}x = -\frac{c}{a}$$
+
+Complete the square by adding $\left(\frac{b}{2a}\right)^2$ to both sides:
+
+$$\left(x + \frac{b}{2a}\right)^2 = \frac{b^2 - 4ac}{4a^2}$$
+
+Take the square root and solve for $x$:
+
+$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
+:::
+
+---
+
+## Titles and IDs
+
+Add `{title="…"}` to give a block a name. Add `{#id}` to make it cross-referenceable.
+
+```yamd
+:::theorem {title="Pythagorean theorem" #thm:pythagoras}
+$a^2 + b^2 = c^2$
+:::
+```
+
+Cross-reference it anywhere in the same note (or in the same rendered context) with `[@thm:pythagoras]`.
+The recognised prefixes are:
+
+| Prefix | Refers to |
+| ------ | --------- |
+| `def:` | Definition |
+| `thm:` | Theorem |
+| `lem:` | Lemma |
+| `ex:` | Example |
+| `q:` | Question |
+| `rem:` | Remark |
+| `fig:` | Figure |
+| `tbl:` | Table |
+| `eq:` | Numbered equation |
+| `sec:` | Section heading |
+
+A cross-reference that doesn't match a known prefix is treated as a citation key (see [citations](05-citations.yamd)).
+
+---
+
+## Numbering
+
+Blocks of the same kind are numbered in source order within the note:
+Definition 1, Definition 2, Theorem 1, Theorem 2, …
+Proofs, remarks and summaries are not numbered.
+
+---
+
+## Generating a cheat sheet
+
+Run **YAMD: Generate Cheat Sheet** from the command palette. The extension:
+1. Asks which course to include (or all courses).
+2. Scans every note in the workspace for `:::definition`, `:::theorem`, `:::lemma` and `:::summary` blocks.
+3. Writes a new `.yamd` note that collects them all, grouped by kind, each linked back to its source note.
+
+The cheat sheet is a normal note — edit, export or print it like any other.

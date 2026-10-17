@@ -1,0 +1,109 @@
+---
+yamd: 0.1
+title: Flashcards and spaced repetition
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD has three ways to mark content as a flashcard. The extension collects them from every note and schedules reviews using SM-2 — the same algorithm behind Anki. The schedule is stored in `.yamd/srs.json` at the workspace root, so it travels with the notes when you share or commit the folder.
+
+::toc{depth=2}
+
+---
+
+## Container card
+
+A `:::card` block separates the question from the answer with a `---` line.
+This is the richest format — you can put any YAMD content on either side.
+
+:::card {#card:binary-search}
+What is the time complexity of binary search, and why?
+
+---
+
+**$O(\log n)$**
+
+Each comparison halves the search space, so after $k$ comparisons at most $n / 2^k$ elements remain. Solving $n / 2^k = 1$ gives $k = \log_2 n$.
+:::
+
+A card with no `---` separator between the question and the answer triggers a warning instead:
+
+```yamd
+:::card
+A card with no --- separator produces a warning.
+:::
+```
+
+The linter reports **Y605**, "This card has no answer," so you won't forget to add one.
+
+---
+
+## Leaf card
+
+`::card[Question]{a="Answer"}` is a compact one-liner. Use it for vocabulary,
+formulae or definitions where a short string on each side is enough.
+
+::card[What does "idempotent" mean?]{a="Applying the operation more than once has the same effect as once."}
+
+::card[State the product rule.]{a="$(fg)' = f'g + fg'$"}
+
+::card[What is the capital of France?]{a="Paris"}
+
+---
+
+## Cloze deletion
+
+Wrap the hidden word or phrase in `:cloze[…]`. Each `:cloze` in a paragraph becomes a separate card. When you review, one blank is shown at a time.
+
+The :cloze[mitochondrion] is the :cloze[powerhouse] of the cell.
+
+The derivative of :cloze[$\sin x$] is :cloze[$\cos x$].
+
+**Named groups** let two clozes in the same paragraph belong together — useful when the blanks are related:
+
+The :cloze[First World War]{n=1} ended in :cloze[1918]{n=1}.
+
+---
+
+## IDs and stability
+
+Every card has a stable ID so the schedule survives edits elsewhere in the note:
+- An explicit `{#id}` on a container card: `:::card {#card:my-id}`
+- A hash of the question text for leaf cards and cloze paragraphs (auto-generated)
+
+Changing the question text creates a new ID and a fresh scheduling entry. If you rename many cards at once, run **YAMD: Prune Orphaned Card Data** to remove stale entries from `srs.json`.
+
+---
+
+## Reviewing cards
+
+Open the command palette and run **YAMD: Review Flashcards**.
+
+- Due cards (oldest due date first) are shown, then up to `yamd.study.newCardsPerDay` new ones (default 20).
+- Grade each card: **Again** (forgot), **Hard**, **Good**, **Easy**.
+- The interval shown on each button is the SM-2 prediction for that grade.
+- After grading, click **Open in editor** to jump to the source line.
+
+Settings:
+
+| Setting | Default | Meaning |
+| ------- | ------- | ------- |
+| `yamd.study.newCardsPerDay` | `20` | New cards shown per session |
+
+---
+
+## Quiz mode
+
+Run **YAMD: Toggle Quiz Mode** while a preview is open. Cloze answers are hidden — the preview shows `[…]` — and clicking one (or pressing :kbd[Enter] / :kbd[Space] while it is focused) reveals the answer. This turns any note into a self-test without touching the source.
+
+---
+
+## Tips
+
+- Put flashcards at the end of a lecture note under a **Review cards** heading.
+- Use container cards for multi-line proofs or code snippets.
+- Use leaf cards for vocabulary, definitions and short formulae.
+- Use cloze on sentences you've already written — just wrap the key words.
+- Keep the question and answer short enough to read in 10 seconds.

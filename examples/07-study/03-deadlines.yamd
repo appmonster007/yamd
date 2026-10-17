@@ -1,0 +1,142 @@
+---
+yamd: 0.1
+title: Courses, deadlines and the dashboard
+course: YAMD guide
+lang: en-US
+---
+
+# {{ title }}
+
+YAMD tracks assignments and coursework deadlines without a separate calendar app.
+Everything lives in the notes themselves — `course:` front matter groups them,
+`due:` dates mark when things are due, and the dashboard brings it all together.
+
+::toc{depth=2}
+
+---
+
+## Naming a course
+
+Add `course:` to the front matter of any note. Notes in the same course are
+grouped together in the dashboard and when generating a cheat sheet.
+
+```yamd
+---
+title: Binary search trees
+course: CS201
+due: 2026-11-01
+---
+```
+
+The `due:` key here marks the **whole note** as a submission (an essay, a lab
+report, a problem set). The extension picks it up automatically.
+
+---
+
+## Marking a note as reviewed
+
+Add `reviewed:` with today's date to tell the dashboard you've looked at this note recently. Notes without a recent review date appear in the **Stale topics** list after `yamd.study.staleAfterDays` days (default 14).
+
+```yamd
+---
+title: Sorting algorithms
+course: CS201
+reviewed: 2026-10-17
+---
+```
+
+---
+
+## Task-level deadlines
+
+Any task item in a note can carry `{due=YYYY-MM-DD}`. These show up in the
+agenda alongside note-level due dates.
+
+- [ ] Read chapters 4–6 {due=2026-10-24}
+- [ ] Submit lab report 2 {due=2026-11-01}
+- [ ] Revise for midterm {due=2026-11-08}
+- [x] Complete tutorial 3 {due=2026-10-10}
+
+---
+
+## The dashboard
+
+Run **YAMD: Open Study Dashboard** from the command palette. The dashboard shows:
+
+### Agenda
+
+Deadlines grouped by urgency:
+
+| Section | Meaning |
+| ------- | ------- |
+| **Overdue** | Past due and not done |
+| **Today** | Due today |
+| **This week** | Due in the next 7 days |
+| **Later** | Further out |
+| **Done** | Completed items |
+
+Each item shows the note title, the due date, how far away it is ("in 3 days",
+"yesterday") and the course. Click any item to jump to that note.
+
+### Course progress
+
+A progress bar per course showing how many tasks are done vs total.
+Courses with no tasks still appear if any note carries that `course:` label.
+
+### Stale topics
+
+Notes in a course not opened or reviewed in the last `yamd.study.staleAfterDays`
+days, sorted oldest first. A prompt to revisit them.
+
+### Study heatmap
+
+A GitHub-style 26-week heatmap of your study sessions (logged by the timer).
+Each cell's colour intensity corresponds to minutes studied that day.
+Hover a cell to see the exact date and minutes.
+
+### Review queue
+
+How many flashcards are due for review today. Click **Review now** to open the
+review panel.
+
+---
+
+## Settings
+
+| Setting | Default | Meaning |
+| ------- | ------- | ------- |
+| `yamd.study.staleAfterDays` | `14` | Days before a topic is flagged as stale |
+
+---
+
+## Example: a module overview note
+
+Here is what a typical course overview note looks like. It gives the dashboard
+everything it needs.
+
+```yamd
+---
+title: CS201 overview
+course: CS201
+reviewed: 2026-10-17
+lang: en
+---
+
+# CS201 overview
+
+## Deadlines
+
+- [ ] Problem set 1 {due=2026-10-24}
+- [ ] Midterm exam {due=2026-11-08}
+- [ ] Lab report 2 {due=2026-11-01}
+- [ ] Problem set 2 {due=2026-11-15}
+- [ ] Final exam {due=2026-12-10}
+
+## Topics
+
+- [x] Arrays and sorting
+- [x] Recursion and recurrences
+- [ ] Trees and BSTs
+- [ ] Hash tables
+- [ ] Graphs and BFS/DFS
+```
