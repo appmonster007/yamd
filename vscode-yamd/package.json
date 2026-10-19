@@ -231,6 +231,19 @@
         "icon": "$(history)"
       },
       {
+        "command": "yamd.newNoteMenu",
+        "title": "New Note…",
+        "shortTitle": "New Note",
+        "category": "YAMD",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "yamd.newNoteFromTemplate",
+        "title": "New Note from Template…",
+        "category": "YAMD",
+        "icon": "$(files)"
+      },
+      {
         "command": "yamd.reviewCards",
         "title": "Review Flashcards",
         "category": "YAMD"
@@ -438,14 +451,9 @@
       ],
       "explorer/context": [
         {
-          "command": "yamd.newNote",
+          "command": "yamd.newNoteMenu",
           "when": "explorerResourceIsFolder",
           "group": "navigation@5"
-        },
-        {
-          "command": "yamd.newTimestampNote",
-          "when": "explorerResourceIsFolder",
-          "group": "navigation@6"
         },
         {
           "command": "yamd.openMarkdownAsYamd",
@@ -465,14 +473,9 @@
       ],
       "view/title": [
         {
-          "command": "yamd.newNote",
+          "command": "yamd.newNoteMenu",
           "when": "view == yamd.backlinks",
           "group": "navigation@1"
-        },
-        {
-          "command": "yamd.newTimestampNote",
-          "when": "view == yamd.backlinks",
-          "group": "navigation@2"
         },
         {
           "command": "yamd.openGraph",
@@ -632,7 +635,7 @@
         "yamd.templates.folder": {
           "type": "string",
           "default": "templates",
-          "description": "Folder that holds templates for \"YAMD: Insert Template\". Notes in it aren't indexed."
+          "description": "Folder that holds templates for \"YAMD: Insert Template\" and \"YAMD: New Note from Template\". Notes in it aren't indexed."
         },
         "yamd.queries.timeout": {
           "type": "number",

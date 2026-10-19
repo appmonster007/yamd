@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { formatDate, newNoteText } from '../core/templates';
+import { expandPlaceholders, formatDate, newNoteText } from '../core/templates';
+import { findTemplates } from './daily';
 
 /** Characters that can't appear in a file name on common file systems. */
 const INVALID = /[\\/:*?"<>|\u0000-\u001f]/;
@@ -85,9 +86,66 @@ async function newTimestampNote(clicked?: vscode.Uri): Promise<void> {
   await create(folder, name, formatDate(now, 'YYYY-MM-DD HH:mm'));
 }
 
+/** "YAMD: New Note from Template…": picks a template from the templates folder, then asks for a name. */
+async function newNoteFromTemplate(clicked?: vscode.Uri): Promise<void> {
+  const folder = await targetFolder(clicked);
+  if (!folder) {
+    void vscode.window.showInformationMessage('YAMD: Open a folder to create notes in it.');
+    return;
+  }
+  const items = await findTemplates(folder);
+  if (!items.length) {
+    const templates = vscode.workspace.getConfiguration('yamd.templates').get<string>('folder', 'templates');
+    void vscode.window.showInformationMessage(`YAMD: No templates found in "${templates}". Set yamd.templates.folder to change it.`);
+    return;
+  }
+  const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Choose a template' });
+  if (!picked) return;
+  const where = vscode.workspace.asRelativePath(folder, true);
+  const name = await vscode.window.showInputBox({
+    title: 'New Note from Template',
+    prompt: `The note's title; it is also the file name. Creates it in ${where}.`,
+    placeHolder: 'Meeting notes',
+    validateInput: async (value) => {
+      const v = value.trim();
+      if (!v) return 'Enter a name.';
+      if (INVALID.test(v)) return 'A name can’t contain / \\ : * ? " < > |';
+      if (await exists(vscode.Uri.joinPath(folder, `${v.replace(/\.yamd$/i, '')}.yamd`))) return `${v}.yamd already exists here.`;
+      return null;
+    },
+  });
+  if (name === undefined) return;
+  const title = name.trim().replace(/\.yamd$/i, '');
+  const template = new TextDecoder().decode(await vscode.workspace.fs.readFile(picked.uri));
+  const { text, cursor } = expandPlaceholders(template, { now: new Date(), title });
+  const uri = vscode.Uri.joinPath(folder, `${title}.yamd`);
+  await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(text));
+  const editor = await vscode.window.showTextDocument(uri);
+  const pos = cursor === undefined ? editor.document.lineAt(editor.document.lineCount - 1).range.end : editor.document.positionAt(cursor);
+  editor.selection = new vscode.Selection(pos, pos);
+}
+
+/** "YAMD: New Note (Menu)": the single toolbar/context-menu entry point; asks which kind to create. */
+async function newNoteMenu(clicked?: vscode.Uri): Promise<void> {
+  const pick = await vscode.window.showQuickPick(
+    [
+      { label: '$(new-file) New Note…', detail: 'Asks for a name.', action: 'note' as const },
+      { label: '$(history) New Timestamped Note', detail: 'Named after the current time, no questions asked.', action: 'timestamp' as const },
+      { label: '$(files) New Note from Template…', detail: 'Starts from a template in the templates folder.', action: 'template' as const },
+    ],
+    { title: 'YAMD: New Note', placeHolder: 'What kind of note?' },
+  );
+  if (!pick) return;
+  if (pick.action === 'note') await newNote(clicked);
+  else if (pick.action === 'timestamp') await newTimestampNote(clicked);
+  else await newNoteFromTemplate(clicked);
+}
+
 export function registerNewNote(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('yamd.newNote', (uri?: vscode.Uri) => newNote(uri instanceof vscode.Uri ? uri : undefined)),
     vscode.commands.registerCommand('yamd.newTimestampNote', (uri?: vscode.Uri) => newTimestampNote(uri instanceof vscode.Uri ? uri : undefined)),
+    vscode.commands.registerCommand('yamd.newNoteFromTemplate', (uri?: vscode.Uri) => newNoteFromTemplate(uri instanceof vscode.Uri ? uri : undefined)),
+    vscode.commands.registerCommand('yamd.newNoteMenu', (uri?: vscode.Uri) => newNoteMenu(uri instanceof vscode.Uri ? uri : undefined)),
   );
 }

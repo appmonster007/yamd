@@ -103,6 +103,13 @@ async function stepDaily(direction: -1 | 1): Promise<void> {
   await vscode.window.showTextDocument(vscode.Uri.joinPath(dir, target.name));
 }
 
+/** Template files in the `templates/` folder, for the quick pick in "Insert Template" and "New Note from Template". */
+export async function findTemplates(base: vscode.Uri): Promise<{ label: string; description: string; uri: vscode.Uri }[]> {
+  const { templates } = settings();
+  const files = await vscode.workspace.findFiles(new vscode.RelativePattern(base, `${templates}/**/*.yamd`));
+  return files.map((uri) => ({ label: path.basename(uri.fsPath, '.yamd'), description: vscode.workspace.asRelativePath(uri), uri }));
+}
+
 async function insertTemplate(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   const base = root();
@@ -111,15 +118,12 @@ async function insertTemplate(): Promise<void> {
     return;
   }
   const { templates } = settings();
-  const files = await vscode.workspace.findFiles(new vscode.RelativePattern(base, `${templates}/**/*.yamd`));
-  if (!files.length) {
+  const items = await findTemplates(base);
+  if (!items.length) {
     void vscode.window.showInformationMessage(`YAMD: No templates found in "${templates}". Set yamd.templates.folder to change it.`);
     return;
   }
-  const pick = await vscode.window.showQuickPick(
-    files.map((f) => ({ label: path.basename(f.fsPath, '.yamd'), description: vscode.workspace.asRelativePath(f), uri: f })),
-    { placeHolder: 'Choose a template' },
-  );
+  const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Choose a template' });
   if (!pick) return;
   const title = path.basename(editor.document.uri.fsPath, '.yamd');
   let text = await readText(pick.uri);
