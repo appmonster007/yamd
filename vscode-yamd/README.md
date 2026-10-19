@@ -147,7 +147,7 @@ Type a prefix and accept the suggestion:
 | `Y102` | Error    | Front matter is not valid YAML                        |
 | `Y201` | Info     | Redundant trailing backslash (a newline is a break)   |
 | `Y210` | Info     | Paragraph looks hard-wrapped; quick fix joins it      |
-| `Y212` | Info     | Changed bullet marker starts a new list               |
+| `Y212` | Info     | Changed bullet marker nests a new list one level deeper |
 | `Y301` | Warning  | `##word` at the start of a line isn't a heading       |
 | `Y401` | Warning  | Line without `>` continues the quote above (lazy)     |
 | `Y501` | Error    | Unclosed code fence                                   |

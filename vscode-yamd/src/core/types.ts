@@ -130,6 +130,12 @@ export interface ListBlock extends BlockBase {
   /** The bullet character or ordered delimiter, e.g. `-` or `.`. */
   marker: string;
   items: ListItem[];
+  /**
+   * True when this list was nested under the previous item because its marker changed with no
+   * blank line in between (§3.3 Bullets), rather than by indentation. Set by the parser; read by
+   * the linter to report `Y212`.
+   */
+  markerNested?: boolean;
 }
 
 export interface QuoteBlock extends BlockBase {

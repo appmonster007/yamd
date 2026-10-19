@@ -420,17 +420,15 @@ class Linter {
     }
   }
 
-  /** Y212: a bullet list directly followed (no blank line) by one with a different marker. */
+  /** Y212: a bullet list the parser nested because its marker changed with no blank line above it. */
   private listRules() {
     const visit = (blocks: Block[]) => {
-      blocks.forEach((b, i) => {
-        const prev = blocks[i - 1];
-        const adjacent = prev !== undefined && b.line === prev.endLine + 1;
-        if (b.type === 'list' && prev?.type === 'list' && adjacent && !b.ordered && !prev.ordered && b.marker !== prev.marker) {
+      blocks.forEach((b) => {
+        if (b.type === 'list' && b.markerNested) {
           this.report(
             'Y212',
             'info',
-            `Changing the bullet from "${prev.marker}" to "${b.marker}" starts a new list. Use "${prev.marker}" to continue the list above.`,
+            `Changing the bullet to "${b.marker}" nests this list under the item above. Use the same marker to keep it at the same level, or add a blank line above to start a new list instead.`,
             this.markerRange(b),
           );
         }

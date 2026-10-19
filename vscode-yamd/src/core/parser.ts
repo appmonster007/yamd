@@ -20,7 +20,7 @@ import { KNOWN_INLINE_DIRECTIVES, plainText } from './inline';
 import { yamdFromMarkdown } from './micromark/mdast';
 import { yamdSyntax } from './micromark/syntax';
 import { SlugRegistry, slugify } from './slug';
-import type { Align, Attrs, Block, Diagnostic, FootnoteDef, InlineNode, ListItem, Range, RefDef, TableCell, YamdDocument } from './types';
+import type { Align, Attrs, Block, Diagnostic, FootnoteDef, InlineNode, ListBlock, ListItem, Range, RefDef, TableCell, YamdDocument } from './types';
 
 export const KNOWN_CONTAINERS = new Set([
   'note',
@@ -173,6 +173,38 @@ function prepareLines(lines: string[]): {
   return { text, attrs, comments, commentOpeners };
 }
 
+/**
+ * A bullet list directly followed (no blank line) by a bullet list with a different marker nests
+ * under the last item of the first list, one level per marker change, instead of starting a new
+ * list at the same level (GFM's rule). This is YAMD's second way to nest, alongside indentation,
+ * meant for content that shouldn't be pushed over (e.g. alternating dialogue lines). A blank line
+ * between the lists still starts a new list, as in GFM.
+ */
+function nestMarkerChanges(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  let current: ListBlock | undefined;
+  for (const b of blocks) {
+    if (
+      b.type === 'list' &&
+      current &&
+      !b.ordered &&
+      !current.ordered &&
+      b.marker !== current.marker &&
+      b.line === current.endLine + 1
+    ) {
+      const parent = current.items[current.items.length - 1]!;
+      b.markerNested = true;
+      parent.children.push(b);
+      current.endLine = b.endLine;
+      current = b;
+      continue;
+    }
+    out.push(b);
+    current = b.type === 'list' ? b : undefined;
+  }
+  return out;
+}
+
 class Adapter {
   readonly diagnostics: Diagnostic[] = [];
   readonly footnotes = new Map<string, FootnoteDef>();
@@ -246,7 +278,7 @@ class Adapter {
       pending = undefined;
       out.push(b);
     }
-    return out;
+    return nestMarkerChanges(out);
   }
 
   private block(n: MNode): Block | null {

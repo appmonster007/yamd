@@ -52,10 +52,16 @@ describe('headings', () => {
 });
 
 describe('lists', () => {
-  test('changing the bullet marker starts a new list', () => {
+  test('changing the bullet marker nests under the item above', () => {
     const out = html('- a\n- b\n* c');
     assert.equal(count(out, '<ul'), 2);
     assert.equal(count(out, '<li'), 3);
+    assert.match(out, /<li[^>]*>b\s*<ul[^>]*>\s*<li[^>]*>c<\/li>\s*<\/ul>\s*<\/li>/);
+  });
+
+  test('a blank line before a new marker starts a sibling list instead', () => {
+    const out = html('- a\n\n* b');
+    assert.equal(count(out, '<ul'), 2);
   });
 
   test('any number starts an ordered list', () => {

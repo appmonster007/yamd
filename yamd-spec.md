@@ -125,7 +125,7 @@ Don't hard-wrap prose. Use your editor's soft wrap instead. `yamd fmt` never ref
 Lists follow GFM.
 
 **Bullets**
-- `-`, `*` and `+` all work. **Changing the marker starts a new list**, as in GFM. This is how you put two lists next to each other. When the marker changes with no blank line in between, YAMD reports information `Y212` in case it was a typo. `yamd fmt` keeps each list's marker.
+- `-`, `*` and `+` all work. **Changing the marker with no blank line in between nests one level deeper**, under the last item of the list above — a second way to nest, alongside indentation (see **Nesting** below). This diverges from GFM, where a marker change always starts a new list at the same level; add a blank line before the new marker to get that instead. YAMD reports information `Y212` wherever a marker change nests a list, as a reminder of what happened. `yamd fmt` keeps each list's marker.
 
 **Ordered**
 - Use `1.` or `1)`. The list starts at the first item's number, and the following items are numbered in order whatever is written. `yamd fmt` rewrites the numbers to match.
@@ -134,6 +134,7 @@ Lists follow GFM.
 
 **Nesting**
 - An item's content (including nested lists) must be indented to at least the column where the item's text starts: 2 spaces after `- `, 3 after `1. `. This is GFM's rule; `yamd fmt` normalizes nesting to that column.
+- Changing the bullet marker with no blank line in between nests the new list one level under the previous item instead of indenting it — handy for content (like alternating dialogue) that doesn't want extra indentation. Only unordered-to-unordered switches work this way; ordered lists and marker changes after a blank line are unaffected. Switching through a third marker (e.g. `-` then `+` then `*`, each adjacent) nests one level deeper each time.
 
 **Continuity**
 - A bullet list, or an ordered list starting at 1, may start directly after a paragraph line with no blank line.
@@ -687,7 +688,7 @@ These rules are enforced by `yamd check`:
 | `Y102` | error    | Front matter isn't valid YAML (§2.1)                             |
 | `Y201` | info     | Redundant trailing `\` (§3.1)                                    |
 | `Y210` | info     | Paragraph looks hard-wrapped (§3.1)                              |
-| `Y212` | info     | Changed bullet marker starts a new list (§3.3)                   |
+| `Y212` | info     | Changed bullet marker nests a new list one level deeper (§3.3)   |
 | `Y301` | warning  | `##word` without a space (§3.2)                                  |
 | `Y401` | warning  | Lazy blockquote continuation (§3.4)                              |
 | `Y501` | error    | Unclosed code fence (§3.5)                                       |
@@ -761,6 +762,7 @@ YAMD passes the CommonMark 0.31.2 and GFM spec examples except for the cases bel
 | `---` on line 1                  | a thematic break             | front matter                   | Start with a blank line          |
 | `$x$`                            | text                         | math                           | `\$x$` (GitHub also renders math) |
 | Links with schemes outside `http`, `https`, `mailto`, `tel` | a link | text (`Y901`)            | Use an allowed scheme            |
+| `- a`⏎`+ b` (no blank line, different marker)    | two lists                    | `b` nested under `a` (`Y212`)  | Add a blank line before `+ b`    |
 
 "YAMD: Convert from Markdown" and "YAMD: Open Markdown as YAMD" apply every fix in the last column automatically.
 
@@ -775,7 +777,7 @@ YAMD passes the CommonMark 0.31.2 and GFM spec examples except for the cases bel
 | Invisible trailing-space line breaks              | A newline is a break, so they're never needed (§3.1)       |
 | A single newline is ignored                       | Enter starts a new line (§3.1)                             |
 | Nested list indentation (2 vs 4 spaces, tabs)     | GFM's content-column rule, tabs flagged, formatter normalizes (§3.3, §2) |
-| Mixed markers split lists unexpectedly            | Kept as GFM's way to start a new list, with info `Y212` (§3.3) |
+| Mixed markers split lists unexpectedly            | A marker change nests one level deeper instead of splitting, with info `Y212` (§3.3) |
 | `2024. Great year` becomes a list                 | Only lists starting at 1 interrupt paragraphs; escape `\.` (§3.3) |
 | A list needs a blank line before it               | Not required (§3.3)                                        |
 | Code blocks break list numbering                  | Content indented under the item stays in it (§3.3)         |
