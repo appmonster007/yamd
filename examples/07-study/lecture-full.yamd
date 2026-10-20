@@ -38,7 +38,7 @@ called the **left child** and the **right child**.
 :::
 
 :::definition {title="Binary search tree" #def:bst}
-A *binary search tree* (BST) is a binary tree $T$ such that for every node $v$:
+A *binary search tree* (BST) is a [binary tree]{arrow=def:binary-tree} $T$ such that for every node $v$:
 
 $$\text{key}(u) < \text{key}(v) \quad \forall u \in \text{left-subtree}(v)$$
 $$\text{key}(w) > \text{key}(v) \quad \forall w \in \text{right-subtree}(v)$$
@@ -49,13 +49,16 @@ This is the *BST property*.
 The BST property means an in-order traversal visits keys in sorted order —
 see [@thm:inorder] below.
 
+Annotating like you would on paper: [the BST property]{arrow=def:bst} draws
+a connector back to its definition above in the preview, and this note wires up several more below, like a diagram sketched over the text.
+
 ---
 
 ## Theorems and proofs
 
 :::theorem {title="Search complexity" #thm:bst-search}
 Search, insert and delete in a BST each run in $O(h)$ time, where $h$ is the
-height of the tree.
+[height]{arrow=def:height} of the tree.
 :::
 
 :::proof
@@ -78,7 +81,7 @@ subtree. Applying the induction hypothesis to each subtree gives the result.
 A randomly built BST has expected height $O(\log n)$.
 An adversarially ordered input gives a degenerate tree with $h = n - 1$,
 so worst-case complexity is $O(n)$.
-For guaranteed $O(\log n)$, use a balanced variant: AVL tree, red-black tree,
+For guaranteed $O(\log n)$, use a [balanced]{arrow=def:balanced arrow-style=curve} variant: AVL tree, red-black tree,
 or a skip list. See [@cormen2022] for details.
 :::
 
@@ -95,11 +98,11 @@ search for key 5:
 3. 5 < 6 → go left to 4
 4. 5 > 4 → go right — `nil`, not found
 
-The search makes 4 comparisons. The tree's height is 3, so this is $O(h)$.
+The search makes 4 comparisons. The tree's [height]{arrow=def:height} is 3, so this is $O(h)$.
 :::
 
 :::example {title="Insertion" #ex:bst-insert}
-Insert key 5 into the same tree. Follow the same path as search — when you
+Insert key 5 into the same tree. Follow the [same path as search]{arrow=ex:bst-search} — when you
 reach `nil`, attach the new node there (as the right child of 4).
 :::
 
@@ -107,7 +110,7 @@ reach `nil`, attach the new node there (as the right child of 4).
 
 ## Derivation
 
-:::derivation
+:::proof
 **Show that insertion preserves the BST property.**
 
 Let $T$ be a BST and $k$ a new key. Insert $k$ by the standard algorithm,
@@ -120,7 +123,7 @@ By construction, at every ancestor $v$ of $\ell$:
   $v$'s right subtree. ✓
 
 The BST property at $\ell$ is vacuously satisfied (it has no children).
-Therefore $T$ remains a BST after insertion. $\square$
+Therefore $T$ remains a BST after insertion.
 :::
 
 ---
@@ -128,7 +131,7 @@ Therefore $T$ remains a BST after insertion. $\square$
 ## Practice questions
 
 :::question {#q:height}
-What is the height of a BST built by inserting the keys `[5, 3, 7, 1, 4, 6, 8]`
+What is the [height]{arrow=def:height} of a BST built by inserting the keys `[5, 3, 7, 1, 4, 6, 8]`
 in that order? Draw the tree.
 :::
 
@@ -179,17 +182,18 @@ An in-order traversal of a BST visits keys in :cloze[sorted order].
 
 A BST built from sorted input has height :cloze[$n - 1$], giving :cloze[$O(n)$] search.
 
-The AVL tree and the :cloze[red–black tree] are balanced BST variants.
+The AVL tree and the :cloze[red–black tree] are [balanced BST variants]{arrow=def:balanced}.
 
 ---
 
 ## Summary
 
 :::summary
+{#summary-core}
 A binary search tree organises keys so that search, insert and delete each cost
 $O(h)$ time, where $h$ is the tree's height. On random input $h = O(\log n)$;
 on sorted input $h = O(n)$. Balanced variants (AVL, red–black) guarantee
-$O(\log n)$ regardless of insertion order. The in-order traversal visits keys
+$O(\log n)$ regardless of insertion order. The [in-order traversal]{arrow=thm:inorder} visits keys
 in sorted order — a property that follows directly from the BST invariant.
 :::
 
@@ -201,6 +205,7 @@ in sorted order — a property that follows directly from the BST invariant.
 - [ ] Implement `search` and `insert` in Python {due=2026-10-24}
 - [ ] Solve LeetCode #700 (search) and #701 (insert) {due=2026-10-21}
 - [ ] Write up answers to [@q:height] and [@q:degenerate] {due=2026-10-28}
+- [ ] Before the exam, reread [the summary]{arrow=summary-core} above {due=2026-10-31}
 
 ---
 

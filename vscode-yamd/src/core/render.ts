@@ -658,8 +658,18 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       }
       case 'image':
         return this.image(n);
-      case 'span':
+      case 'span': {
+        const arrow = attrString(n.attrs, 'arrow');
+        if (arrow) {
+          const style = attrString(n.attrs, 'arrow-style');
+          const styleAttr = style === 'curve' || style === 'wire' ? ` data-yamd-arrow-style="${style}"` : '';
+          // A real link to #target-id, not just a visual connector: it's clickable and jumps to
+          // the target even without the preview's JS (e.g. in exported HTML), the same way a
+          // cross-reference does.
+          return `<a href="#${escapeHtml(arrow)}"${this.attrs(n.attrs, undefined)} data-yamd-arrow-to="${escapeHtml(arrow)}"${styleAttr}>${this.inline(n.children)}</a>`;
+        }
         return `<span${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</span>`;
+      }
       case 'tag':
         return `<span class="tag" data-tag="${escapeHtml(n.name)}">#${escapeHtml(n.name)}</span>`;
       case 'embed':

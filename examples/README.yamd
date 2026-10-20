@@ -28,6 +28,7 @@ Start with the [guided tour](getting-started.yamd), then explore by topic.
 | [Links and images](01-basics/links-and-images.yamd)         | Inline, reference, bare and wiki links; images, figures             | Available |
 | [Tables](01-basics/tables.yamd)                             | Pipe tables, alignment, captions, colspan, list tables              | Available |
 | [Code and math](01-basics/code-and-math.yamd)               | Fences with attributes, diagrams, inline and block math             | Available |
+| [Arrow annotations](01-basics/arrows.yamd)                  | Connectors between spans, routing and color, a flow chart           | Available |
 
 ## Documents
 

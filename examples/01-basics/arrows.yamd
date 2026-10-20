@@ -1,0 +1,69 @@
+---
+yamd: 0.1
+title: Arrow Annotations
+lang: en-US
+---
+
+# {{ title }}
+
+Draw a connector from a span of text to any labeled element elsewhere in the
+note — the way you'd draw an arrow by hand from a word to its definition.
+
+::toc{depth=2}
+
+## The basics
+
+Source and target are the same shape: `[text]{arrow=id}` to point *from* a span, `[text]{#id}` to label the span being pointed *at* — the same `[text]{attrs}` syntax as any other span (§4.5), the same way you'd mark a target in LaTeX with `\label{}`. The connector always lands on exactly the text you wrapped, word or whole sentence, never just "somewhere in that paragraph":
+
+```yamd
+[mitosis]{arrow=def-mitosis} is how a cell divides. There's more going on in
+cell biology than division alone, but [mitosis is the process of nuclear
+division]{#def-mitosis} specifically, one step among several in the cycle.
+```
+
+[mitosis]{arrow=def-mitosis} is how a cell divides. There's more going on in cell biology than division alone, but [mitosis is the process of nuclear division]{#def-mitosis} specifically, one step among several in the cycle.
+
+To point at an entire block instead of one phrase — a whole definition box, say — label the block itself: `{#id}` on its own line directly above it.
+
+```yamd
+[mitosis]{arrow=def-mitosis-box} is also how a cell divides.
+
+:::definition {#def-mitosis-box}
+Mitosis is the process of nuclear division.
+:::
+```
+
+[mitosis]{arrow=def-mitosis-box} is also how a cell divides.
+
+:::definition {#def-mitosis-box}
+Mitosis is the process of nuclear division.
+:::
+
+Open this file's preview (:kbd[Cmd+K V]) to see both connectors drawn — one landing mid-sentence, one landing on the box's own edge — it's data-only everywhere else, such as in exported HTML.
+
+## Routing and color
+
+`arrow-style=curve` draws a smooth curve straight between the two anchors instead of the default `wire` routing, which steps out to the page margin and back in so it doesn't cross the text in between. Every arrow is also colored automatically, so ones that run close together or cross stay tellable apart — there's nothing to configure for either the routing or the color beyond picking `wire` or `curve`.
+
+[wire (default)]{arrow=target-wire} routes around the text below.
+
+[curve]{arrow=target-curve arrow-style=curve} routes straight across it instead.
+
+{#target-wire}
+Target for the wire example.
+
+{#target-curve}
+Target for the curve example.
+
+## Flow charts
+
+These connectors are for annotating prose — pointing a word or sentence at its definition or source elsewhere in the note. A flow chart (steps, branches, shapes) is a different kind of diagram entirely: write it as a standard ` ```mermaid ` code block (§3.9) instead.
+
+````yamd
+```mermaid
+graph LR
+  start[Start] --> receive[Receive request] --> validate[Validate request]
+```
+````
+
+A renderer without diagram support shows the block as source; this is independent of the word-to-target arrows above.

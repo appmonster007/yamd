@@ -119,6 +119,21 @@ describe('link rules', () => {
     assert.deepEqual(codes('See [@fig:none]'), ['Y701']);
   });
 
+  test('unresolved arrow target', () => {
+    const d = find('[mitosis]{arrow=no-such-id}', 'Y701');
+    assert.ok(d);
+    assert.equal(d.severity, 'warning');
+    assert.match(d.message, /No element has the id "no-such-id"/);
+  });
+
+  test('arrow target resolves to an attributed span', () => {
+    assert.deepEqual(codes('[mitosis]{arrow=def-mitosis} [Mitosis]{#def-mitosis}'), []);
+  });
+
+  test('arrow target resolves to a block ID', () => {
+    assert.deepEqual(codes('[mitosis]{arrow=^def-mitosis}\n\nMitosis is nuclear division. ^def-mitosis'), []);
+  });
+
   test('Y901 unsafe scheme', () => {
     assert.deepEqual(codes('[x](javascript:alert(1))'), ['Y901']);
   });

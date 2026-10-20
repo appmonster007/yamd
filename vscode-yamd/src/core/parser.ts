@@ -288,12 +288,14 @@ class Adapter {
     switch (n.type) {
       case 'paragraph': {
         const children = this.inline(n.children ?? []);
+        const attrs = takeLeadingAttrs(children);
         const blockId = takeBlockId(children);
         return {
           type: 'paragraph',
           children,
           rawLines: this.lines.slice(line, endLine + 1).map((l) => l.trim()),
           blockId,
+          attrs,
           line,
           endLine,
         };
@@ -736,6 +738,17 @@ function makeSpan(out: InlineNode[], attrs: Extract<InlineNode, { type: 'attrs' 
   return false;
 }
 
+/** Removes a leading `{attrs}` (and the whitespace after it) from inline content, e.g. the
+ * `{#start}` in `{#start} Start` — the same attributes a standalone `{#start}` line directly
+ * above the paragraph would set, written on the same line instead. */
+function takeLeadingAttrs(children: InlineNode[]): Attrs | undefined {
+  const first = children[0];
+  if (first?.type !== 'attrs') return undefined;
+  children.shift();
+  trimStart(children);
+  return first.attrs;
+}
+
 /** Removes trailing `{attrs}` (and the whitespace before it) from inline content. */
 function takeTrailingAttrs(children: InlineNode[]): Attrs | undefined {
   trimEnd(children);
@@ -783,6 +796,17 @@ function trimEnd(children: InlineNode[]) {
     if (trimmed === last.value) return;
     if (trimmed === '') children.pop();
     else children[children.length - 1] = { ...last, value: trimmed };
+  }
+}
+
+function trimStart(children: InlineNode[]) {
+  for (;;) {
+    const first = children[0];
+    if (first?.type !== 'text') return;
+    const trimmed = first.value.replace(/^[ \t]+/, '');
+    if (trimmed === first.value) return;
+    if (trimmed === '') children.shift();
+    else children[0] = { ...first, value: trimmed };
   }
 }
 

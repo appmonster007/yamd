@@ -299,6 +299,32 @@ Use `[text]{attrs}` to style any run of text:
 [Warning]{color=red} [small print]{.muted} [centered]{align=center}
 ```
 
+A span's `arrow=target-id` attribute draws a connector from that span to the element whose `id` is `target-id`. The connector always points at exactly the element carrying that `id` — so to point at one specific word or sentence, label that word or sentence itself, the same `[text]{attrs}` span syntax as everything else in this section, the same way you'd mark it for a LaTeX `\label{}`:
+
+```yamd
+[mitosis]{arrow=def-mitosis} is how a cell divides. Mix that with other
+processes and [mitosis is the process of nuclear
+division]{#def-mitosis}, one step in a longer paragraph.
+```
+
+Source and target are the same shape — `[text]{arrow=id}` to point *from* a span, `[text]{#id}` to label the span being pointed *at* — so an arrow never lands vaguely on "the surrounding paragraph somewhere," only on the exact text you wrapped.
+
+To point at an entire block instead — a whole `:::definition` box, say — label the block itself: `{#id}` directly above it or starting its own first line (§5), a heading's own trailing `{#id}`, or a cross-reference label (`{#fig:…}`, §4.7). This is a different target than labeling one phrase inside the block: pick whichever matches what the arrow is actually pointing at. Either way the connector still lands on the block's visible content, not on empty space — a block like a plain paragraph is as wide as the page column regardless of how short its text is, and the preview anchors on the rendered text itself, not that full width.
+
+```yamd
+[mitosis]{arrow=def-mitosis-box} is how a cell divides.
+
+:::definition {#def-mitosis-box}
+Mitosis is the process of nuclear division.
+:::
+```
+
+An optional `arrow-style` attribute chooses how the connector is drawn: `wire` (the default) routes it as a right-angled line that steps out to the page margin and back in, like a schematic's wiring; `curve` routes it as a smooth bracket instead. `[mitosis]{arrow=def-mitosis arrow-style=curve}` uses the curved style for that one arrow.
+
+A block ID (`^id`, §4.11) also resolves as an arrow target, kept with its `^`, the same way `![[note#^id]]` keeps it (`arrow=^id`) — but prefer `{#id}` for anything you're labeling specifically to be an arrow target: it reads the same wherever it's used, and doesn't require the `^id` marker to sit at the very end of a line.
+
+A span with `arrow=` renders as a real link to `#target-id` (`<a href="#target-id">`, same as a cross-reference), so it's clickable and jumps to its target even without the preview — a visible connector line is drawn only in the interactive VS Code preview, as additional data, not a replacement for the link. The preview also assigns each arrow its own color automatically (no two repeat, however many a document has), so arrows that run close together or cross stay visually distinguishable; this coloring isn't configurable from the markup. A `target-id` that doesn't resolve to any element in the document produces `Y701` (§12.1), same as any other missing anchor.
+
 ### 4.6 Footnotes
 
 - Reference: `[^id]`. Definition: `[^id]: text`. Indent the lines that follow a definition to give it more paragraphs.
@@ -352,7 +378,7 @@ Attributes give any element an ID, classes and key/value settings using one synt
 
 | Where       | Placement                                                         |
 | ----------- | ----------------------------------------------------------------- |
-| Block       | On its own line **directly above** the block                      |
+| Block       | On its own line **directly above** the block, or **at the start** of the block's own first line: `{#id} The paragraph's text starts right here.` |
 | Heading     | At the end of the heading line: `## Title {#id}`                  |
 | Inline      | **Directly after** the element, with no space: `![a](b){width=50}` |
 | Code fence  | After the language: ` ```js {title="x.js"} `                      |
@@ -697,7 +723,7 @@ These rules are enforced by `yamd check`:
 | `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
 | `Y604` | info     | Kanban column over its `limit` (§6.1)                            |
 | `Y605` | warning  | Flashcard has no answer (§6.4)                                   |
-| `Y701` | warning  | Missing link, image, anchor, reference or footnote target (§10)  |
+| `Y701` | warning  | Missing link, image, anchor, reference, footnote or arrow target (§10, §4.5)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |
 | `Y709` | warning  | Link name matches more than one note (§4.3)                      |

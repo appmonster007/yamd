@@ -333,6 +333,68 @@ describe('footnotes and cross-references', () => {
   });
 });
 
+describe('arrow annotations', () => {
+  test('a span with an arrow attribute renders as a real link to its target', () => {
+    const out = html('[mitosis]{arrow=def-mitosis}');
+    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
+  });
+
+  test('a span without an arrow attribute is unaffected', () => {
+    const out = html('[small print]{.muted}');
+    assert.doesNotMatch(out, /data-yamd-arrow-to/);
+    assert.match(out, /<span class="muted">small print<\/span>/);
+  });
+
+  test('an arrow attribute combines with other attributes on the same span', () => {
+    const out = html('[mitosis]{.key-term arrow=def-mitosis}');
+    assert.match(out, /<a href="#def-mitosis" class="key-term" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
+  });
+
+  test('an element with a block ID keeps its id for use as an arrow target', () => {
+    const out = html('Mitosis is nuclear division. ^def-mitosis');
+    assert.match(out, /<p id="\^def-mitosis"/);
+  });
+
+  test('arrow-style=curve renders a data-yamd-arrow-style attribute', () => {
+    const out = html('[mitosis]{arrow=def-mitosis arrow-style=curve}');
+    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis" data-yamd-arrow-style="curve">mitosis<\/a>/);
+  });
+
+  test('arrow-style is ignored without an arrow attribute', () => {
+    const out = html('[mitosis]{arrow-style=curve}');
+    assert.doesNotMatch(out, /data-yamd-arrow-style/);
+  });
+
+  test('an unrecognized arrow-style value is dropped', () => {
+    const out = html('[mitosis]{arrow=def-mitosis arrow-style=zigzag}');
+    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
+    assert.doesNotMatch(out, /data-yamd-arrow-style/);
+  });
+});
+
+describe('{#id}-labeled paragraphs', () => {
+  test('a leading {#id} labels the paragraph, consuming the attrs and not showing them as text', () => {
+    const out = html('{#a}\nStart');
+    assert.match(out, /<p id="a" data-line="1">Start<\/p>/);
+  });
+
+  test('{#id} and the paragraph text can share one line', () => {
+    const out = html('{#a} Start\n\n{#b} Receive request');
+    assert.match(out, /<p id="a" data-line="0">Start<\/p>/);
+    assert.match(out, /<p id="b" data-line="2">Receive request<\/p>/);
+  });
+
+  test('a leading attribute list can combine an id with other attributes', () => {
+    const out = html('{.muted #a} Start');
+    assert.match(out, /<p id="a" class="muted" data-line="0">Start<\/p>/);
+  });
+
+  test('braces that do not parse as attrs stay literal, even at the start of a line', () => {
+    const out = html('{2+2=4} rest of the line');
+    assert.match(out, /<p data-line="0">\{2\+2=4\} rest of the line<\/p>/);
+  });
+});
+
 describe('fallbacks', () => {
   test('math is shown as source', () => {
     assert.match(html('$E = mc^2$'), /<code class="math">E = mc\^2<\/code>/);

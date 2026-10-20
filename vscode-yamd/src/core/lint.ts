@@ -112,6 +112,7 @@ class Linter {
     for (const b of this.allBlocks) {
       if (b.type === 'heading') this.ids.add(b.id);
       if (b.attrs?.id) this.ids.add(b.attrs.id);
+      if (b.type === 'paragraph' && b.blockId) this.ids.add(`^${b.blockId}`);
       if (b.type === 'list') b.items.forEach((it) => it.attrs?.id && this.ids.add(it.attrs.id));
       for (const nodes of blockInlines(b)) {
         walkInline(nodes, (n) => {
@@ -337,6 +338,13 @@ class Linter {
       case 'crossRef':
         if (!this.ids.has(n.id)) this.report('Y701', 'warning', `No element has the id "${n.id}".`, n.range);
         break;
+      case 'span': {
+        const target = n.attrs.values['arrow'];
+        if (typeof target === 'string' && !this.ids.has(target)) {
+          this.report('Y701', 'warning', `No element has the id "${target}".`, n.range);
+        }
+        break;
+      }
       case 'footnoteRef':
         if (!this.doc.footnotes.has(n.id)) {
           this.report('Y701', 'warning', `The footnote "[^${n.id}]" is not defined.`, n.range);
