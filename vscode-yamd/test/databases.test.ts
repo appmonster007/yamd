@@ -244,8 +244,15 @@ describe('views', () => {
 
   test('calendar', () => {
     const html = view(tasks(), { type: 'calendar', date: 'Due' }, { month: '2026-10' }).html ?? '';
-    assert.match(html, /data-date="2026-10-20"><span class="db-day-number">20<\/span><div class="db-event" data-row-id="t2">Finish the sign-up flow/);
+    assert.match(html, /data-date="2026-10-20"><button type="button" class="db-day-number">20<\/button><div class="db-event" tabindex="0" data-row-id="t2"><div class="db-event-summary">Finish the sign-up flow/);
     assert.match(html, /October 2026/);
+  });
+
+  test('calendar weeks get a week number, and events get a collapsible detail of the view\'s other columns', () => {
+    const html = view(tasks(), { type: 'calendar', date: 'Due', columns: 'Owner' }, { month: '2026-10' }).html ?? '';
+    assert.match(html, /class="db-week-number" data-week="\d+">Wk \d+/);
+    assert.match(html, /class="db-event-detail"><span class="db-prop" data-prop="Owner" title="Owner">Ada<\/span><\/div>/);
+    assert.match(html, /<div class="db-agenda" hidden>/);
   });
 
   test('list and gallery', () => {

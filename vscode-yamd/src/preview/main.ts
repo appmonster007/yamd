@@ -505,15 +505,19 @@ root.addEventListener('dblclick', (event) => {
 
 // The agenda is a below-the-grid list (never inside a day cell, which is too narrow to show full
 // detail without cropping): clicking a day or week number lists every event in that range, and
-// clicking one event narrows the list to just that item, already expanded.
+// clicking one event narrows the list to just that item, already expanded. This applies to any
+// `.db-calendar` grid — the editable `:::calendar` board and the read-only `::db{type=calendar}`
+// view alike — not just interactive ones.
+
+const calGridOf = (el: Element) => el.closest<HTMLElement>('.db-calendar');
 
 function calFormatDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
   return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
-function calShowAgenda(board: HTMLElement, title: string, events: HTMLElement[], expandAll: boolean) {
-  const agenda = board.querySelector<HTMLElement>('.db-agenda');
+function calShowAgenda(grid: HTMLElement, title: string, events: HTMLElement[], expandAll: boolean) {
+  const agenda = grid.querySelector<HTMLElement>('.db-agenda');
   const list = agenda?.querySelector<HTMLElement>('.db-agenda-list');
   const titleEl = agenda?.querySelector<HTMLElement>('.db-agenda-title');
   if (!agenda || !list || !titleEl) return;
@@ -536,13 +540,13 @@ root.addEventListener('click', (event) => {
   const weekNumber = target.closest<HTMLElement>('.db-week-number');
   if (!dayNumber && !weekNumber) return;
   const scope = dayNumber?.closest<HTMLElement>('.db-day') ?? weekNumber?.closest<HTMLElement>('.db-week');
-  const board = calBoardOf(dayNumber ?? weekNumber!);
-  if (!scope || !board) return;
+  const grid = calGridOf(dayNumber ?? weekNumber!);
+  if (!scope || !grid) return;
   const events = Array.from(scope.querySelectorAll<HTMLElement>('.db-event'));
   if (!events.length) return;
   const date = dayNumber ? scope.dataset['date'] : undefined;
   const title = date ? calFormatDate(date) : weekNumber ? `Week ${weekNumber.dataset['week']}` : '';
-  calShowAgenda(board, title, events, false);
+  calShowAgenda(grid, title, events, false);
 });
 
 // Click an event's summary to list just that one item below the calendar, already expanded — unless
@@ -558,9 +562,9 @@ root.addEventListener('click', (event) => {
     if (card.querySelector('.db-event-detail')) card.classList.toggle('expanded');
     return;
   }
-  const board = calBoardOf(card);
-  if (!board) return;
-  calShowAgenda(board, card.dataset['title'] ?? card.textContent ?? '', [card], true);
+  const grid = calGridOf(card);
+  if (!grid) return;
+  calShowAgenda(grid, card.dataset['title'] ?? card.textContent ?? '', [card], true);
 });
 
 // Close the agenda.

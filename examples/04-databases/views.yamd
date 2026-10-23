@@ -103,6 +103,6 @@ In a trusted workspace you can edit these views directly:
 - Click a column header to sort for yourself, without changing this note.
 - **Save view** writes the current sort and filter into the database as a named view.
 - Formula cells such as `Overdue`, and the `Created` and `Updated` times, are read-only.
-- Calendar, timeline and chart views are read-only (there's no cell to click or card to drag). For an editable, drag-to-reschedule board over the same kind of data without a `.ydb` file, write it as prose instead — see [calendar, timeline and gallery as markup](../05-kanban/calendar-timeline-gallery.yamd).
+- Calendar, timeline and chart views are read-only — there's no cell to edit or card to drag — though a calendar's day and week numbers can still be clicked to list that range's rows below the grid. For an editable, drag-to-reschedule board over the same kind of data without a `.ydb` file, write it as prose instead — see [calendar, timeline and gallery as markup](../05-kanban/calendar-timeline-gallery.yamd).
 
 Edits to `.ydb` files can be undone in the editor. Edits to SQLite files ask for permission the first time in each session.

@@ -100,7 +100,7 @@ function today(): string {
 }
 
 /** ISO 8601 week number (weeks start Monday; week 1 is the one containing the year's first Thursday). */
-function isoWeek(iso: string): number {
+export function isoWeek(iso: string): number {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3);
   const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
@@ -618,7 +618,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
     const mode = interactive ? ' data-interactive' : '';
     const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
-    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}</div>${agenda}</div>`;
+    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div></div>`;
   }
 
   /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are

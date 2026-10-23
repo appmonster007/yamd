@@ -2,7 +2,7 @@
  * HTML for database views and query results. Every value is escaped here; the webview never
  * builds HTML from data.
  */
-import { escapeHtml, sanitizeUrl } from '../render';
+import { escapeHtml, isoWeek, sanitizeUrl } from '../render';
 import { READ_ONLY_TYPES, titleProperty } from './ydb';
 import type { Property, SavedView, Schema } from './ydb';
 import type { QueryResult } from './engine';
@@ -235,16 +235,37 @@ function calendar(data: ViewData): string {
     const d = Number(v.slice(8, 10));
     byDay.set(d, [...(byDay.get(d) ?? []), r]);
   }
-  const cells: string[] = [];
-  for (let i = 0; i < offset; i++) cells.push('<div class="db-day empty"></div>');
+  const cols = columnsFor(data).filter((p) => p.name !== dateProp);
+  const eventHtml = (r: ViewRow): string => {
+    const detailLine = propsLine(data, r, cols);
+    const detail = detailLine ? `<div class="db-event-detail">${detailLine}</div>` : '';
+    return `<div class="db-event" tabindex="0" data-row-id="${escapeHtml(r.id)}"><div class="db-event-summary">${escapeHtml(titleOf(data, r))}</div>${detail}</div>`;
+  };
+  interface Cell {
+    html: string;
+    iso?: string;
+  }
+  const cells: Cell[] = [];
+  for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
   for (let d = 1; d <= days; d++) {
     const iso = `${month}-${String(d).padStart(2, '0')}`;
-    const items = (byDay.get(d) ?? []).map((r) => `<div class="db-event" data-row-id="${escapeHtml(r.id)}">${escapeHtml(titleOf(data, r))}</div>`).join('');
-    cells.push(`<div class="db-day${iso === data.today ? ' today' : ''}" data-date="${iso}"><span class="db-day-number">${d}</span>${items}</div>`);
+    const items = (byDay.get(d) ?? []).map(eventHtml).join('');
+    cells.push({ html: `<div class="db-day${iso === data.today ? ' today' : ''}" data-date="${iso}"><button type="button" class="db-day-number">${d}</button>${items}</div>`, iso });
+  }
+  while (cells.length % 7 !== 0) cells.push({ html: '<div class="db-day empty"></div>' });
+  const weeks: string[] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    const week = cells.slice(i, i + 7);
+    const firstIso = week.find((c) => c.iso)?.iso;
+    const label = firstIso
+      ? `<button type="button" class="db-week-number" data-week="${isoWeek(firstIso)}">Wk ${isoWeek(firstIso)}</button>`
+      : '<span class="db-week-number empty"></span>';
+    weeks.push(`<div class="db-week">${label}${week.map((c) => c.html).join('')}</div>`);
   }
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
   const title = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
-  return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><button type="button" class="db-month" data-delta="-1" aria-label="Previous month">‹</button><span class="db-month-title">${title}</span><button type="button" class="db-month" data-delta="1" aria-label="Next month">›</button></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div>`;
+  const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
+  return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><button type="button" class="db-month" data-delta="-1" aria-label="Previous month">‹</button><span class="db-month-title">${title}</span><button type="button" class="db-month" data-delta="1" aria-label="Next month">›</button></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div>`;
 }
 
 interface TimelineItem {
