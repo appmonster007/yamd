@@ -189,6 +189,14 @@ describe('variable rules', () => {
     assert.equal(d.length, 1);
     assert.match(d[0]?.message ?? '', /produc/);
   });
+
+  test('Y802 template placeholder outside a template insertion', () => {
+    const src = '---\nlang: en\n---\n{{@date}}';
+    const d = lint(parse(src)).filter((x) => x.code === 'Y802' || x.code === 'Y801');
+    assert.equal(d.length, 1);
+    assert.equal(d[0]?.code, 'Y802');
+    assert.equal(d[0]?.severity, 'info');
+  });
 });
 
 describe('excluded content', () => {

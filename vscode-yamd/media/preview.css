@@ -287,8 +287,11 @@ code.math { font-style: italic; }
 .footnotes { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
 .footnote-ref a { font-size: 0.8em; }
 
-.citation, .xref-missing, .var-missing { color: var(--yamd-muted); }
+.citation, .xref-missing, .var-missing, .placeholder { color: var(--yamd-muted); }
 .xref-missing, .var-missing { text-decoration: wavy underline var(--yamd-warning); }
+/* A template placeholder outside insertion is an info-level note (Y802), not an error, so it gets
+   a quieter dotted underline instead of var-missing's warning-colored wavy one. */
+.placeholder { text-decoration: dotted underline var(--yamd-muted); }
 .bibliography-note { color: var(--yamd-muted); font-size: 0.9em; }
 
 .include-placeholder, .embed-fallback {

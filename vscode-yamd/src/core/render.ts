@@ -694,6 +694,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
         return `<span class="citation">[${escapeHtml(n.raw.replace(/@/g, ''))}]</span>`;
       }
       case 'variable': {
+        if (n.path.startsWith('@')) return `<span class="placeholder">${escapeHtml(n.raw)}</span>`;
         const value = lookupVariable(this.doc.frontMatter, n.path);
         return value === undefined ? `<span class="var-missing">${escapeHtml(n.raw)}</span>` : escapeHtml(value);
       }

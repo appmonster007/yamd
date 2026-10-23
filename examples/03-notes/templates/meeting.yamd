@@ -10,7 +10,7 @@ lang: en-US
 # {{@title}}
 
 :::note {title="Template placeholders"}
-`{{@date}}`, `{{@time}}`, `{{@title}}` and `{{@cursor}}` are filled in when you run **YAMD: Insert Template**. They aren't variables, so they produce no warnings here.
+`{{@date}}`, `{{@time}}`, `{{@title}}` and `{{@cursor}}` are filled in when you run **YAMD: Insert Template**. They aren't variables, so an undefined one never produces `Y801` — but sitting unexpanded in a file like this one (outside an actual template insertion), they do get a gentle `Y802` info note, which is expected here and nothing to fix.
 :::
 
 **Date:** {{@date:DD/MM/YYYY}} at {{@time}}

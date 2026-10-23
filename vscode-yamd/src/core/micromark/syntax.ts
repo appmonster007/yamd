@@ -144,11 +144,11 @@ function rawSpan(type: TokenName, open: string, close: string, options: RawSpanO
 
 const notOpenBrace = (prev: Code) => prev !== codes.leftCurlyBrace;
 
-/** `{{ path }}` */
+/** `{{ path }}` (a variable) or `{{@name}}` / `{{@name:FORMAT}}` (a template placeholder, §4.12). */
 const variable: Construct = rawSpan('yamdVariable', '{{', '}}', {
   forbid: '{}',
   previous: notOpenBrace,
-  validate: (c) => /^\s*[A-Za-z_][\w.-]*\s*$/.test(c),
+  validate: (c) => /^\s*(@[A-Za-z_][\w.-]*(:[^{}]*)?|[A-Za-z_][\w.-]*)\s*$/.test(c),
 });
 
 /** Review markup. Content may span lines and contain formatting. */

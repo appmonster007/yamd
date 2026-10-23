@@ -165,9 +165,11 @@ describe('cross-note diagnostics', () => {
     assert.match(lintNote(s, 'i.yamd').join(), /Y709 .*a\/notes\.yamd, b\/notes\.yamd/);
   });
 
-  test('template placeholders are not variables', () => {
-    assert.deepEqual(lint(parse('---\nlang: en\n---\nDate: {{@date}}')).map((d) => d.code), []);
-    assert.match(html('Date: {{@date}}'), /\{\{@date\}\}/);
+  test('template placeholders are not variables, but get a Y802 info note outside template insertion', () => {
+    const d = lint(parse('---\nlang: en\n---\nDate: {{@date}}'));
+    assert.deepEqual(d.map((x) => x.code), ['Y802']);
+    assert.equal(d[0]?.severity, 'info');
+    assert.match(html('Date: {{@date}}'), /<span class="placeholder">\{\{@date\}\}<\/span>/);
   });
 });
 

@@ -350,7 +350,14 @@ class Linter {
         }
         break;
       case 'variable':
-        if (lookupVariable(this.doc.frontMatter, n.path) === undefined) {
+        if (n.path.startsWith('@')) {
+          this.report(
+            'Y802',
+            'info',
+            `"{{${n.path}}}" is a template placeholder, only replaced when a template is inserted. Run template insertion, or remove it if this note wasn't inserted from a template.`,
+            n.range,
+          );
+        } else if (lookupVariable(this.doc.frontMatter, n.path) === undefined) {
           this.report(
             'Y801',
             'error',

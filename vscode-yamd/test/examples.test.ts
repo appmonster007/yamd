@@ -24,14 +24,18 @@ const notes = new NoteStore([posixRoot], (p) => existsSync(p));
 for (const f of all) notes.set(f.split(path.sep).join('/'), readFileSync(f, 'utf8'));
 const rel = (file: string) => path.relative(root, file).split(path.sep).join('/');
 
-/** Files that only use features the extension supports today. */
+/**
+ * Files that only use features the extension supports today.
+ * `03-notes/templates/*` is excluded: those files are raw templates, so their `{{@...}}`
+ * placeholders are meant to sit unexpanded — Y802 firing there is expected, not a bug.
+ */
 const available = all.filter((f) => {
   const r = rel(f);
   return (
     (r.startsWith('01-basics/') ||
       r.startsWith('02-documents/') ||
       r.startsWith('06-markdown/') ||
-      (r.startsWith('03-notes/') && r !== '03-notes/queries.yamd') ||
+      (r.startsWith('03-notes/') && r !== '03-notes/queries.yamd' && !r.startsWith('03-notes/templates/')) ||
       r === '05-kanban/sprint-board.yamd' ||
       !r.includes('/')) &&
     r !== '02-documents/diagnostics.yamd'
