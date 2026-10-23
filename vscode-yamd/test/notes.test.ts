@@ -160,9 +160,19 @@ describe('cross-note diagnostics', () => {
     assert.match(lintNote(s, 'b.yamd').join(), /Y602/);
   });
 
-  test('ambiguous link', () => {
+  test('ambiguous link is not auto-resolved, and Y709 is an error', () => {
     const s = store({ 'a/notes.yamd': '', 'b/notes.yamd': '', 'i.yamd': '---\nlang: en\n---\n[[notes]]' });
-    assert.match(lintNote(s, 'i.yamd').join(), /Y709 .*a\/notes\.yamd, b\/notes\.yamd/);
+    const d = lint(parse(s.read('i.yamd') ?? ''), { notes: { lookup: s, path: 'i.yamd' } });
+    assert.deepEqual(d.map((x) => x.code), ['Y709']);
+    assert.equal(d[0]?.severity, 'error');
+    assert.match(d[0]?.message ?? '', /a\/notes\.yamd, b\/notes\.yamd/);
+  });
+
+  test('ambiguous embed renders as unresolved, not a silent shortest-path guess', () => {
+    const s = store({ 'a/notes.yamd': 'A content', 'b/notes.yamd': 'B content' });
+    const out = render(parse('![[notes]]'), { resolveEmbed: embedResolver(s, 'i.yamd', () => ({})) });
+    assert.doesNotMatch(out, /A content|B content/);
+    assert.match(out, /embed-missing/);
   });
 
   test('template placeholders are not variables, but get a Y802 info note outside template insertion', () => {

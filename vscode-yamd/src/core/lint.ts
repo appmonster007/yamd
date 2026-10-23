@@ -233,7 +233,8 @@ class Linter {
       return true;
     }
     if (r.candidates.length > 1) {
-      this.report('Y709', 'warning', `"${file}" matches ${r.candidates.length} notes: ${r.candidates.join(', ')}. The shortest path is used; write more of the path to choose.`, range);
+      this.report('Y709', 'error', `"${file}" matches ${r.candidates.length} notes: ${r.candidates.join(', ')}. Not resolved — write more of the path to choose.`, range);
+      return true;
     }
     if (!r.path.toLowerCase().endsWith(NOTE_EXT)) return true;
     const target = r.path === notes.path ? summarize(notes.path, this.doc.source, this.doc) : this.noteSummary(r.path);

@@ -273,7 +273,15 @@ export class PreviewManager implements vscode.Disposable {
       : fileResolver(doc)?.(decoded);
     if (!file && this.index && from) {
       // Wikilinks resolve by name and alias anywhere in the workspace.
-      file = resolveNote(this.index.store, decoded.replace(/\.yamd$/i, ''), from)?.path;
+      const r = resolveNote(this.index.store, decoded.replace(/\.yamd$/i, ''), from);
+      if (r && r.candidates.length > 1) {
+        // Ambiguous: never auto-pick (the shortest path could silently change later as notes are
+        // added or removed), so ask which one was meant instead of guessing.
+        const picked = await vscode.window.showQuickPick(r.candidates, { placeHolder: `"${decoded}" matches more than one note — which one?` });
+        file = picked;
+      } else {
+        file = r?.path;
+      }
     }
     if (!file) {
       const name = splitTarget(decoded).file.replace(/\.yamd$/i, '');
