@@ -315,7 +315,23 @@ division]{#def-mitosis}, one step in a longer paragraph.
 
 A span with `ref=` renders as a real link to `#target-id` (`<a href="#target-id">`, the same as a cross-reference), so it's clickable and jumps to its target in any renderer. A `target-id` that doesn't resolve to any element in the document produces `Y701` (§12.1), same as any other missing anchor.
 
-YAMD Studio adds editor-only affordances on top of `ref=` — color-coding each target and showing its line/column on hover — described in [yamd-studio-spec.md](yamd-studio-spec.md); none of that changes what gets rendered.
+**Locating a target.** Every distinct `ref=` target in a document gets its own color (no two repeat on a page, however many there are), applied to the source link and shown again next to the target itself, so the two ends stay visually paired even far apart in a long document. Next to both ends, a renderer also shows a `file:line:col` locator (the current file's name, or just `line:col` when the renderer has no filename for the document) pointing at the target's own position in the source — not the source span's position, since the point is finding the target, not the reference to it:
+
+```yamd
+[mitosis]{ref=def-mitosis} is how a cell divides.
+
+[mitosis is the process of nuclear division]{#def-mitosis}.
+```
+
+renders as something like:
+
+```html
+<a href="#def-mitosis" style="color:hsl(0 70% 42%)">mitosis</a> <sup>guide.yamd:3:1</sup> is how a cell divides.
+
+<span id="def-mitosis" style="color:hsl(0 70% 42%)">mitosis is the process of nuclear division</span> <sup>guide.yamd:3:1</sup>.
+```
+
+This is part of the format's own rendering contract, not an editor-only affordance — it works the same in exported HTML with no script required.
 
 ### 4.6 Footnotes
 
@@ -674,7 +690,7 @@ These rules are enforced by `yamd check`:
 
 There are only two levels, and both are defined in this one document:
 
-- **Core:** sections 2–5 and 8–10, except for math, diagrams, citations and cross-references. Directives degrade as described in section 3.10.
+- **Core:** sections 2–5 and 8–10, except for math, diagrams, citations, cross-references, and `ref=`'s color-coding and `file:line:col` locator (a Core renderer only has to render the plain link). Directives degrade as described in section 3.10.
 - **Full:** everything in this spec.
 
 A Core renderer that meets a Full feature must show its source text as plain text or a code block. It must never drop content silently.

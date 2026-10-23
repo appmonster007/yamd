@@ -38,7 +38,7 @@ Mitosis is the process of nuclear division.
 Mitosis is the process of nuclear division.
 :::
 
-A `ref=` span renders as a real link to `#target-id`, so it's clickable and jumps to its target in any renderer — including in exported HTML, with no preview script needed.
+A `ref=` span renders as a real link to `#target-id`, so it's clickable and jumps to its target in any renderer — including in exported HTML, with no preview script needed. Every distinct target also gets its own color (no two repeat on a page), shown at both the source and the target, plus a `file:line:col` locator pointing at exactly where the target sits in the source — so a reference stays easy to find even in a long document, with nothing to configure.
 
 ## Block IDs
 
@@ -53,10 +53,6 @@ Mitosis is the process of nuclear division. ^def-mitosis-block
 [mitosis]{ref=^def-mitosis-block} is how a cell divides.
 
 Mitosis is the process of nuclear division. ^def-mitosis-block
-
-## In YAMD Studio
-
-The format only guarantees the plain link above. YAMD Studio adds two editor-only affordances on top, neither of which changes what gets rendered: every distinct `ref=` target gets its own color (no two repeat on a page), so references to the same target stay visually grouped even without a drawn line between them, and hovering a `ref=` span shows the target's line and column with a "Jump to target" action.
 
 ## Flow charts
 

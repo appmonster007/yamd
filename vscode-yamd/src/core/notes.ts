@@ -189,7 +189,7 @@ function stringList(value: unknown): string[] {
 }
 
 /** Inline content owned directly by a block. */
-function blockInlines(b: Block): InlineNode[][] {
+export function blockInlines(b: Block): InlineNode[][] {
   switch (b.type) {
     case 'paragraph':
     case 'heading':
@@ -203,7 +203,7 @@ function blockInlines(b: Block): InlineNode[][] {
   }
 }
 
-function walkInline(nodes: InlineNode[], visit: (n: InlineNode) => void) {
+export function walkInline(nodes: InlineNode[], visit: (n: InlineNode) => void) {
   for (const n of nodes) {
     visit(n);
     if ('children' in n && Array.isArray(n.children)) walkInline(n.children, visit);

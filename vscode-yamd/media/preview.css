@@ -294,7 +294,11 @@ code.math { font-style: italic; }
 .placeholder { text-decoration: dotted underline var(--yamd-muted); }
 .bibliography-note { color: var(--yamd-muted); font-size: 0.9em; }
 
-.include-placeholder, .embed-fallback {
+/* A ref= locator: shown at both the source span and its target, in the target's own assigned
+   hue (set inline per element, since it's one of possibly many distinct targets on the page). */
+.ref-locator { font-family: var(--yamd-mono); font-size: 0.75em; opacity: 0.85; }
+
+.embed-fallback {
   border: 1px dashed var(--yamd-border);
   border-radius: var(--yamd-radius);
   padding: 8px 16px;

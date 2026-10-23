@@ -5,6 +5,7 @@ import { buildBoard, buildCalendarCards, buildGallery, buildTimeline, cardSource
 import type { CalendarBoard, GalleryBoard, TimelineBoard } from './kanban';
 import type { KanbanBoard, KanbanCard } from './kanban';
 import { cardTitleSource } from './kanbanEdit';
+import { blockInlines, walkInline } from './notes';
 import { walkBlocks } from './parser';
 import { normalizeUri } from 'micromark-util-sanitize-uri';
 import { sanitizeHtml } from './sanitize';
@@ -108,6 +109,7 @@ class Renderer {
   private figureCount = 0;
   private tableCount = 0;
   private equationCount = 0;
+  private refTargets: Map<string, { hue: number; line: number; column: number }> | undefined;
 
   constructor(
     private readonly doc: YamdDocument,
@@ -153,6 +155,79 @@ class Renderer {
     this.equationCount = 0;
   }
 
+  /** The 1-based line and column of a character offset into the source. */
+  private offsetToLineCol(offset: number): { line: number; column: number } {
+    const starts = this.doc.lineStarts;
+    let lo = 0;
+    let hi = starts.length - 1;
+    let line = 0;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if ((starts[mid] ?? 0) <= offset) {
+        line = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return { line: line + 1, column: offset - (starts[line] ?? 0) + 1 };
+  }
+
+  /** Where an `{#id}`/`^id` target actually is in the source, for a `ref=` locator (§4.5). */
+  private locate(id: string): { line: number; column: number } | undefined {
+    const blockId = id.startsWith('^') ? id.slice(1) : undefined;
+    let found: { line: number; column: number } | undefined;
+    walkBlocks(this.doc.blocks, (b) => {
+      if (found) return;
+      if (blockId === undefined && b.type === 'heading' && b.id === id) found = { line: b.line + 1, column: 1 };
+      else if (blockId === undefined && b.attrs?.id === id) found = { line: b.line + 1, column: 1 };
+      else if (blockId !== undefined && b.type === 'paragraph' && b.blockId === blockId) {
+        const col = (this.doc.lines[b.endLine] ?? '').indexOf(`^${blockId}`);
+        found = { line: b.endLine + 1, column: (col === -1 ? 0 : col) + 1 };
+      }
+      if (found) return;
+      for (const nodes of blockInlines(b)) {
+        walkInline(nodes, (n) => {
+          if (found || blockId !== undefined) return;
+          if ((n.type === 'span' || n.type === 'image' || n.type === 'link') && n.attrs?.id === id) found = this.offsetToLineCol(n.range.start);
+        });
+      }
+    });
+    return found;
+  }
+
+  /**
+   * Every distinct `ref=` target in the document, in order of first use, each assigned its own hue
+   * (a golden-angle step, so no two repeat) and the line/column its target actually sits at — the
+   * same information shown at both ends of the reference, source and target (§4.5).
+   */
+  private computeRefTargets(): Map<string, { hue: number; line: number; column: number }> {
+    if (this.refTargets) return this.refTargets;
+    const map = new Map<string, { hue: number; line: number; column: number }>();
+    walkBlocks(this.doc.blocks, (b) => {
+      for (const nodes of blockInlines(b)) {
+        walkInline(nodes, (n) => {
+          if (n.type !== 'span') return;
+          const ref = attrString(n.attrs, 'ref');
+          if (!ref || map.has(ref)) return;
+          const pos = this.locate(ref);
+          if (pos) map.set(ref, { hue: (map.size * 137.508) % 360, ...pos });
+        });
+      }
+    });
+    this.refTargets = map;
+    return map;
+  }
+
+  /** The `file:line:col` badge shown next to both a `ref=` source and its target. */
+  private locatorBadge(id: string): string {
+    const info = this.computeRefTargets().get(id);
+    if (!info) return '';
+    const file = this.options.sourcePath?.split('/').pop();
+    const text = `${file ? `${file}:` : ''}${info.line}:${info.column}`;
+    return ` <sup class="ref-locator" style="color:hsl(${info.hue} 70% 42%)">${escapeHtml(text)}</sup>`;
+  }
+
   render(): string {
     return this.blocks(this.doc.blocks) + this.footnoteSection();
   }
@@ -188,10 +263,10 @@ class Renderer {
         const embed = blockEmbed(b);
         if (embed) return this.embedBlock(embed, b.line);
         const id = b.attrs?.id ?? (b.blockId ? `^${b.blockId}` : undefined);
-        return `<p${this.attrs(b.attrs, b.line, [], id)}>${this.inline(b.children)}</p>`;
+        return `<p${this.attrs(b.attrs, b.line, [], id)}>${this.inline(b.children)}${id ? this.locatorBadge(id) : ''}</p>`;
       }
       case 'heading':
-        return `<h${b.level}${this.attrs(b.attrs, b.line, [], b.id)}>${this.inline(b.children)}</h${b.level}>`;
+        return `<h${b.level}${this.attrs(b.attrs, b.line, [], b.id)}>${this.inline(b.children)}${this.locatorBadge(b.id)}</h${b.level}>`;
       case 'thematicBreak':
         return `<hr${this.attrs(b.attrs, b.line)}>`;
       case 'blockquote':
@@ -737,11 +812,14 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       case 'span': {
         const ref = attrString(n.attrs, 'ref');
         if (ref) {
-          // A real link to #target-id, the same as a cross-reference — no connector drawing,
-          // no routing hints, just an anchor link.
-          return `<a href="#${escapeHtml(ref)}"${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</a>`;
+          // A real link to #target-id, the same as a cross-reference — no connector drawing, just
+          // a colored anchor link plus a file:line:col locator, matching the one shown at the target.
+          const info = this.computeRefTargets().get(ref);
+          const style = info ? ` style="color:hsl(${info.hue} 70% 42%)"` : '';
+          return `<a href="#${escapeHtml(ref)}"${this.attrs(n.attrs, undefined)}${style}>${this.inline(n.children)}</a>${this.locatorBadge(ref)}`;
         }
-        return `<span${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</span>`;
+        const id = n.attrs?.id;
+        return `<span${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</span>${id ? this.locatorBadge(id) : ''}`;
       }
       case 'tag':
         return `<span class="tag" data-tag="${escapeHtml(n.name)}">#${escapeHtml(n.name)}</span>`;

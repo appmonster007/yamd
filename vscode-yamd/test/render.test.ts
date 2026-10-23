@@ -359,6 +359,24 @@ describe('ref= references', () => {
     const out = html('[mitosis]{ref=^def-mitosis}');
     assert.match(out, /<a href="#\^def-mitosis">mitosis<\/a>/);
   });
+
+  test('a resolved ref shows a colored file:line:col locator at both the source and the target', () => {
+    const out = render(parse('[mitosis]{ref=def-mitosis} is how a cell divides.\n\n[Mitosis is nuclear division]{#def-mitosis}.'), { sourcePath: 'notes/guide.yamd' });
+    assert.match(out, /<a href="#def-mitosis" style="color:hsl\(0 70% 42%\)">mitosis<\/a> <sup class="ref-locator" style="color:hsl\(0 70% 42%\)">guide\.yamd:3:1<\/sup>/);
+    assert.match(out, /<span id="def-mitosis">Mitosis is nuclear division<\/span> <sup class="ref-locator" style="color:hsl\(0 70% 42%\)">guide\.yamd:3:1<\/sup>/);
+  });
+
+  test('two distinct ref targets get two distinct hues', () => {
+    const out = render(parse('[a]{ref=t1} [b]{ref=t2}\n\n{#t1}\nOne.\n\n{#t2}\nTwo.'));
+    const hues = [...out.matchAll(/hsl\((\d+(?:\.\d+)?) 70% 42%\)/g)].map((m) => m[1]);
+    assert.ok(new Set(hues).size >= 2, `expected distinct hues, got ${hues.join(', ')}`);
+  });
+
+  test('an unresolved ref gets no color or locator', () => {
+    const out = html('[mitosis]{ref=no-such-id}');
+    assert.match(out, /^<p data-line="0"><a href="#no-such-id">mitosis<\/a><\/p>$/);
+    assert.doesNotMatch(out, /ref-locator|style=/);
+  });
 });
 
 describe('{#id}-labeled paragraphs', () => {

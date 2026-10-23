@@ -160,15 +160,6 @@ CSV files can be turned into `.ydb` databases with the column types inferred fro
 
 ---
 
-### Reference locating (arrow-annotation successor)
-
-A span's `ref=target-id` attribute (yamd-spec.md §4.5) renders as a plain anchor link in any renderer. YAMD Studio adds two editor-only affordances on top, neither of which is part of the rendered document:
-
-- **Color coding.** Every distinct `target-id` referenced via `ref=` in a document gets its own color (no two repeat on a page), applied as a decoration on the `ref=` span in the editor and in the live preview, so references to the same target stay visually grouped without a drawn connector line.
-- **Locate on hover.** Hovering a `ref=target-id` span shows the target's line and column number and a "Jump to target" action.
-
----
-
 ### Diagnostics added by Studio features
 
 | Code  | Severity | Meaning                                         |
