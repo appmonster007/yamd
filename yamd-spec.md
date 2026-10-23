@@ -87,9 +87,13 @@ This is a callout.
 | `author`       | String or list                                            |
 | `date`         | ISO 8601 date                                             |
 | `lang`         | BCP 47 language tag, e.g. `en-US` (used for accessibility) |
-| `vars`         | Map of variables, see [Variables](#58-variables)          |
+| `vars`         | Map of variables, see [Variables](#48-variables)          |
 | `bibliography` | Path to a BibTeX or CSL-JSON file for citations           |
+| `citation-style` | Citation output style: `apa` (default), `mla`, `chicago`, `ieee` or `vancouver` (§4.7) |
 | `toc`          | `true` to insert a table of contents after the title      |
+| `tags`         | List of tags, e.g. `[planning, project/web]` (§4.10)      |
+| `aliases`      | List of alternate names a wikilink can match (§4.12)      |
+| `databases`    | Map of alias → `.ydb`/SQLite path (§6.2)                  |
 
 You can add other keys freely. Renderers must ignore keys they don't recognize.
 
@@ -125,7 +129,7 @@ Don't hard-wrap prose. Use your editor's soft wrap instead. `yamd fmt` never ref
 Lists follow GFM.
 
 **Bullets**
-- `-`, `*` and `+` all work. **Changing the marker with no blank line in between nests one level deeper**, under the last item of the list above — a second way to nest, alongside indentation (see **Nesting** below). This diverges from GFM, where a marker change always starts a new list at the same level; add a blank line before the new marker to get that instead. YAMD reports information `Y212` wherever a marker change nests a list, as a reminder of what happened. `yamd fmt` keeps each list's marker.
+- `-`, `*` and `+` all work, as in GFM: changing the marker always starts a new list at the same level, blank line or not. `yamd fmt` keeps each list's marker.
 
 **Ordered**
 - Use `1.` or `1)`. The list starts at the first item's number, and the following items are numbered in order whatever is written. `yamd fmt` rewrites the numbers to match.
@@ -133,8 +137,7 @@ Lists follow GFM.
 - `{start=5}` on the line above a list also sets the start number.
 
 **Nesting**
-- An item's content (including nested lists) must be indented to at least the column where the item's text starts: 2 spaces after `- `, 3 after `1. `. This is GFM's rule; `yamd fmt` normalizes nesting to that column.
-- Changing the bullet marker with no blank line in between nests the new list one level under the previous item instead of indenting it — handy for content (like alternating dialogue) that doesn't want extra indentation. Only unordered-to-unordered switches work this way; ordered lists and marker changes after a blank line are unaffected. Switching through a third marker (e.g. `-` then `+` then `*`, each adjacent) nests one level deeper each time.
+- An item's content (including nested lists) must be indented to at least the column where the item's text starts: 2 spaces after `- `, 3 after `1. `. This is GFM's rule; `yamd fmt` normalizes nesting to that column. Indentation is the only way to nest a list — there's no second, marker-based way, so a nesting level is always visible in the source.
 
 **Continuity**
 - A bullet list, or an ordered list starting at 1, may start directly after a paragraph line with no blank line.
@@ -443,12 +446,12 @@ To transclude another file or one of its sections, use an embed (`![[note]]`, `!
 :::
 ```
 
-means: each heading starts a **column**, and is a value of an implicit `Status` property (a `select`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2).
+means: each heading starts a **column**, and is a value of an implicit `Status` property (a `status`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2). This implicit database has no backing `.ydb` file and no alias: it can't be referenced by another `::db[...]` or by a query (§6.2) — it exists only to render the one `:::kanban` block it's written in.
 
 Because of that, a board's rules are the database's rules, stated once, whichever way the board was written:
 
 - `{limit=N}` / `count/N`, and `{complete}` marking a column done, are the board view's per-column display settings — the same ones `::db[...]{type=board}` honors for any database.
-- A column over its `{limit=N}` produces information `Y604`, and grouping by a property that isn't `select`/`status`/`person`/`checkbox` produces error `Y855` — both apply uniformly, whether the board came from `:::kanban` markup or a `::db[...]{type=board}` view of a `.ydb` file.
+- A column over its `{limit=N}` produces information `Y604`, and the board's grouping rules (and `Y855`) are exactly the ones a board view has in general (§6.2.1) — both apply uniformly, whether the board came from `:::kanban` markup or a `::db[...]{type=board}` view of a `.ydb` file.
 - Content before the first column heading isn't shown on the board (warning `Y603`) — this one stays markup-specific, since it's a parse-time issue only the prose form can have.
 - Board headings are columns, not document sections: they are left out of the table of contents and the outline, and aren't checked by `Y704` and `Y705`.
 - Editors may let users drag cards. A move rewrites the card's lines (title and body) at the new place, ticking the card when it enters a `{complete}` column and unticking it when it leaves one.
@@ -469,10 +472,14 @@ databases:
 ---
 ```
 
-**Views.** `::db[ref]{view type filter sort group columns limit date date-end cover chart x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order.
+#### 6.2.1 Views
 
+`::db[ref]{view type filter sort group columns limit date date-end cover chart x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order. An attribute that isn't meaningful for the chosen `type` (e.g. `chart` on a `table` view) is ignored and produces information `Y856`.
+
+- **Board** groups rows by `group` (must be `select`, `status`, `person` or `checkbox`, `Y855` otherwise) — see [Kanban boards](#61-kanban-boards) for the markup shorthand.
+- **Gallery** shows each row as a card image named by `cover` (must be a `url` property or an embedded image reference, `Y855` otherwise).
 - **Calendar** places each row on the date named by `date` (must be a `date` property, `Y855` otherwise).
-- **Timeline** is a calendar stretched into a bar: `date` and `date-end` name the start and end `date` properties (`Y855` if either isn't one); a row with no `date-end` renders as a single point. `group` (same as board, §6.1) lays out one row per group instead of one shared track.
+- **Timeline** is a calendar stretched into a bar: `date` and `date-end` name the start and end `date` properties (`Y855` if either isn't one); a row with no `date-end` renders as a single point. `group` (same as board) lays out one row per group instead of one shared track.
 - **Chart** aggregates rows instead of listing them: `x` names the category property rows are bucketed by, `aggregate` is `count` (default), `sum`, `avg`, `min` or `max` applied to the property named by `y` (required unless `aggregate=count`; wrong property type for the chosen aggregate is `Y855`), and `chart` picks the shape — `bar` (default), `line` or `pie`.
 
 ```yamd
@@ -574,7 +581,6 @@ These rules are enforced by `yamd check`:
 | `Y102` | error    | Front matter isn't valid YAML (§2.1)                             |
 | `Y201` | info     | Redundant trailing `\` (§3.1)                                    |
 | `Y210` | info     | Paragraph looks hard-wrapped (§3.1)                              |
-| `Y212` | info     | Changed bullet marker nests a new list one level deeper (§3.3)   |
 | `Y301` | warning  | `##word` without a space (§3.2)                                  |
 | `Y401` | warning  | Lazy blockquote continuation (§3.4)                              |
 | `Y501` | error    | Unclosed code fence (§3.5)                                       |
@@ -582,7 +588,6 @@ These rules are enforced by `yamd check`:
 | `Y602` | error    | Circular embed (§4.11)                                           |
 | `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
 | `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1, §6.2) |
-| `Y605` | warning  | Flashcard has no answer (§6.4)                                   |
 | `Y701` | warning  | Missing link, image, anchor, reference, footnote or `ref=` target (§10, §4.5)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |
@@ -594,7 +599,8 @@ These rules are enforced by `yamd check`:
 | `Y852` | error    | Invalid `.ydb` structure or property type (§6.2)                 |
 | `Y853` | error/warning | Value doesn't match its property (warning for an unknown option) |
 | `Y854` | error    | Duplicate row `id` (§6.2)                                        |
-| `Y855` | error    | A view attribute (`group`, `date`, `date-end`, `x`, `y`) names a property of the wrong type for that view, from `:::kanban` or `::db` (§6.1, §6.2) |
+| `Y855` | error    | A view attribute (`group`, `date`, `date-end`, `cover`, `x`, `y`) names a property of the wrong type for that view, in any database view (§6.1 board, §6.2.1) |
+| `Y856` | info     | View attribute not meaningful for the view's `type`, ignored (§6.2.1)            |
 | `Y901` | warning  | URL scheme not allowed (§9)                                      |
 | `Y950` | error    | Query refused as unsafe (§6.2)                                   |
 | `Y951` | error    | Database outside the note's folder (§6.2)                        |
@@ -622,7 +628,7 @@ These rules are enforced by `yamd check`:
 
 There are only two levels, and both are defined in this one document:
 
-- **Core:** sections 2–5 and 8–10, except for math, diagrams, citations, cross-references and review markup. Directives degrade as described in section 3.10.
+- **Core:** sections 2–5 and 8–10, except for math, diagrams, citations and cross-references. Directives degrade as described in section 3.10.
 - **Full:** everything in this spec.
 
 A Core renderer that meets a Full feature must show its source text as plain text or a code block. It must never drop content silently.
@@ -649,7 +655,6 @@ YAMD passes the CommonMark 0.31.2 and GFM spec examples except for the cases bel
 | `---` on line 1                  | a thematic break             | front matter                   | Start with a blank line          |
 | `$x$`                            | text                         | math                           | `\$x$` (GitHub also renders math) |
 | Links with schemes outside `http`, `https`, `mailto`, `tel` | a link | text (`Y901`)            | Use an allowed scheme            |
-| `- a`⏎`+ b` (no blank line, different marker)    | two lists                    | `b` nested under `a` (`Y212`)  | Add a blank line before `+ b`    |
 
 "YAMD: Convert from Markdown" and "YAMD: Open Markdown as YAMD" apply every fix in the last column automatically.
 
@@ -664,7 +669,6 @@ YAMD passes the CommonMark 0.31.2 and GFM spec examples except for the cases bel
 | Invisible trailing-space line breaks              | A newline is a break, so they're never needed (§3.1)       |
 | A single newline is ignored                       | Enter starts a new line (§3.1)                             |
 | Nested list indentation (2 vs 4 spaces, tabs)     | GFM's content-column rule, tabs flagged, formatter normalizes (§3.3, §2) |
-| Mixed markers split lists unexpectedly            | A marker change nests one level deeper instead of splitting, with info `Y212` (§3.3) |
 | `2024. Great year` becomes a list                 | Only lists starting at 1 interrupt paragraphs; escape `\.` (§3.3) |
 | A list needs a blank line before it               | Not required (§3.3)                                        |
 | Code blocks break list numbering                  | Content indented under the item stays in it (§3.3)         |

@@ -101,7 +101,7 @@ Notes name a course with `course: CS101` in their front matter. Tasks and kanban
 
 ### Citation lookup
 
-`YAMD: Add Citation` looks up a DOI, arXiv ID or ISBN and appends the BibTeX entry to the note's `.bib` file (named by the `bibliography:` front matter key, yamd-spec.md §6.3). Lookup requires network access; the command falls back to a paste-box when offline.
+`YAMD: Add Citation` looks up a DOI, arXiv ID or ISBN and appends the BibTeX entry to the note's `.bib` file (named by the `bibliography:` front matter key, yamd-spec.md §2.1). Lookup requires network access; the command falls back to a paste-box when offline.
 
 ---
 
