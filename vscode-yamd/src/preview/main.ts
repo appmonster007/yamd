@@ -503,6 +503,31 @@ root.addEventListener('dblclick', (event) => {
   });
 });
 
+// Click an event's summary to expand it in place and show its full details (due/owner/tags/body) —
+// skipped when the click is on its checkbox, so ticking a task doesn't also toggle the card open.
+root.addEventListener('click', (event) => {
+  const target = event.target as Element;
+  if (target.closest('input[type="checkbox"]')) return;
+  const summary = target.closest<HTMLElement>('.db-event-summary');
+  const card = summary?.closest<HTMLElement>('.db-event');
+  if (!summary || !card || !card.querySelector('.db-event-detail')) return;
+  card.classList.toggle('expanded');
+});
+
+// Click a day's or week's number to expand (or, if all are already open, collapse) every event in it.
+root.addEventListener('click', (event) => {
+  const target = event.target as Element;
+  const dayNumber = target.closest<HTMLElement>('.db-day-number');
+  const weekNumber = target.closest<HTMLElement>('.db-week-number');
+  const scope = dayNumber?.closest<HTMLElement>('.db-day') ?? weekNumber?.closest<HTMLElement>('.db-week');
+  if (!dayNumber && !weekNumber) return;
+  if (!scope) return;
+  const events = Array.from(scope.querySelectorAll<HTMLElement>('.db-event')).filter((e) => e.querySelector('.db-event-detail'));
+  if (!events.length) return;
+  const expand = events.some((e) => !e.classList.contains('expanded'));
+  events.forEach((e) => e.classList.toggle('expanded', expand));
+});
+
 // ---- Timeline ----
 
 const tlBoardOf = (el: Element) => el.closest<HTMLElement>('.kanban-timeline');
@@ -530,6 +555,14 @@ function tlMove(bar: HTMLElement, toGroup: number, newStart: string) {
 
 let tlDragged: HTMLElement | null = null;
 
+// A vertical line + date label that follows the cursor during a drag, so the user can see exactly
+// where it will land before dropping — otherwise there's no feedback at all about the target date.
+const tlCursor = document.createElement('div');
+tlCursor.className = 'db-timeline-cursor';
+const tlCursorLabel = document.createElement('div');
+tlCursorLabel.className = 'db-timeline-cursor-label';
+tlCursor.append(tlCursorLabel);
+
 root.addEventListener('dragstart', (event) => {
   const bar = (event.target as Element).closest<HTMLElement>('.db-timeline-bar');
   if (!bar || !tlIsInteractive(bar)) return;
@@ -549,6 +582,14 @@ root.addEventListener('dragover', (event) => {
     root.querySelectorAll('.db-timeline-row.drop-target').forEach((r) => r.classList.remove('drop-target'));
     row.classList.add('drop-target');
   }
+  const newStart = tlDateAt(track, event.clientX);
+  if (newStart) {
+    const rect = track.getBoundingClientRect();
+    const pct = rect.width ? ((event.clientX - rect.left) / rect.width) * 100 : 0;
+    tlCursorLabel.textContent = newStart;
+    tlCursor.style.left = `${Math.min(100, Math.max(0, pct))}%`;
+    if (tlCursor.parentElement !== track) track.append(tlCursor);
+  }
 });
 
 root.addEventListener('drop', (event) => {
@@ -557,13 +598,15 @@ root.addEventListener('drop', (event) => {
   if (!tlDragged || !row || !track) return;
   event.preventDefault();
   row.classList.remove('drop-target');
-  const newStart = tlDateAt(track, (event as DragEvent).clientX);
+  tlCursor.remove();
+  const newStart = tlDateAt(track, event.clientX);
   if (newStart) tlMove(tlDragged, Number(row.dataset['group']), newStart);
 });
 
 root.addEventListener('dragend', () => {
   tlDragged?.classList.remove('dragging');
   tlDragged = null;
+  tlCursor.remove();
   root.querySelectorAll('.db-timeline-row.drop-target').forEach((r) => r.classList.remove('drop-target'));
 });
 

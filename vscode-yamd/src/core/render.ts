@@ -99,6 +99,15 @@ function today(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+/** ISO 8601 week number (weeks start Monday; week 1 is the one containing the year's first Thursday). */
+function isoWeek(iso: string): number {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3);
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3);
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
+}
+
 class Renderer {
   private readonly numbers = new Map<string, { kind: string; n: number }>();
   private readonly footnoteOrder: string[] = [];
@@ -564,29 +573,51 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       const d = Number(c.due.slice(8, 10));
       byDay.set(d, [...(byDay.get(d) ?? []), c]);
     }
-    const cells: string[] = [];
-    for (let i = 0; i < offset; i++) cells.push('<div class="db-day empty"></div>');
+    const eventHtml = (c: KanbanCard): string => {
+      const hash = hashText(cardSource(this.doc.lines, c));
+      const drag = interactive ? ' draggable="true"' : '';
+      const box = c.hasCheckbox ? `${this.checkbox(c.line, c.done)} ` : '';
+      const titleSource = escapeHtml(cardTitleSource(this.doc.lines[c.line] ?? ''));
+      const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
+      const owner = c.owner ? `<span class="kanban-owner">@${escapeHtml(c.owner)}</span>` : '';
+      const meta = chips || owner ? `<div class="kanban-card-meta">${chips}${owner}</div>` : '';
+      const bodyInline = c.bodyInline.length ? `<p>${this.inline(c.bodyInline)}</p>` : '';
+      const bodyBlocks = c.body.length ? this.blocks(c.body) : '';
+      const detail = meta || bodyInline || bodyBlocks ? `<div class="db-event-detail">${bodyInline}${bodyBlocks}${meta}</div>` : '';
+      return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}><div class="db-event-summary">${box}${this.inline(c.title)}</div>${detail}</div>`;
+    };
+    interface Cell {
+      html: string;
+      iso?: string;
+    }
+    const cells: Cell[] = [];
+    for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
     for (let d = 1; d <= days; d++) {
       const iso = `${month}-${String(d).padStart(2, '0')}`;
-      const items = (byDay.get(d) ?? [])
-        .map((c) => {
-          const hash = hashText(cardSource(this.doc.lines, c));
-          const drag = interactive ? ' draggable="true"' : '';
-          const box = c.hasCheckbox ? `${this.checkbox(c.line, c.done)} ` : '';
-          const titleSource = escapeHtml(cardTitleSource(this.doc.lines[c.line] ?? ''));
-          return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}>${box}${this.inline(c.title)}</div>`;
-        })
-        .join('');
+      const items = (byDay.get(d) ?? []).map(eventHtml).join('');
       const add = interactive
         ? `<form class="kanban-add" data-date="${iso}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card on ${iso}"></form>`
         : '';
-      cells.push(`<div class="db-day${iso === now ? ' today' : ''}" data-date="${iso}"><span class="db-day-number">${d}</span>${items}${add}</div>`);
+      cells.push({
+        html: `<div class="db-day${iso === now ? ' today' : ''}" data-date="${iso}"><button type="button" class="db-day-number">${d}</button>${items}${add}</div>`,
+        iso,
+      });
+    }
+    while (cells.length % 7 !== 0) cells.push({ html: '<div class="db-day empty"></div>' });
+    const weeks: string[] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      const week = cells.slice(i, i + 7);
+      const firstIso = week.find((c) => c.iso)?.iso;
+      const label = firstIso
+        ? `<button type="button" class="db-week-number" data-week="${isoWeek(firstIso)}">Wk ${isoWeek(firstIso)}</button>`
+        : '<span class="db-week-number empty"></span>';
+      weeks.push(`<div class="db-week">${label}${week.map((c) => c.html).join('')}</div>`);
     }
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
     const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
     const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
     const mode = interactive ? ' data-interactive' : '';
-    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div></div>`;
+    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}</div></div>`;
   }
 
   /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are

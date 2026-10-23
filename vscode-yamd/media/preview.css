@@ -639,22 +639,47 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-calendar-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .db-month { padding: 0 8px; }
 .db-month-title { font-weight: 600; min-width: 9em; text-align: center; }
-.db-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.db-calendar-weekdays, .db-week { display: grid; grid-template-columns: 2.2em repeat(7, minmax(0, 1fr)); gap: 4px; }
+.db-week + .db-week { margin-top: 4px; }
 .db-weekday { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--yamd-muted); text-align: center; padding-bottom: 2px; }
+.db-week-number {
+  align-self: start;
+  margin-top: 2px;
+  padding: 0;
+  font-size: 11px;
+  color: var(--yamd-muted);
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+.db-week-number:not(.empty):hover, .db-week-number:not(.empty):focus-visible { color: var(--yamd-accent); cursor: pointer; }
 .db-day { min-height: 72px; padding: 4px 6px; border: 1px solid var(--yamd-border); border-radius: var(--yamd-radius); font-size: 12px; }
 .db-day.empty { border-color: transparent; }
 .db-day.today { border-color: var(--vscode-focusBorder); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
 .db-day.today .db-day-number { color: var(--vscode-focusBorder); font-weight: 700; }
-.db-day-number { color: var(--yamd-muted); font-variant-numeric: tabular-nums; }
+.db-day-number {
+  padding: 0;
+  color: var(--yamd-muted);
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  font: inherit;
+}
+.db-day-number:hover, .db-day-number:focus-visible { color: var(--yamd-accent); cursor: pointer; }
 .db-event {
   margin-top: 3px;
   padding: 1px 6px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--yamd-accent) 18%, transparent);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
+.db-event:not(.expanded) .db-event-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-event-summary:hover { cursor: pointer; }
+.db-event-detail { display: none; margin-top: 4px; font-size: 11.5px; color: var(--yamd-muted); }
+.db-event.expanded .db-event-detail { display: block; }
+.db-event.expanded { white-space: normal; }
+.db-event-detail p { margin: 0 0 4px; }
+.db-event-detail .kanban-card-meta { margin-top: 0; }
 .db-event input[type="checkbox"], .db-timeline-bar input[type="checkbox"] { vertical-align: middle; margin: 0 2px 0 0; }
 .kanban-calendar[data-interactive] .db-event { cursor: grab; }
 .db-event:focus-visible, .db-event:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
@@ -733,6 +758,30 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-timeline-bar:focus-visible, .db-timeline-bar:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
 .db-timeline-bar.dragging { opacity: 0.4; }
 .db-timeline-row.drop-target .db-timeline-track { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+/* Follows the cursor during a drag so the drop date is visible before releasing. */
+.db-timeline-cursor {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--vscode-focusBorder);
+  pointer-events: none;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+.db-timeline-cursor-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  background: var(--vscode-focusBorder);
+  color: var(--vscode-button-foreground, #fff);
+}
 .kanban-timeline .kanban-add { flex: 0 0 140px; }
 .kanban-timeline .kanban-add-input { padding: 1px 6px; font-size: 12px; }
 .kanban-timeline > .kanban-add { margin-top: 6px; }

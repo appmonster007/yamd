@@ -191,6 +191,14 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
   });
 
+  test('calendar weeks get a week number, and events get a collapsible detail with owner/tags/body', () => {
+    const src = ':::calendar\n- [ ] Submit report #finance {due=2026-10-10 owner=ada}\n  Needs the Q3 numbers.\n:::';
+    const html = render(parse(src), { today: '2026-10-16' });
+    assert.match(html, /class="db-week-number" data-week="\d+">Wk \d+/);
+    assert.match(html, /<div class="db-event-summary"><input type="checkbox"[^>]*> Submit report<\/div>/);
+    assert.match(html, /class="db-event-detail">.*Needs the Q3 numbers.*tag">#finance.*kanban-owner">@ada/s);
+  });
+
   test('calendar and timeline cards render a clickable task-toggle checkbox, same as kanban', () => {
     const cal = render(parse(':::calendar\n- [x] Done {due=2026-10-10}\n:::'), { today: '2026-10-16', interactive: true, sourcePath: 'x.yamd' });
     assert.match(cal, /<input type="checkbox" class="task-toggle" data-line="1" data-hash="[a-z0-9]+" data-source="x\.yamd" checked aria-label="Toggle task">/);
