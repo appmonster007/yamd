@@ -11,7 +11,7 @@ import { Bibliography, parseCitation } from './study/bibtex';
 import { STUDY_BY_NAME } from './study/blocks';
 import type { Attrs, Block, ContainerBlock, InlineNode, ListBlock, TableCell, YamdDocument } from './types';
 
-/** Content resolved for an embed or include. */
+/** Content resolved for an embed. */
 export interface ResolvedEmbed {
   /** Path of the embedded note, used for `data-source` and the link back. */
   path: string;
@@ -25,8 +25,8 @@ export interface ResolvedEmbed {
 export interface RenderOptions {
   /** Maps a safe image URL to the URL the output should use (e.g. a webview URI). */
   resolveImage?: (src: string) => string;
-  /** Resolves `![[note]]` and `::include[...]`. Without it, embeds render as links. */
-  resolveEmbed?: (target: { file: string; heading?: string; blockId?: string; include?: boolean }) => ResolvedEmbed | 'missing' | 'cycle' | null;
+  /** Resolves `![[note]]`. Without it, embeds render as links. */
+  resolveEmbed?: (target: { file: string; heading?: string; blockId?: string }) => ResolvedEmbed | 'missing' | 'cycle' | null;
   /** `trust` renders raw HTML unchanged (only for tests and trusted mode). Default: sanitize. */
   rawHtml?: 'sanitize' | 'trust';
   /** `newline` renders soft breaks as Markdown does (only for conformance tests). Default: `break`. */
@@ -491,16 +491,6 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
         return this.toc(attrNumber(b.attrs, 'depth') ?? 3, b.line);
       case 'pagebreak':
         return `<div class="pagebreak" data-line="${b.line}" aria-hidden="true"></div>`;
-      case 'include': {
-        const [file = '', anchor] = b.rawLabel.split('#');
-        const resolved = this.options.resolveEmbed?.({ file, heading: anchor ?? attrString(b.attrs, 'section'), include: true });
-        if (resolved && resolved !== 'missing' && resolved !== 'cycle') {
-          return `<div class="include" data-line="${b.line}" data-source="${escapeHtml(resolved.path)}">${resolved.html}</div>`;
-        }
-        if (resolved === 'cycle') return `<div class="embed-missing" data-line="${b.line}">Circular include: <code>${escapeHtml(b.rawLabel)}</code></div>`;
-        if (resolved === 'missing') return `<div class="embed-missing" data-line="${b.line}">File not found: <code>${escapeHtml(b.rawLabel)}</code></div>`;
-        return `<div class="include-placeholder" data-line="${b.line}">Included file: <code>${escapeHtml(b.rawLabel)}</code> (not resolved in preview)</div>`;
-      }
       case 'embed': {
         const url = sanitizeUrl(b.rawLabel);
         const link = url ? `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>` : escapeHtml(b.rawLabel);

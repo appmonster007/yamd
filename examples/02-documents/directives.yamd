@@ -97,13 +97,13 @@ A `:::figure` can wrap any content, not just images:
 
 [@fig:pipeline] lists the stages.
 
-## Includes
-
-Pull another file into this one:
-
-::include[changelog.yamd]
-
 ## Embeds
+
+Pull another file into this one — there's no separate include directive, an embed does both jobs:
+
+![[changelog]]
+
+Or pull in external media, from the renderer's allow-list:
 
 ::embed[https://www.youtube.com/watch?v=dQw4w9WgXcQ]{width=640}
 

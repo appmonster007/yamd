@@ -86,7 +86,7 @@ describe('chunked parsing matches a full parse', () => {
       '    indented code\n\n    still code',
       'Setext\n------\n\nafter',
       '{start=5}\n5. five\n6. six',
-      '::toc{depth=2}\n\n::include[x.yamd]\n\n:kbd[Ctrl] inline',
+      '::toc{depth=2}\n\n::unknown-leaf[x.yamd]\n\n:kbd[Ctrl] inline',
       ':::kanban\n## Todo\n\n- [ ] a\n\n## Done\n\n- [x] b\n:::',
       '***\n\n---\n\n___',
       '  \n\n',

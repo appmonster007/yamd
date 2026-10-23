@@ -397,8 +397,8 @@ describe('fallbacks', () => {
     assert.match(html('[@lamport1978]'), /<span class="citation">\[lamport1978\]<\/span>/);
   });
 
-  test('includes', () => {
-    assert.match(html('::include[changelog.yamd]'), /Included file: <code>changelog\.yamd<\/code>/);
+  test('an unknown leaf directive (e.g. the retired ::include) degrades to its label as text', () => {
+    assert.match(html('::include[changelog.yamd]'), /<p data-line="0">changelog\.yamd<\/p>/);
   });
 
   test('mermaid', () => {

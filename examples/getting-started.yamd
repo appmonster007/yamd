@@ -208,11 +208,11 @@ See [examples/07-study/](07-study/README.yamd) for the complete guide.
 
 Use a backslash for any literal symbol: \*not italic\*, \# not a heading, \{{ not a variable }}, \:::not a directive.
 
-## Embeds and includes
+## Embeds
 
 ::embed[https://www.youtube.com/watch?v=dQw4w9WgXcQ]{width=640}
 
-::include[02-documents/changelog.yamd]
+![[02-documents/changelog]]
 
 ::pagebreak
 

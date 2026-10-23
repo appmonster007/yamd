@@ -191,7 +191,7 @@ export interface LeafBlock extends BlockBase {
   type: 'leaf';
   name: string;
   label: InlineNode[];
-  /** Label text as written, e.g. the path in `::include[path]`. */
+  /** Label text as written, e.g. the depth in `::toc{depth=2}` or the URL in `::embed[url]`. */
   rawLabel: string;
 }
 
