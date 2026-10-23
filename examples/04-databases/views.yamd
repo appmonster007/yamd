@@ -52,6 +52,34 @@ Rows placed on a month grid by their due date:
 
 ::db[tasks]{type=calendar date=Due}
 
+## Timeline
+
+Rows stretched into bars from a start date to an end date, one lane per owner:
+
+::db[tasks]{view=Roadmap}
+
+The same view, written out instead of by name — `date` is the start, `date-end` the end, and `group` lays out one lane per value (it must be a select, status, person or checkbox property):
+
+::db[tasks]{type=timeline date=Started date-end=Due group=Owner}
+
+Drop `group` for one shared track instead of separate lanes:
+
+::db[tasks]{type=timeline date=Started date-end=Due}
+
+## Chart
+
+Counts rows into buckets by a category property — here, how many tasks are in each status:
+
+::db[tasks]{type=chart x=Status}
+
+`aggregate` sums (or averages, or takes the min/max of) a number property per bucket instead of just counting rows — here, how many story points are assigned to each owner:
+
+::db[tasks]{type=chart x=Owner aggregate=sum y=Points}
+
+`shape=pie` draws the same aggregation as a pie instead of bars:
+
+::db[tasks]{type=chart x=Status shape=pie}
+
 ## SQLite tables
 
 The `crm` alias points at the `contacts` table of a SQLite file:
@@ -71,5 +99,6 @@ In a trusted workspace you can edit these views directly:
 - Click a column header to sort for yourself, without changing this note.
 - **Save view** writes the current sort and filter into the database as a named view.
 - Formula cells such as `Overdue`, and the `Created` and `Updated` times, are read-only.
+- Calendar, timeline and chart views are read-only (there's no cell to click or card to drag). For an editable, drag-to-reschedule board over the same kind of data without a `.ydb` file, write it as prose instead — see [calendar, timeline and gallery as markup](../05-kanban/calendar-timeline-gallery.yamd).
 
 Edits to `.ydb` files can be undone in the editor. Edits to SQLite files ask for permission the first time in each session.

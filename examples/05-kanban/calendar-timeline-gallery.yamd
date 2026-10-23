@@ -40,13 +40,22 @@ A calendar stretched into a bar: `{start=...}`/`{due=...}` are the start and end
 Each image starts a card; the paragraph(s) right after it (no blank line needed, since that's still the same paragraph) are its caption.
 
 :::gallery {title="Trip photos"}
-![Yosemite Falls](../assets/architecture.svg)
-Peak flow in spring. #landscape
-
 ![Golden Gate Bridge](../assets/architecture.svg)
 Shot at sunset from Battery Spencer. #landscape
 
+![Yosemite Falls](../assets/architecture.svg)
+Peak flow in spring. #landscape
 :::
+
+## Interacting in the preview
+
+Each one gets the interaction its own shape calls for, not a copy of kanban's column-to-column drag:
+
+- **Calendar** — drag a card to a different day to reschedule it (only its `{due=...}` changes; its line in the file doesn't move). Alt+Left/Right shifts by a day, Alt+Up/Down by a week. Click a card's title to expand its full detail (owner, tags, body) in place — clicking its checkbox still just ticks the task. Click a date or a week number to expand (or collapse) every card in that day or week at once.
+- **Timeline** — drag a bar along its track to reschedule it (start and due shift together, so its length is kept); drag it onto a different lane's track to move it there. While dragging, a line and date label follow the cursor so you can see exactly where it'll land before you let go. Alt+Left/Right reschedules by a day, Alt+Up/Down moves to the neighboring lane.
+- **Gallery** — drag a card to reorder it; Alt+Left/Right swaps it with a neighbor. The add-form takes two fields (image path, caption), since an image card has no single title to type.
+
+Double-click a calendar or timeline card's title to rename it. Every one of these edits is a single undoable step and is saved automatically — no separate save, the way checking a task already worked.
 
 ## What's not sugar
 

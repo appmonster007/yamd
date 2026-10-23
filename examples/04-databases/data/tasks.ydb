@@ -14,6 +14,7 @@ properties:
     type: multi_select
     options: [frontend, backend, design, docs]
   Owner: person
+  Started: date
   Due: date
   Points: number
   Blocked: checkbox
@@ -40,6 +41,11 @@ views:
   Calendar:
     type: calendar
     date: Due
+  Roadmap:
+    type: timeline
+    date: Started
+    date-end: Due
+    group: Owner
 
 rows:
   - id: t1
@@ -48,6 +54,7 @@ rows:
     Priority: High
     Tags: [docs]
     Owner: Ada
+    Started: 2026-09-20
     Due: 2026-10-01
     Points: 3
     Blocked: false
@@ -61,6 +68,7 @@ rows:
     Priority: High
     Tags: [frontend, backend]
     Owner: Ada
+    Started: 2026-10-01
     Due: 2026-10-20
     Points: 8
     Blocked: false
@@ -75,6 +83,7 @@ rows:
     Priority: Medium
     Tags: [design]
     Owner: Grace
+    Started: 2026-10-15
     Due: 2026-10-28
     Points: 5
     Blocked: true
@@ -88,6 +97,7 @@ rows:
     Priority: High
     Tags: [backend]
     Owner: Alan
+    Started: 2026-10-05
     Due: 2026-10-10
     Points: 5
     Blocked: false
@@ -101,6 +111,7 @@ rows:
     Priority: Low
     Tags: [frontend]
     Owner: Grace
+    Started: 2026-11-01
     Due: 2026-11-30
     Points: 2
     Blocked: false
