@@ -199,6 +199,12 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.match(html, /class="db-event-detail">.*Needs the Q3 numbers.*tag">#finance.*kanban-owner">@ada/s);
   });
 
+  test('calendar renders a below-grid agenda shell for day/week drill-down', () => {
+    const src = ':::calendar\n- [ ] Submit report {due=2026-10-10}\n:::';
+    const html = render(parse(src), { today: '2026-10-16' });
+    assert.match(html, /<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"><\/span><button type="button" class="db-agenda-close"[^>]*>Close<\/button><\/div><div class="db-agenda-list"><\/div><\/div>/);
+  });
+
   test('calendar and timeline cards render a clickable task-toggle checkbox, same as kanban', () => {
     const cal = render(parse(':::calendar\n- [x] Done {due=2026-10-10}\n:::'), { today: '2026-10-16', interactive: true, sourcePath: 'x.yamd' });
     assert.match(cal, /<input type="checkbox" class="task-toggle" data-line="1" data-hash="[a-z0-9]+" data-source="x\.yamd" checked aria-label="Toggle task">/);

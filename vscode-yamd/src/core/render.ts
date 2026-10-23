@@ -617,7 +617,8 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
     const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
     const mode = interactive ? ' data-interactive' : '';
-    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}</div></div>`;
+    const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
+    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}</div>${agenda}</div>`;
   }
 
   /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are

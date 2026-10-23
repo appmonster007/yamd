@@ -673,7 +673,7 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
   border-radius: 4px;
   background: color-mix(in srgb, var(--yamd-accent) 18%, transparent);
 }
-.db-event:not(.expanded) .db-event-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-calendar .db-event:not(.expanded) .db-event-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .db-event-summary:hover { cursor: pointer; }
 .db-event-detail { display: none; margin-top: 4px; font-size: 11.5px; color: var(--yamd-muted); }
 .db-event.expanded .db-event-detail { display: block; }
@@ -686,6 +686,22 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-event.dragging { opacity: 0.4; }
 .db-day.drop-target { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
 .kanban-calendar .kanban-add { margin-top: 3px; }
+.db-agenda { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--yamd-border); }
+.db-agenda-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.db-agenda-title { font-weight: 600; font-size: 13px; }
+.db-agenda-close {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--yamd-muted);
+  background: transparent;
+  border: 1px solid var(--yamd-border);
+  border-radius: var(--yamd-radius);
+}
+.db-agenda-close:hover, .db-agenda-close:focus-visible { color: var(--yamd-fg); cursor: pointer; }
+.db-agenda-list { display: flex; flex-direction: column; gap: 6px; }
+.db-agenda-list .db-event { margin-top: 0; padding: 6px 8px; white-space: normal; }
+.db-agenda-list .db-event-summary { font-weight: 600; }
+.db-agenda-list .db-event-detail { font-size: 12.5px; }
 .kanban-calendar .kanban-add-input { padding: 1px 6px; font-size: 12px; }
 
 /* Database boards scroll inside their view instead of using the full preview width. */
