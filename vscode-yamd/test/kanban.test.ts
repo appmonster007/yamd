@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse, render } from '../src/core';
+import { lint, parse, render } from '../src/core';
 import { buildBoard } from '../src/core/kanban';
 import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/kanbanEdit';
 import { cardSource, hashText } from '../src/core/kanban';
@@ -172,5 +172,54 @@ describe('task toggles', () => {
 
   test('rejects a changed line', () => {
     assert.equal(toggleTask('- [ ] edited', 0, hashText('- [ ] task'), true), null);
+  });
+});
+
+describe('visual shorthands: calendar, timeline, gallery', () => {
+  test(':::calendar places cards by {due=...}, with no column structure', () => {
+    const src = ':::calendar {title="October"}\n- [ ] Submit report {due=2026-10-10}\n- [ ] Team sync {due=2026-10-14 owner=ada}\n:::';
+    const html = render(parse(src), { today: '2026-10-16' });
+    assert.match(html, /class="kanban-calendar"/);
+    assert.match(html, /class="db-calendar"/);
+    assert.match(html, /data-date="2026-10-10"[^]*?Submit report/);
+    assert.match(html, /data-date="2026-10-14"[^]*?Team sync/);
+  });
+
+  test('a calendar card with no {due=...} is not shown, and reports Y606', () => {
+    const src = ':::calendar\n- [ ] Undated\n- [ ] Dated {due=2026-10-10}\n:::';
+    assert.doesNotMatch(render(parse(src), { today: '2026-10-16' }), /Undated/);
+    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
+  });
+
+  test(':::timeline stretches cards into bars, grouped by heading when present', () => {
+    const src = ':::timeline {title="Q4"}\n## Ada\n- [ ] Ship billing {start=2026-10-01 due=2026-10-15}\n\n## Bob\n- [ ] Migrate auth {start=2026-10-05 due=2026-11-01}\n:::';
+    const html = render(parse(src));
+    assert.match(html, /class="kanban-timeline"/);
+    assert.equal((html.match(/db-timeline-row/g) ?? []).length, 2);
+    assert.match(html, />Ada</);
+    assert.match(html, />Bob</);
+    assert.match(html, /db-timeline-bar/);
+  });
+
+  test(':::timeline with no headings puts every card on one shared track', () => {
+    const src = ':::timeline\n- [ ] Only task {start=2026-10-01 due=2026-10-05}\n:::';
+    const html = render(parse(src));
+    assert.equal((html.match(/db-timeline-row/g) ?? []).length, 1);
+  });
+
+  test('a timeline card with no {start=...} is not shown, and reports Y606', () => {
+    const src = ':::timeline\n- [ ] Undated\n- [ ] Dated {start=2026-10-01}\n:::';
+    assert.doesNotMatch(render(parse(src)), /Undated/);
+    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
+  });
+
+  test(':::gallery turns each image plus its caption into a card', () => {
+    const src = ':::gallery {title="Trip photos"}\n![Golden Gate Bridge](ggb.jpg)\nShot at sunset. #landscape\n\n![Yosemite Falls](yosemite.jpg)\nPeak flow in spring.\n:::';
+    const html = render(parse(src));
+    assert.match(html, /class="kanban-gallery"/);
+    assert.equal((html.match(/class="db-card"/g) ?? []).length, 2);
+    assert.match(html, /<img src="ggb\.jpg"/);
+    assert.match(html, /Shot at sunset/);
+    assert.match(html, /class="tag">#landscape/);
   });
 });

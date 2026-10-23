@@ -1,6 +1,6 @@
 import { extractCards } from './study/cards';
 import { lookupVariable } from './frontmatter';
-import { buildBoard } from './kanban';
+import { buildBoard, buildCalendarCards, buildTimeline } from './kanban';
 import { NOTE_EXT, resolveNote, splitTarget, summarize } from './notes';
 import { slugify } from './slug';
 import type { NoteLookup, NoteSummary } from './notes';
@@ -101,7 +101,7 @@ class Linter {
     this.headingRules();
     this.tableRules();
     this.paragraphRules();
-    this.kanbanRules();
+    this.visualShorthandRules();
     this.blockIdRules();
     this.frontMatterRules();
     return this.out.sort((a, b) => a.range.start - b.range.start);
@@ -452,7 +452,8 @@ class Linter {
     }
   }
 
-  private kanbanRules() {
+  /** Y603/Y604 (kanban), Y606 (calendar/timeline) — the four visual-shorthand directives (§6.1). */
+  private visualShorthandRules() {
     for (const b of this.allBlocks) {
       if (b.type !== 'container' || b.name !== 'kanban') continue;
       const board = buildBoard(b);
@@ -472,6 +473,24 @@ class Linter {
             `This column has ${c.cards.length} cards, over its limit of ${c.limit}.`,
             this.lineRange(c.line),
           );
+        }
+      }
+    }
+    for (const b of this.allBlocks) {
+      if (b.type !== 'container' || b.name !== 'calendar') continue;
+      for (const c of buildCalendarCards(b).cards) {
+        if (c.due === undefined) {
+          this.report('Y606', 'warning', 'This card has no {due=...}, so it has nowhere to go on the calendar and is not shown.', this.lineRange(c.line));
+        }
+      }
+    }
+    for (const b of this.allBlocks) {
+      if (b.type !== 'container' || b.name !== 'timeline') continue;
+      for (const g of buildTimeline(b).groups) {
+        for (const c of g.cards) {
+          if (c.start === undefined) {
+            this.report('Y606', 'warning', 'This card has no {start=...}, so it has nowhere to go on the timeline and is not shown.', this.lineRange(c.line));
+          }
         }
       }
     }

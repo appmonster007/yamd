@@ -1,7 +1,8 @@
 import { attrNumber, attrString } from './attrs';
 import { lookupVariable } from './frontmatter';
 import { plainText } from './inline';
-import { buildBoard, cardSource, hashText } from './kanban';
+import { buildBoard, buildCalendarCards, buildGallery, buildTimeline, cardSource, hashText } from './kanban';
+import type { CalendarBoard, GalleryBoard, TimelineBoard } from './kanban';
 import type { KanbanBoard, KanbanCard } from './kanban';
 import { cardTitleSource } from './kanbanEdit';
 import { walkBlocks } from './parser';
@@ -389,6 +390,12 @@ class Renderer {
         return this.listTable(b);
       case 'kanban':
         return this.board(buildBoard(b));
+      case 'calendar':
+        return this.calendarSugar(buildCalendarCards(b));
+      case 'timeline':
+        return this.timelineSugar(buildTimeline(b));
+      case 'gallery':
+        return this.gallerySugar(buildGallery(b));
       case 'html':
         return `<div${this.attrs(b.attrs, b.line, ['raw-html'])}><div class="code-title">Raw HTML (not rendered: trusted mode is off)</div><pre><code>${escapeHtml(b.raw)}</code></pre></div>`;
       default:
@@ -463,6 +470,90 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const drag = interactive ? ' draggable="true"' : '';
     const label = escapeHtml(plainText(card.title));
     return `<article class="kanban-card${card.done ? ' done' : ''}${overdue ? ' overdue' : ''}" tabindex="0"${drag} data-line="${card.line}" data-index="${index}" data-hash="${hash}" aria-label="${label}"><div class="kanban-card-title">${box}<span class="kanban-card-text" data-title="${titleSource}">${this.inline(card.title)}</span></div>${meta}${body}</article>`;
+  }
+
+  /** `:::calendar` is sugar for an implicit database rendered as a calendar (§6.2.1); a card with
+   * no `{due=...}` isn't shown (Y606, reported by the linter, not here). */
+  private calendarSugar(board: CalendarBoard): string {
+    const month = (this.options.today ?? today()).slice(0, 7);
+    const [y, m] = month.split('-').map(Number) as [number, number];
+    const first = new Date(Date.UTC(y, m - 1, 1));
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const offset = (first.getUTCDay() + 6) % 7;
+    const byDay = new Map<number, KanbanCard[]>();
+    for (const c of board.cards) {
+      if (!c.due?.startsWith(month)) continue;
+      const d = Number(c.due.slice(8, 10));
+      byDay.set(d, [...(byDay.get(d) ?? []), c]);
+    }
+    const cells: string[] = [];
+    for (let i = 0; i < offset; i++) cells.push('<div class="db-day empty"></div>');
+    for (let d = 1; d <= days; d++) {
+      const iso = `${month}-${String(d).padStart(2, '0')}`;
+      const items = (byDay.get(d) ?? []).map((c) => `<div class="db-event" data-line="${c.line}">${this.inline(c.title)}</div>`).join('');
+      cells.push(`<div class="db-day${iso === (this.options.today ?? today()) ? ' today' : ''}" data-date="${iso}"><span class="db-day-number">${d}</span>${items}</div>`);
+    }
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
+    const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
+    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
+    return `<div class="kanban-calendar" data-line="${board.line}">${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div></div>`;
+  }
+
+  /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are
+   * optional groups. A card with no `{start=...}` isn't shown (Y606, reported by the linter). */
+  private timelineSugar(board: TimelineBoard): string {
+    interface Item {
+      card: KanbanCard;
+      start: string;
+      end: string;
+    }
+    const byLine = new Map<number, Item>();
+    for (const g of board.groups) {
+      for (const c of g.cards) {
+        if (!c.start) continue;
+        byLine.set(c.line, { card: c, start: c.start, end: c.due && c.due >= c.start ? c.due : c.start });
+      }
+    }
+    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
+    const items = [...byLine.values()];
+    if (!items.length) return `<div class="kanban-timeline" data-line="${board.line}">${title}<div class="db-timeline db-empty">No dated cards.</div></div>`;
+    const time = (d: string) => new Date(d).getTime();
+    const min = Math.min(...items.map((i) => time(i.start)));
+    const max = Math.max(...items.map((i) => time(i.end)));
+    const span = Math.max(max - min, 86400000);
+    const pct = (t: number) => ((t - min) / span) * 100;
+    const bar = (i: Item) => {
+      const left = pct(time(i.start));
+      const width = Math.max(pct(time(i.end)) - left, 1.5);
+      const label = escapeHtml(plainText(i.card.title));
+      return `<div class="db-timeline-bar" data-line="${i.card.line}" style="left:${left}%;width:${width}%" title="${label}">${this.inline(i.card.title)}</div>`;
+    };
+    const rows = board.groups
+      .map((g) => {
+        const bars = g.cards.map((c) => byLine.get(c.line)).filter((i): i is Item => i !== undefined).map(bar).join('');
+        if (!bars) return '';
+        const label = g.title ? this.inline(g.title) : '';
+        return `<div class="db-timeline-row"><span class="db-timeline-label">${label}</span><div class="db-timeline-track">${bars}</div></div>`;
+      })
+      .filter(Boolean)
+      .join('');
+    return `<div class="kanban-timeline" data-line="${board.line}">${title}<div class="db-timeline">${rows}</div></div>`;
+  }
+
+  /** `:::gallery` is sugar for an implicit database rendered as a gallery (§6.2.1): each image
+   * starts a card, and the paragraph(s) following it are its caption. */
+  private gallerySugar(board: GalleryBoard): string {
+    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
+    const cards = board.cards
+      .map((c) => {
+        const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
+        const meta = chips ? `<div class="kanban-card-meta">${chips}</div>` : '';
+        const bodyInline = c.bodyInline.length ? `<p>${this.inline(c.bodyInline)}</p>` : '';
+        const bodyBlocks = c.body.length ? this.blocks(c.body) : '';
+        return `<article class="db-card" data-line="${c.line}">${this.image(c.image)}<div class="db-card-body">${bodyInline}${bodyBlocks}${meta}</div></article>`;
+      })
+      .join('\n');
+    return `<div class="kanban-gallery" data-line="${board.line}">${title}<div class="db-gallery">${cards}</div></div>`;
   }
 
   private embedBlock(embed: Extract<InlineNode, { type: 'embed' }>, line: number): string {

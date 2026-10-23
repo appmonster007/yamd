@@ -64,6 +64,7 @@ Start with the [guided tour](getting-started.yamd), then explore by topic.
 | -------------------------------------------------------- | ------------------------------------------------------------- | ------- |
 | [Sprint board](05-kanban/sprint-board.yamd)              | A standalone board written as headings and tasks              | Available |
 | [Roadmap board](05-kanban/roadmap-board.yamd)            | A board view of a database                                    | Available |
+| [Calendar, timeline, gallery](05-kanban/calendar-timeline-gallery.yamd) | The other visual shorthands, same sugar as kanban | Available |
 
 ## Moving from Markdown
 

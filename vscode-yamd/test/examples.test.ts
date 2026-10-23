@@ -37,6 +37,7 @@ const available = all.filter((f) => {
       r.startsWith('06-markdown/') ||
       (r.startsWith('03-notes/') && r !== '03-notes/queries.yamd' && !r.startsWith('03-notes/templates/')) ||
       r === '05-kanban/sprint-board.yamd' ||
+      r === '05-kanban/calendar-timeline-gallery.yamd' ||
       !r.includes('/')) &&
     r !== '02-documents/diagnostics.yamd'
   );

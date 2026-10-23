@@ -34,6 +34,9 @@ export const KNOWN_CONTAINERS = new Set([
   'table',
   'html',
   'kanban',
+  'calendar',
+  'timeline',
+  'gallery',
   // Study blocks (§6.3) and flashcards (§6.4).
   'definition',
   'theorem',

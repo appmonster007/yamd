@@ -1,0 +1,52 @@
+---
+yamd: 0.1
+title: Calendar, timeline and gallery
+lang: en-US
+---
+
+# {{ title }}
+
+Like `:::kanban`, these three directives are sugar for an implicit database rendered as a view — they exist so the view can be written as plain prose and still read as headings, lists or images in a tool that doesn't know them.
+
+## Calendar
+
+Every top-level list item is a card, placed by its `{due=...}`. There are no column headings, because a calendar groups by date, not by a named column.
+
+:::calendar {title="October"}
+- [ ] Submit grant report {due=2026-10-10}
+- [ ] Team sync {due=2026-10-14 owner=ada}
+- [ ] Draft budget review {due=2026-10-14 owner=grace}
+:::
+
+A card with no `{due=...}` isn't shown, and the linter reports `Y606`.
+
+## Timeline
+
+A calendar stretched into a bar: `{start=...}`/`{due=...}` are the start and end. Headings are optional — present, they group cards into lanes; absent, every card shares one track.
+
+:::timeline {title="Q4 Roadmap"}
+## Ada
+
+- [ ] Ship billing API {start=2026-10-01 due=2026-10-15}
+- [ ] Sign-up flow redesign {start=2026-10-16 due=2026-10-28}
+
+## Alan
+
+- [ ] Migrate auth {start=2026-10-05 due=2026-11-01}
+:::
+
+## Gallery
+
+Each image starts a card; the paragraph(s) right after it (no blank line needed, since that's still the same paragraph) are its caption.
+
+:::gallery {title="Trip photos"}
+![Golden Gate Bridge](../assets/architecture.svg)
+Shot at sunset from Battery Spencer. #landscape
+
+![Yosemite Falls](../assets/architecture.svg)
+Peak flow in spring. #landscape
+:::
+
+## What's not sugar
+
+A chart aggregates rows that already exist, so there's nothing to write as prose — there's no `:::chart`. Table and list already have a native plain-prose form (pipe tables and list tables), so they don't get one either. All of these are still reachable as `::db[...]` views over a real `.ydb` file.

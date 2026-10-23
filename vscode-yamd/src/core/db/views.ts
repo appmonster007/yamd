@@ -336,13 +336,17 @@ function chart(data: ViewData): string {
   });
   if (shape === 'pie') {
     const total = points.reduce((a, p) => a + p.value, 0) || 1;
+    const hue = (i: number) => (i * 47) % 360;
     let angle = 0;
-    const slices = points.map((p, i) => {
+    const stops = points.map((p, i) => {
       const start = angle;
       angle += (p.value / total) * 360;
-      return `<div class="db-chart-slice" data-color="${i % 8}" style="--start:${start}deg;--end:${angle}deg" title="${escapeHtml(p.label)}: ${p.value}"></div>`;
+      return `hsl(${hue(i)} 65% 55%) ${start}deg ${angle}deg`;
     });
-    return `<div class="db-chart db-chart-pie">${slices.join('')}<ul class="db-chart-legend">${points.map((p, i) => `<li data-color="${i % 8}">${escapeHtml(p.label)} (${p.value})</li>`).join('')}</ul></div>`;
+    const legend = points
+      .map((p, i) => `<li><span class="db-chart-swatch" style="background:hsl(${hue(i)} 65% 55%)"></span>${escapeHtml(p.label)} (${p.value})</li>`)
+      .join('');
+    return `<div class="db-chart db-chart-pie"><div class="db-chart-pie-circle" style="background:conic-gradient(${stops.join(', ')})" title="${points.map((p) => `${escapeHtml(p.label)}: ${p.value}`).join(', ')}"></div><ul class="db-chart-legend">${legend}</ul></div>`;
   }
   const max = Math.max(...points.map((p) => p.value), 1);
   return `<div class="db-chart db-chart-${shape}">${points

@@ -668,6 +668,82 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-result-list { padding-left: 1.4em; margin: 0; }
 .db-result { margin: 0; }
 
+/* Y856: an attribute that doesn't apply to the chosen view type, muted rather than alarming since
+   it's an info-level note, not a blocking error like .db-error. */
+.db-notice {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  border-radius: var(--yamd-radius);
+  background: var(--yamd-tint);
+  color: var(--yamd-muted);
+  font-size: 0.85em;
+}
+.db-notice-code { flex: none; font-family: var(--yamd-mono); font-weight: 600; }
+
+/* ---- Timeline ---- */
+.db-timeline { display: flex; flex-direction: column; gap: 6px; }
+.db-timeline.db-empty { color: var(--yamd-muted); font-size: 0.9em; }
+.db-timeline-row { display: flex; align-items: center; gap: 10px; }
+.db-timeline-label { flex: 0 0 120px; font-size: 0.85em; color: var(--yamd-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-timeline-track { position: relative; flex: 1; height: 24px; background: var(--yamd-surface); border-radius: var(--yamd-radius); }
+.db-timeline-bar {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--yamd-accent);
+  color: var(--vscode-button-foreground, #fff);
+  font-size: 11px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Chart ---- */
+.db-chart-bar, .db-chart-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 160px;
+  padding-top: 10px;
+}
+.db-chart-bar .db-chart-bar, .db-chart-line .db-chart-bar {
+  flex: 1;
+  height: var(--value, 0%);
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--yamd-accent);
+  position: relative;
+}
+.db-chart-label {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--yamd-muted);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.db-chart-pie {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.db-chart-pie-circle { width: 120px; height: 120px; border-radius: 50%; flex: none; }
+.db-chart-legend { list-style: none; margin: 0; padding: 0; font-size: 0.85em; color: var(--yamd-muted); }
+.db-chart-legend li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.db-chart-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
 /* ---- Study blocks, flashcards and quiz mode ---- */
 .study {
   --study: var(--yamd-note);

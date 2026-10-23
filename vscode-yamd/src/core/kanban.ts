@@ -14,6 +14,8 @@ export interface KanbanCard {
   attrs?: Attrs;
   due?: string;
   owner?: string;
+  /** A timeline card's start date (`{start=...}`); unused by kanban and calendar. */
+  start?: string;
   line: number;
   endLine: number;
 }
@@ -87,6 +89,7 @@ function card(item: ListItem): KanbanCard {
     attrs: item.attrs,
     due: attrString(item.attrs, 'due'),
     owner: attrString(item.attrs, 'owner'),
+    start: attrString(item.attrs, 'start'),
     line: item.line,
     endLine: item.endLine,
   };
@@ -124,6 +127,116 @@ export function buildBoard(container: ContainerBlock): KanbanBoard {
     }
   }
   return board;
+}
+
+export interface CalendarBoard {
+  title?: string;
+  cards: KanbanCard[];
+  line: number;
+  endLine: number;
+}
+
+/**
+ * Builds the card list from a `:::calendar` container: every top-level list item is a card,
+ * placed by its `{due=...}`, with no column structure (a calendar groups by date, not a heading).
+ */
+export function buildCalendarCards(container: ContainerBlock): CalendarBoard {
+  const cards: KanbanCard[] = [];
+  for (const b of container.children) {
+    if (b.type === 'list') cards.push(...b.items.map(card));
+  }
+  return { title: attrString(container.attrs, 'title'), cards, line: container.line, endLine: container.endLine };
+}
+
+export interface TimelineGroup {
+  /** Undefined for the single shared track when the container has no headings. */
+  title?: InlineNode[];
+  attrs?: Attrs;
+  cards: KanbanCard[];
+}
+
+export interface TimelineBoard {
+  title?: string;
+  groups: TimelineGroup[];
+  line: number;
+  endLine: number;
+}
+
+/**
+ * Builds the group/card model from a `:::timeline` container. Headings are optional: present, they
+ * group cards into lanes exactly like a kanban column; absent, every card shares one lane.
+ */
+export function buildTimeline(container: ContainerBlock): TimelineBoard {
+  const board: TimelineBoard = { title: attrString(container.attrs, 'title'), groups: [], line: container.line, endLine: container.endLine };
+  let group: TimelineGroup | undefined;
+  const shared: TimelineGroup = { cards: [] };
+  for (const b of container.children) {
+    if (b.type === 'heading') {
+      group = { title: b.children, attrs: b.attrs, cards: [] };
+      board.groups.push(group);
+    } else if (b.type === 'list') {
+      (group ?? shared).cards.push(...b.items.map(card));
+    }
+  }
+  if (shared.cards.length) board.groups.unshift(shared);
+  return board;
+}
+
+export interface GalleryCard {
+  image: Extract<InlineNode, { type: 'image' }>;
+  /** Inlines from the rest of the image's own paragraph (a single newline doesn't start a new one). */
+  bodyInline: InlineNode[];
+  /** Further paragraph(s), separated from the image by a blank line. */
+  body: Block[];
+  tags: string[];
+  attrs?: Attrs;
+  line: number;
+  endLine: number;
+}
+
+export interface GalleryBoard {
+  title?: string;
+  cards: GalleryCard[];
+  line: number;
+  endLine: number;
+}
+
+/** A paragraph whose first inline child is an image, starting a gallery card. */
+function leadingImage(b: Block): Extract<InlineNode, { type: 'image' }> | undefined {
+  if (b.type !== 'paragraph') return undefined;
+  const first = b.children[0];
+  return first?.type === 'image' ? first : undefined;
+}
+
+/**
+ * Builds the card list from a `:::gallery` container: each image starts a card. The rest of that
+ * same paragraph (after the image, on the lines that follow it with no blank line in between) is
+ * the card's caption, same as a kanban card's title/body split; further paragraph(s), separated by
+ * a blank line, extend the caption.
+ */
+export function buildGallery(container: ContainerBlock): GalleryBoard {
+  const cards: GalleryCard[] = [];
+  let current: GalleryCard | undefined;
+  for (const b of container.children) {
+    const image = leadingImage(b);
+    if (image && b.type === 'paragraph') {
+      const br = b.children.findIndex((n) => n.type === 'break');
+      const captionInline = br === -1 ? [] : b.children.slice(br + 1);
+      const { nodes, tags } = extractTags(captionInline);
+      current = { image, bodyInline: nodes, body: [], tags, attrs: image.attrs, line: b.line, endLine: b.endLine };
+      cards.push(current);
+    } else if (current) {
+      if (b.type === 'paragraph') {
+        const { nodes, tags } = extractTags(b.children);
+        current.body.push({ ...b, children: nodes });
+        current.tags.push(...tags);
+      } else {
+        current.body.push(b);
+      }
+      current.endLine = b.endLine;
+    }
+  }
+  return { title: attrString(container.attrs, 'title'), cards, line: container.line, endLine: container.endLine };
 }
 
 /** FNV-1a hash used to check that a card's source hasn't changed since it was rendered. */
