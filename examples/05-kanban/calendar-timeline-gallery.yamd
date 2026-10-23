@@ -30,9 +30,9 @@ A calendar stretched into a bar: `{start=...}`/`{due=...}` are the start and end
 
 ## Alan
 
-- [ ] Migrate auth {start=2026-11-17 due=2026-12-14}
+- [ ] Migrate auth {start=2026-11-10 due=2026-12-07}
 - [ ] Ship billing API {start=2026-10-05 due=2026-10-19}
-- [ ] Sign-up flow redesign {start=2026-10-24 due=2026-11-05}
+- [ ] Sign-up flow redesign {start=2026-10-22 due=2026-11-03}
 :::
 
 ## Gallery
