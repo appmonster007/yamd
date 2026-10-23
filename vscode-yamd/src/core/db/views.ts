@@ -241,7 +241,8 @@ function calendar(data: ViewData): string {
   const eventHtml = (r: ViewRow): string => {
     const detailLine = propsLine(data, r, cols);
     const detail = detailLine ? `<div class="db-event-detail">${detailLine}</div>` : '';
-    return `<div class="db-event" tabindex="0" data-row-id="${escapeHtml(r.id)}"><div class="db-event-summary">${escapeHtml(titleOf(data, r))}</div>${detail}</div>`;
+    const title = escapeHtml(titleOf(data, r));
+    return `<div class="db-event" tabindex="0" data-row-id="${escapeHtml(r.id)}" data-title="${title}"><div class="db-event-summary">${title}</div>${detail}</div>`;
   };
   interface Cell {
     html: string;

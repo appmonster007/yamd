@@ -244,8 +244,14 @@ describe('views', () => {
 
   test('calendar', () => {
     const html = view(tasks(), { type: 'calendar', date: 'Due' }, { month: '2026-10' }).html ?? '';
-    assert.match(html, /data-date="2026-10-20"><button type="button" class="db-day-number">20<\/button><div class="db-event" tabindex="0" data-row-id="t2"><div class="db-event-summary">Finish the sign-up flow/);
+    assert.match(html, /data-date="2026-10-20"><button type="button" class="db-day-number">20<\/button><div class="db-event" tabindex="0" data-row-id="t2" data-title="Finish the sign-up flow"><div class="db-event-summary">Finish the sign-up flow/);
     assert.match(html, /October 2026/);
+  });
+
+  test('a calendar event carries its own data-title, so the client never falls back to its (hidden-detail-including) textContent', () => {
+    const html = view(tasks(), { type: 'calendar', date: 'Due', columns: 'Owner' }, { month: '2026-10' }).html ?? '';
+    const event = /<div class="db-event"[^>]*>/.exec(html)?.[0] ?? '';
+    assert.match(event, /data-title="[^"]+"/);
   });
 
   test('calendar, timeline and chart stay read-only even in an interactive (trusted) workspace', () => {
