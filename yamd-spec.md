@@ -418,7 +418,10 @@ Renderers must ignore keys they don't recognize. They must never render attribut
 | `:::figure {caption="…" #fig:x}`     | Figure wrapping any content, not only images                  |
 | `:::table`                           | List table, see [Tables](#37-tables)                          |
 | `:::html`                            | Raw HTML; rendered **only** in trusted mode, see [Security](#9-security) |
-| `:::kanban {title="…"}`              | Kanban board, see [Kanban boards](#61-kanban-boards)          |
+| `:::kanban {title="…"}`              | Kanban board, see [Visual shorthands](#61-visual-shorthands)  |
+| `:::calendar {title="…"}`            | Calendar, see [Visual shorthands](#61-visual-shorthands)      |
+| `:::timeline {title="…"}`            | Timeline, see [Visual shorthands](#61-visual-shorthands)      |
+| `:::gallery {title="…"}`             | Gallery, see [Visual shorthands](#61-visual-shorthands)       |
 | `::db[ref]{…}`                       | Database view, see [Databases and queries](#62-databases-and-queries) |
 | `:query[SQL]{db=…}`                  | Inline query result                                           |
 | `::toc{depth=3}`                     | Table of contents                                             |
@@ -430,9 +433,13 @@ Renderers must ignore keys they don't recognize. They must never render attribut
 
 To transclude another file or one of its sections, use an embed (`![[note]]`, `![[note#Heading]]`, `![[note#^id]]`, §4.11) — there is no separate include directive.
 
-### 6.1 Kanban boards
+### 6.1 Visual shorthands
 
-`:::kanban` is **sugar for an implicit, single-use database rendered as a board** (`::db[...]{type=board group=Status}`, §6.2.1) — it exists only so a board can be written and read as plain prose, degrading to headings and task lists, not as a second feature with its own rules. Writing
+Four directives — `:::kanban`, `:::calendar`, `:::timeline` and `:::gallery` — are each **sugar for an implicit, single-use database rendered as a view** (§6.2.1): they exist only so their view can be written and read as plain prose, degrading to headings, lists and images, not as separate features with their own rules. Each one's rows and view-level rules (`Y855`, `Y856`) are exactly the ones its view has in general; only the markup-specific parse issues (a card with nowhere to go) are particular to the shorthand.
+
+Two views deliberately have **no** shorthand: a **chart** aggregates existing rows rather than holding content of its own — there's no "plain prose" a chart could degrade to, since nobody writes a chart out row-by-row — and **table**/**list** already have a native plain-prose form, pipe tables and list tables (§3.7), so a third one would be redundant rather than a convenience.
+
+#### 6.1.1 Kanban boards
 
 ```yamd
 :::kanban {title="Sprint 12"}
@@ -447,15 +454,52 @@ To transclude another file or one of its sections, use an embed (`![[note]]`, `!
 :::
 ```
 
-means: each heading starts a **column**, and is a value of an implicit `Status` property (a `status`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2.1). This implicit database has no backing `.ydb` file and no alias: it can't be referenced by another `::db[...]` or by a query (§6.2) — it exists only to render the one `:::kanban` block it's written in.
-
-Because of that, a board's rules are the database's rules, stated once, whichever way the board was written:
+means: each heading starts a **column**, and is a value of an implicit `Status` property (a `status`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2.1). This implicit database has no backing `.ydb` file and no alias: it can't be referenced by another `::db[...]` or by a query (§6.2) — it exists only to render the one `:::kanban` block it's written in. The same is true of `:::calendar`, `:::timeline` and `:::gallery` below.
 
 - `{limit=N}` / `count/N`, and `{complete}` marking a column done, are the board view's per-column display settings — the same ones `::db[...]{type=board}` honors for any database.
 - A column over its `{limit=N}` produces information `Y604`, and the board's grouping rules (and `Y855`) are exactly the ones a board view has in general (§6.2.1) — both apply uniformly, whether the board came from `:::kanban` markup or a `::db[...]{type=board}` view of a `.ydb` file.
 - Content before the first column heading isn't shown on the board (warning `Y603`) — this one stays markup-specific, since it's a parse-time issue only the prose form can have.
 - Board headings are columns, not document sections: they are left out of the table of contents and the outline, and aren't checked by `Y704` and `Y705`.
 - Editors may let users drag cards. A move rewrites the card's lines (title and body) at the new place, ticking the card when it enters a `{complete}` column and unticking it when it leaves one.
+
+#### 6.1.2 Calendar
+
+```yamd
+:::calendar {title="October"}
+- [ ] Submit grant report {due=2026-10-10}
+- [ ] Team sync {due=2026-10-14 owner=ada}
+:::
+```
+
+Each top-level list item is a card, exactly as in a kanban board — first line as `title`, indented lines as `text`, `#tags` as `multi_select`, `{owner=name}` as `person`, checkbox as `checkbox` — but there are no column headings, because a calendar groups by date rather than by a named column. `{due=YYYY-MM-DD}` is required and becomes the `date` property the card is placed on; a card with no `{due=…}` isn't shown and produces warning `Y606`. This desugars to `::db[...]{type=calendar date=Due}`.
+
+#### 6.1.3 Timeline
+
+```yamd
+:::timeline {title="Q4 Roadmap"}
+## Ada
+- [ ] Ship billing API {start=2026-10-01 due=2026-10-15}
+
+## Bob
+- [ ] Migrate auth {start=2026-10-05 due=2026-11-01}
+:::
+```
+
+A calendar stretched into a bar, the same way the `timeline` view is a stretched `calendar` view (§6.2.1): cards work as in `:::calendar`, but `{start=YYYY-MM-DD}` becomes the `date` property and `{due=YYYY-MM-DD}` the `date-end` property — a card with no `{start=…}` isn't shown and produces warning `Y606`; a card with no `{due=…}` renders as a single point, same as the view's own rule for an omitted `date-end`. Headings are optional here: when present, each is a value of an implicit `Owner` property and lays out one row per heading, the same role `group` plays for a `.ydb` file; with no headings, every card shares one track. This desugars to `::db[...]{type=timeline date=Start date-end=Due group=Owner}`.
+
+#### 6.1.4 Gallery
+
+```yamd
+:::gallery {title="Trip photos"}
+![Golden Gate Bridge](ggb.jpg)
+Shot at sunset from Battery Spencer. #landscape
+
+![Yosemite Falls](yosemite.jpg)
+Peak flow in spring. #landscape
+:::
+```
+
+Each image starts a card; the image is the `cover` property (§6.2.1), and the paragraph(s) following it, up to the next image or the end of the container, are its `text` body. `#tags` becomes `multi_select`, same as the other shorthands. This desugars to `::db[...]{type=gallery cover=Cover}`. A renderer that doesn't know `gallery` still shows the images and their captions in order, which already reads as a gallery even without the directive.
 
 ### 6.2 Databases and queries
 
@@ -477,7 +521,7 @@ databases:
 
 `::db[ref]{view type filter sort group columns limit date date-end cover shape x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order. An attribute that isn't meaningful for the chosen `type` (e.g. `shape` on a `table` view) is ignored and produces information `Y856`.
 
-- **Board** groups rows by `group` (must be `select`, `status`, `person` or `checkbox`, `Y855` otherwise) — see [Kanban boards](#61-kanban-boards) for the markup shorthand.
+- **Board** groups rows by `group` (must be `select`, `status`, `person` or `checkbox`, `Y855` otherwise) — see [Visual shorthands](#61-visual-shorthands) for the markup shorthand.
 - **Gallery** shows each row as a card image named by `cover` (must be a `url` property or an embedded image reference, `Y855` otherwise).
 - **Calendar** places each row on the date named by `date` (must be a `date` property, `Y855` otherwise).
 - **Timeline** is a calendar stretched into a bar: `date` and `date-end` name the start and end `date` properties (`Y855` if either isn't one); a row with no `date-end` renders as a single point. `group` (same as board) lays out one row per group instead of one shared track.
@@ -587,8 +631,9 @@ These rules are enforced by `yamd check`:
 | `Y501` | error    | Unclosed code fence (§3.5)                                       |
 | `Y601` | warning  | Unknown directive (§3.10)                                        |
 | `Y602` | error    | Circular embed (§4.11)                                           |
-| `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
-| `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1, §6.2.1) |
+| `Y603` | warning  | Content before the first column of a kanban board (§6.1.1)       |
+| `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1.1, §6.2.1) |
+| `Y606` | warning  | Calendar/timeline card has no date and isn't shown (§6.1.2, §6.1.3) |
 | `Y701` | warning  | Missing link, image, anchor, reference, footnote or `ref=` target (§10, §4.5)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |
@@ -600,7 +645,7 @@ These rules are enforced by `yamd check`:
 | `Y852` | error    | Invalid `.ydb` structure or property type (§6.2)                 |
 | `Y853` | error/warning | Value doesn't match its property (warning for an unknown option) |
 | `Y854` | error    | Duplicate row `id` (§6.2)                                        |
-| `Y855` | error    | A view attribute (`group`, `date`, `date-end`, `cover`, `x`, `y`) names a property of the wrong type for that view, in any database view (§6.1 board, §6.2.1) |
+| `Y855` | error    | A view attribute (`group`, `date`, `date-end`, `cover`, `x`, `y`) names a property of the wrong type for that view, in any database view (§6.1.1 board, §6.2.1) |
 | `Y856` | info     | View attribute not meaningful for the view's `type`, ignored (§6.2.1)            |
 | `Y901` | warning  | URL scheme not allowed (§9)                                      |
 | `Y950` | error    | Query refused as unsafe (§6.2)                                   |
