@@ -12,7 +12,7 @@ function yamdFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) return yamdFiles(full);
-    return e.name.endsWith('.yamd') ? [full] : [];
+    return /\.(yamd|ymd)$/.test(e.name) ? [full] : [];
   });
 }
 

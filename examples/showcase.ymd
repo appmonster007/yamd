@@ -1,0 +1,116 @@
+---
+yamd: 0.1
+title: Feature Showcase
+author: Ada Lovelace
+date: 2026-10-23
+lang: en-US
+bibliography: refs.bib
+databases:
+  tasks: 04-databases/data/tasks.ydb
+vars:
+  product: Nimbus
+  version: 2.4.0
+---
+
+# {{ title }}
+
+This note is a `.ymd` file — the short alias for `.yamd` (§ file extension). Same format, same features, just a shorter extension; everything below works identically either way.
+
+::toc{depth=2}
+
+## Text and lists
+
+Welcome to **{{ product }} {{ version }}**. You can write *italic*, **bold**, ~~strikethrough~~ and `code`.
+
+- Bullets nest by indenting
+  - like this
+- [x] Write the showcase
+- [ ] Ship it
+
+1. First step
+2. Second step
+
+## Tables
+
+| Plan | Price |
+| ---- | ----: |
+| Free |    $0 |
+| Pro  |   $12 |
+
+## Code and math
+
+```python {title="example.py"}
+print("hello from a .ymd file")
+```
+
+Inline math works too: $E = mc^2$.
+
+## Links, images and references
+
+A bare link: https://example.com. A wikilink to another example: [[01-basics/tables]].
+
+![Divider](assets/divider.svg){decorative}
+
+[mitosis]{ref=def-mitosis} is how a cell divides.
+
+[mitosis is the process of nuclear division]{#def-mitosis} is defined once, here.
+
+## Footnotes and citations
+
+This claim needs a source[^note]. It also cites earlier work [@lamport1978].
+
+[^note]: A footnote with the detail.
+
+## Callouts
+
+:::note
+Notes add helpful context, same as in any `.yamd` file.
+:::
+
+:::details {summary="Show more"}
+Collapsible content goes here.
+:::
+
+## Kanban board
+
+:::kanban {title="Launch"}
+## Todo
+
+- [ ] Draft the announcement {due=2026-10-25 owner=ada}
+
+## Done {complete}
+
+- [x] Pick a launch date
+:::
+
+## Calendar
+
+:::calendar {title="October"}
+- [ ] Submit report {due=2026-10-24 owner=ada}
+- [ ] Team sync {due=2026-10-28 owner=grace}
+:::
+
+## Timeline
+
+:::timeline {title="Rollout"}
+## Ada
+
+- [ ] Beta rollout {start=2026-10-24 due=2026-11-01}
+:::
+
+## Gallery
+
+:::gallery {title="Snapshots"}
+![Divider graphic](assets/divider.svg)
+A simple divider image, reused from the assets folder.
+:::
+
+## Database view
+
+A table view over the shared tasks database, scoped to this file's own folder and its subfolders:
+
+::db[tasks]{columns="Title,Status,Due" filter="Status != 'Done'" sort="Due"}
+
+## References
+
+::bibliography
