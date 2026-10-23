@@ -34,7 +34,7 @@ The second one is `example-2`: [first](#example), [second](#example-2).
 
 ## Bullet lists
 
-`-`, `*` and `+` all work. As in GFM, changing the marker starts a new list, so this is two lists. Without the blank line between them, YAMD adds an info note (Y212) in case the change was a typo:
+`-`, `*` and `+` all work. As in GFM, changing the marker always starts a new list, blank line or not — nesting is only ever by indentation (below), so a nesting level is always visible in the source:
 
 - Apples
 - Bananas

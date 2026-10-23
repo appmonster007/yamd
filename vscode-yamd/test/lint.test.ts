@@ -48,11 +48,8 @@ describe('syntax rules', () => {
     assert.deepEqual(codes('#tag at the start'), []);
   });
 
-  test('Y212 changed bullet marker', () => {
-    const d = find('- a\n- b\n* c', 'Y212');
-    assert.ok(d);
-    assert.equal(d.severity, 'info');
-    assert.equal(d.text, '*');
+  test('changing a bullet marker starts a new list, as in GFM, with no diagnostic', () => {
+    assert.deepEqual(codes('- a\n- b\n* c'), []);
     assert.deepEqual(codes('- a\n\n1. b'), []);
     assert.deepEqual(codes('- a\n\n* b'), []);
   });

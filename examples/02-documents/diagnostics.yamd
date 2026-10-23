@@ -29,12 +29,6 @@ Markdown files are written. In YAMD every line break is kept, so it renders
 as four short lines instead of one paragraph. The quick fix joins the lines
 into one.
 
-## Y212: changed bullet marker
-
-- First list
-- still the first list
-* a new list starts here, because the marker changed
-
 ## Y301: missing space after hashes
 
 ##Installation

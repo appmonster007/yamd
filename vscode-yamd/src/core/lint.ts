@@ -7,7 +7,7 @@ import type { NoteLookup, NoteSummary } from './notes';
 import { plainText } from './inline';
 import { walkBlocks } from './parser';
 import { sanitizeUrl } from './render';
-import type { Block, Diagnostic, InlineNode, ListBlock, Range, Severity, YamdDocument } from './types';
+import type { Block, Diagnostic, InlineNode, Range, Severity, YamdDocument } from './types';
 
 export interface LintOptions {
   /**
@@ -100,7 +100,6 @@ class Linter {
     this.inlineRules();
     this.headingRules();
     this.tableRules();
-    this.listRules();
     this.paragraphRules();
     this.kanbanRules();
     this.blockIdRules();
@@ -426,31 +425,6 @@ class Linter {
         this.report('Y703', 'error', 'List tables need a header row. Add {header=1} to the :::table line.', this.lineRange(b.line));
       }
     }
-  }
-
-  /** Y212: a bullet list the parser nested because its marker changed with no blank line above it. */
-  private listRules() {
-    const visit = (blocks: Block[]) => {
-      blocks.forEach((b) => {
-        if (b.type === 'list' && b.markerNested) {
-          this.report(
-            'Y212',
-            'info',
-            `Changing the bullet to "${b.marker}" nests this list under the item above. Use the same marker to keep it at the same level, or add a blank line above to start a new list instead.`,
-            this.markerRange(b),
-          );
-        }
-        if (b.type === 'list') b.items.forEach((it) => visit(it.children));
-        else if (b.type === 'blockquote' || b.type === 'container') visit(b.children);
-      });
-    };
-    visit(this.doc.blocks);
-  }
-
-  private markerRange(list: ListBlock): Range {
-    const text = this.doc.lines[list.line] ?? '';
-    const col = text.search(/[-*+]/);
-    return this.lineRange(list.line, Math.max(col, 0), Math.max(col, 0) + 1);
   }
 
   /** Y210: paragraphs that look hard-wrapped, which render one line per source line. */

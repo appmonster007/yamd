@@ -52,11 +52,12 @@ describe('headings', () => {
 });
 
 describe('lists', () => {
-  test('changing the bullet marker nests under the item above', () => {
+  test('changing the bullet marker starts a new list at the same level, as in GFM', () => {
     const out = html('- a\n- b\n* c');
     assert.equal(count(out, '<ul'), 2);
     assert.equal(count(out, '<li'), 3);
-    assert.match(out, /<li[^>]*>b\s*<ul[^>]*>\s*<li[^>]*>c<\/li>\s*<\/ul>\s*<\/li>/);
+    assert.doesNotMatch(out, /<li[^>]*>b\s*<ul/);
+    assert.match(out, /<\/ul>\s*<ul/);
   });
 
   test('a blank line before a new marker starts a sibling list instead', () => {

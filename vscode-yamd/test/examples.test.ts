@@ -81,7 +81,7 @@ describe('available examples have no diagnostics', () => {
 test('the diagnostics example triggers every check', () => {
   const codes = new Set(lintFile(path.join(root, '02-documents/diagnostics.yamd')).map((d) => d.code));
   const expected = [
-    'Y101', 'Y201', 'Y210', 'Y212', 'Y301', 'Y401', 'Y501', 'Y601', 'Y603', 'Y604',
+    'Y101', 'Y201', 'Y210', 'Y301', 'Y401', 'Y501', 'Y601', 'Y603', 'Y604',
     'Y701', 'Y702', 'Y703', 'Y704', 'Y705', 'Y706', 'Y707', 'Y801', 'Y901',
   ];
   assert.deepEqual([...codes].sort(), expected);
