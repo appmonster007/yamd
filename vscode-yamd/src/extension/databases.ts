@@ -454,6 +454,9 @@ export class DatabaseService implements vscode.Disposable {
       wsEdit.replace(doc.uri, range, edit.text);
     }
     const ok = await vscode.workspace.applyEdit(wsEdit);
+    // A .ydb file is rarely opened directly, so leaving the edit unsaved risks it being silently
+    // lost; a board move/cell edit/row add is a completed action, not in-progress typing.
+    if (ok) await doc.save();
     this.log.appendLine(`${new Date().toISOString()} edited ${file}`);
     return ok;
   }

@@ -551,6 +551,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
    * no `{due=...}` isn't shown (Y606, reported by the linter, not here). */
   private calendarSugar(board: CalendarBoard): string {
     const interactive = Boolean(this.options.interactive);
+    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
     const now = this.options.today ?? today();
     const month = now.slice(0, 7);
     const [y, m] = month.split('-').map(Number) as [number, number];
@@ -572,7 +573,8 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
           const hash = hashText(cardSource(this.doc.lines, c));
           const drag = interactive ? ' draggable="true"' : '';
           const box = c.hasCheckbox ? `${this.checkbox(c.line, c.done)} ` : '';
-          return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}"${drag}>${box}${this.inline(c.title)}</div>`;
+          const titleSource = escapeHtml(cardTitleSource(this.doc.lines[c.line] ?? ''));
+          return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}>${box}${this.inline(c.title)}</div>`;
         })
         .join('');
       const add = interactive
@@ -584,13 +586,14 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
     const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
     const mode = interactive ? ' data-interactive' : '';
-    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div></div>`;
+    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div></div>`;
   }
 
   /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are
    * optional groups. A card with no `{start=...}` isn't shown (Y606, reported by the linter). */
   private timelineSugar(board: TimelineBoard): string {
     const interactive = Boolean(this.options.interactive);
+    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
     interface Item {
       card: KanbanCard;
       start: string;
@@ -607,7 +610,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const mode = interactive ? ' data-interactive' : '';
     const items = [...byLine.values()];
     if (!items.length && !interactive) {
-      return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}><div class="db-timeline db-empty">No dated cards.</div></div>`;
+      return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}><div class="db-timeline db-empty">No dated cards.</div></div>`;
     }
     const time = (d: string) => new Date(d).getTime();
     const min = items.length ? Math.min(...items.map((i) => time(i.start))) : time(this.options.today ?? today());
@@ -622,7 +625,8 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       const box = i.card.hasCheckbox ? `${this.checkbox(i.card.line, i.card.done)} ` : '';
       const hash = hashText(cardSource(this.doc.lines, i.card));
       const drag = interactive ? ' draggable="true"' : '';
-      return `<div class="db-timeline-bar" tabindex="0" data-line="${i.card.line}" data-hash="${hash}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${this.inline(i.card.title)}</div>`;
+      const titleSource = escapeHtml(cardTitleSource(this.doc.lines[i.card.line] ?? ''));
+      return `<div class="db-timeline-bar" tabindex="0" data-line="${i.card.line}" data-hash="${hash}" data-start="${i.start}" data-title="${titleSource}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${this.inline(i.card.title)}</div>`;
     };
     const rows = board.groups
       .map((g, gi) => {
@@ -640,13 +644,14 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       interactive && board.groups.length === 0
         ? `<form class="kanban-add" data-group=""><input type="text" class="kanban-add-input" placeholder="Add a card" aria-label="Add a card"></form>`
         : '';
-    return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${rows}</div>${globalAdd}</div>`;
+    return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${rows}</div>${globalAdd}</div>`;
   }
 
   /** `:::gallery` is sugar for an implicit database rendered as a gallery (§6.2.1): each image
    * starts a card, and the paragraph(s) following it are its caption. */
   private gallerySugar(board: GalleryBoard): string {
     const interactive = Boolean(this.options.interactive);
+    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
     const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
     const mode = interactive ? ' data-interactive' : '';
     const cards = board.cards
@@ -663,7 +668,7 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     const add = interactive
       ? `<form class="gallery-add"><input type="text" class="gallery-add-image" placeholder="Image path" aria-label="New image path"><input type="text" class="gallery-add-caption" placeholder="Caption" aria-label="New image caption"><button type="submit">Add</button></form>`
       : '';
-    return `<div class="kanban-gallery" data-line="${board.line}" data-board="${board.line}"${mode}>${title}<div class="db-gallery">${cards}</div>${add}</div>`;
+    return `<div class="kanban-gallery" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-gallery">${cards}</div>${add}</div>`;
   }
 
   private embedBlock(embed: Extract<InlineNode, { type: 'embed' }>, line: number): string {

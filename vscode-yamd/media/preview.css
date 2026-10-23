@@ -310,7 +310,7 @@ code.math { font-style: italic; }
 .pagebreak { border-top: 2px dashed var(--yamd-border); margin: 2em 0; }
 @media print {
   .pagebreak { border: 0; break-after: page; }
-  .code-copy, .db-toolbar, .kanban-add, .db-row-actions, .db-board-new { display: none !important; }
+  .code-copy, .db-toolbar, .kanban-add, .gallery-add, .db-row-actions, .db-board-new { display: none !important; }
 }
 
 ins.review-ins { color: var(--vscode-gitDecoration-addedResourceForeground, #2ea043); text-decoration: underline; }
@@ -621,6 +621,20 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-card:hover { border-color: color-mix(in srgb, var(--yamd-accent) 45%, var(--yamd-border)); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14); }
 .db-cover { display: block; width: 100%; height: 120px; object-fit: cover; border-radius: 0; background: var(--yamd-surface); }
 .db-card-body { padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.kanban-gallery[data-interactive] .db-card { cursor: grab; }
+.db-card:focus-visible, .db-card:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-card.dragging { opacity: 0.4; }
+.gallery-add { display: flex; gap: 6px; margin-top: 12px; }
+.gallery-add-image, .gallery-add-caption {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--yamd-border);
+  border-radius: 4px;
+}
+.gallery-add-image:focus, .gallery-add-caption:focus { border-color: var(--vscode-focusBorder); outline: none; }
 
 .db-calendar-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .db-month { padding: 0 8px; }
@@ -642,6 +656,12 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
   white-space: nowrap;
 }
 .db-event input[type="checkbox"], .db-timeline-bar input[type="checkbox"] { vertical-align: middle; margin: 0 2px 0 0; }
+.kanban-calendar[data-interactive] .db-event { cursor: grab; }
+.db-event:focus-visible, .db-event:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-event.dragging { opacity: 0.4; }
+.db-day.drop-target { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+.kanban-calendar .kanban-add { margin-top: 3px; }
+.kanban-calendar .kanban-add-input { padding: 1px 6px; font-size: 12px; }
 
 /* Database boards scroll inside their view instead of using the full preview width. */
 .kanban.db-board { margin: 0; padding: 0; }
@@ -709,6 +729,13 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.kanban-timeline[data-interactive] .db-timeline-bar { cursor: grab; }
+.db-timeline-bar:focus-visible, .db-timeline-bar:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-timeline-bar.dragging { opacity: 0.4; }
+.db-timeline-row.drop-target .db-timeline-track { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+.kanban-timeline .kanban-add { flex: 0 0 140px; }
+.kanban-timeline .kanban-add-input { padding: 1px 6px; font-size: 12px; }
+.kanban-timeline > .kanban-add { margin-top: 6px; }
 
 /* ---- Chart ---- */
 .db-chart-bar, .db-chart-line {

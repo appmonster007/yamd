@@ -382,7 +382,14 @@ export class PreviewManager implements vscode.Disposable {
     const end = doc.lineAt(Math.min(edit.endLine, doc.lineCount - 1)).range.end;
     const workspaceEdit = new vscode.WorkspaceEdit();
     workspaceEdit.replace(doc.uri, new vscode.Range(edit.startLine, 0, end.line, end.character), edit.text);
-    if (!(await vscode.workspace.applyEdit(workspaceEdit))) this.forceUpdate();
+    if (await vscode.workspace.applyEdit(workspaceEdit)) {
+      // A drag, toggle, add or rename is a completed action, not an in-progress typing session to
+      // leave uncommitted — auto-save so it isn't silently lost (this matters most for an embedded
+      // note, which the user may never open directly).
+      await doc.save();
+    } else {
+      this.forceUpdate();
+    }
   }
 
   /**
