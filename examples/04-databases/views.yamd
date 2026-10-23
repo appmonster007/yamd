@@ -80,6 +80,10 @@ Counts rows into buckets by a category property — here, how many tasks are in 
 
 ::db[tasks]{type=chart x=Status shape=pie}
 
+`shape=line` draws it as a connected line instead, each point's value labeled above it:
+
+::db[tasks]{type=chart x=Priority aggregate=sum y=Points shape=line}
+
 ## SQLite tables
 
 The `crm` alias points at the `contacts` table of a SQLite file:

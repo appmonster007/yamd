@@ -787,20 +787,31 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .kanban-timeline > .kanban-add { margin-top: 6px; }
 
 /* ---- Chart ---- */
-.db-chart-bar, .db-chart-line {
+.db-chart-bar {
   display: flex;
   align-items: flex-end;
   gap: 10px;
   height: 160px;
-  padding-top: 10px;
+  padding-top: 24px;
 }
-.db-chart-bar .db-chart-bar, .db-chart-line .db-chart-bar {
+.db-chart-bar .db-chart-bar {
   flex: 1;
   height: var(--value, 0%);
   min-height: 2px;
   border-radius: 3px 3px 0 0;
   background: var(--yamd-accent);
   position: relative;
+}
+.db-chart-value {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--yamd-fg);
+  text-align: center;
 }
 .db-chart-label {
   position: absolute;
@@ -814,6 +825,36 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.db-chart-line {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.db-chart-plot {
+  position: relative;
+  height: 160px;
+}
+.db-chart-svg { width: 100%; height: 100%; overflow: visible; }
+.db-chart-path { fill: none; stroke: var(--yamd-accent); stroke-width: 2; }
+.db-chart-dot { fill: var(--yamd-accent); }
+.db-chart-line .db-chart-value {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  margin-bottom: 6px;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  white-space: nowrap;
+}
+.db-chart-axis { position: relative; height: 16px; }
+.db-chart-axis .db-chart-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  max-width: 80px;
+  left: auto;
+  right: auto;
 }
 .db-chart-pie {
   display: flex;

@@ -334,6 +334,7 @@ function chart(data: ViewData): string {
             : Math.max(...nums);
     return { label, value };
   });
+  const formatValue = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(/0+$/, '').replace(/\.$/, ''));
   if (shape === 'pie') {
     const total = points.reduce((a, p) => a + p.value, 0) || 1;
     const hue = (i: number) => (i * 47) % 360;
@@ -344,13 +345,43 @@ function chart(data: ViewData): string {
       return `hsl(${hue(i)} 65% 55%) ${start}deg ${angle}deg`;
     });
     const legend = points
-      .map((p, i) => `<li><span class="db-chart-swatch" style="background:hsl(${hue(i)} 65% 55%)"></span>${escapeHtml(p.label)} (${p.value})</li>`)
+      .map((p, i) => `<li><span class="db-chart-swatch" style="background:hsl(${hue(i)} 65% 55%)"></span>${escapeHtml(p.label)} (${formatValue(p.value)})</li>`)
       .join('');
-    return `<div class="db-chart db-chart-pie"><div class="db-chart-pie-circle" style="background:conic-gradient(${stops.join(', ')})" title="${points.map((p) => `${escapeHtml(p.label)}: ${p.value}`).join(', ')}"></div><ul class="db-chart-legend">${legend}</ul></div>`;
+    return `<div class="db-chart db-chart-pie"><div class="db-chart-pie-circle" style="background:conic-gradient(${stops.join(', ')})" title="${points.map((p) => `${escapeHtml(p.label)}: ${formatValue(p.value)}`).join(', ')}"></div><ul class="db-chart-legend">${legend}</ul></div>`;
   }
   const max = Math.max(...points.map((p) => p.value), 1);
+  if (shape === 'line') {
+    const w = 300;
+    const h = 120;
+    const padX = 16;
+    const padY = 14;
+    const n = points.length;
+    const stepX = n > 1 ? (w - padX * 2) / (n - 1) : 0;
+    const coords = points.map((p, i) => ({
+      x: n > 1 ? padX + i * stepX : w / 2,
+      y: padY + (1 - p.value / max) * (h - padY * 2),
+      p,
+    }));
+    const path = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+    const dots = coords
+      .map(
+        (c, i) =>
+          `<circle class="db-chart-dot" data-color="${i % 8}" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3"><title>${escapeHtml(c.p.label)}: ${formatValue(c.p.value)}</title></circle>`,
+      )
+      .join('');
+    const axis = coords
+      .map((c) => `<div class="db-chart-label" style="left:${((c.x / w) * 100).toFixed(2)}%">${escapeHtml(c.p.label)}</div>`)
+      .join('');
+    const values = coords
+      .map((c) => `<div class="db-chart-value" style="left:${((c.x / w) * 100).toFixed(2)}%;top:${((c.y / h) * 100).toFixed(2)}%">${formatValue(c.p.value)}</div>`)
+      .join('');
+    return `<div class="db-chart db-chart-line"><div class="db-chart-plot"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="db-chart-svg"><path d="${path}" class="db-chart-path"></path>${dots}</svg>${values}</div><div class="db-chart-axis">${axis}</div></div>`;
+  }
   return `<div class="db-chart db-chart-${shape}">${points
-    .map((p, i) => `<div class="db-chart-bar" data-color="${i % 8}" style="--value:${(p.value / max) * 100}%" title="${escapeHtml(p.label)}: ${p.value}"><span class="db-chart-label">${escapeHtml(p.label)}</span></div>`)
+    .map(
+      (p, i) =>
+        `<div class="db-chart-bar" data-color="${i % 8}" style="--value:${(p.value / max) * 100}%" title="${escapeHtml(p.label)}: ${formatValue(p.value)}"><span class="db-chart-value">${formatValue(p.value)}</span><span class="db-chart-label">${escapeHtml(p.label)}</span></div>`,
+    )
     .join('')}</div>`;
 }
 

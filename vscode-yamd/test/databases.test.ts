@@ -295,6 +295,22 @@ describe('views', () => {
     assert.equal(view(tasks(), { type: 'chart', x: 'Status', shape: 'bogus' }).problem?.code, 'Y855');
   });
 
+  test('chart bars and pie slices show their value as text, not just on hover', () => {
+    const bars = view(tasks(), { type: 'chart', x: 'Status' }).html ?? '';
+    assert.match(bars, /<span class="db-chart-value">3<\/span>/);
+    const pie = view(tasks(), { type: 'chart', x: 'Status', shape: 'pie' }).html ?? '';
+    assert.match(pie, /Todo \(3\)/);
+  });
+
+  test('a line chart draws a real connected line, not a copy of the bars', () => {
+    const html = view(tasks(), { type: 'chart', x: 'Status', shape: 'line' }).html ?? '';
+    assert.match(html, /class="db-chart db-chart-line"/);
+    assert.match(html, /<svg[^>]*class="db-chart-svg"/);
+    assert.match(html, /<path d="M[\d.]+,[\d.]+ L[\d.]+,[\d.]+ L[\d.]+,[\d.]+" class="db-chart-path">/);
+    assert.equal((html.match(/db-chart-dot/g) ?? []).length, 3);
+    assert.doesNotMatch(html, /db-chart-bar/);
+  });
+
   test('Y856 for a view attribute that does not apply to the chosen type', () => {
     const html = view(tasks(), { type: 'table', cover: 'Link' }).html ?? '';
     assert.match(html, /Y856/);
