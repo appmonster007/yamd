@@ -565,7 +565,9 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
     for (let i = 0; i < offset; i++) cells.push('<div class="db-day empty"></div>');
     for (let d = 1; d <= days; d++) {
       const iso = `${month}-${String(d).padStart(2, '0')}`;
-      const items = (byDay.get(d) ?? []).map((c) => `<div class="db-event" data-line="${c.line}">${this.inline(c.title)}</div>`).join('');
+      const items = (byDay.get(d) ?? [])
+        .map((c) => `<div class="db-event" data-line="${c.line}">${c.hasCheckbox ? `${this.checkbox(c.line, c.done)} ` : ''}${this.inline(c.title)}</div>`)
+        .join('');
       cells.push(`<div class="db-day${iso === (this.options.today ?? today()) ? ' today' : ''}" data-date="${iso}"><span class="db-day-number">${d}</span>${items}</div>`);
     }
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
@@ -601,7 +603,8 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
       const left = pct(time(i.start));
       const width = Math.max(pct(time(i.end)) - left, 1.5);
       const label = escapeHtml(plainText(i.card.title));
-      return `<div class="db-timeline-bar" data-line="${i.card.line}" style="left:${left}%;width:${width}%" title="${label}">${this.inline(i.card.title)}</div>`;
+      const box = i.card.hasCheckbox ? `${this.checkbox(i.card.line, i.card.done)} ` : '';
+      return `<div class="db-timeline-bar" data-line="${i.card.line}" style="left:${left}%;width:${width}%" title="${label}">${box}${this.inline(i.card.title)}</div>`;
     };
     const rows = board.groups
       .map((g) => {

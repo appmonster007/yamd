@@ -191,6 +191,13 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
   });
 
+  test('calendar and timeline cards render a clickable task-toggle checkbox, same as kanban', () => {
+    const cal = render(parse(':::calendar\n- [x] Done {due=2026-10-10}\n:::'), { today: '2026-10-16', interactive: true, sourcePath: 'x.yamd' });
+    assert.match(cal, /<input type="checkbox" class="task-toggle" data-line="1" data-hash="[a-z0-9]+" data-source="x\.yamd" checked aria-label="Toggle task">/);
+    const tl = render(parse(':::timeline\n- [ ] Open {start=2026-10-01}\n:::'), { interactive: true, sourcePath: 'x.yamd' });
+    assert.match(tl, /<input type="checkbox" class="task-toggle" data-line="1" data-hash="[a-z0-9]+" data-source="x\.yamd" aria-label="Toggle task">/);
+  });
+
   test(':::timeline stretches cards into bars, grouped by heading when present', () => {
     const src = ':::timeline {title="Q4"}\n## Ada\n- [ ] Ship billing {start=2026-10-01 due=2026-10-15}\n\n## Bob\n- [ ] Migrate auth {start=2026-10-05 due=2026-11-01}\n:::';
     const html = render(parse(src));

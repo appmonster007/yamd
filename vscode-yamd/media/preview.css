@@ -641,6 +641,7 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.db-event input[type="checkbox"], .db-timeline-bar input[type="checkbox"] { vertical-align: middle; margin: 0 2px 0 0; }
 
 /* Database boards scroll inside their view instead of using the full preview width. */
 .kanban.db-board { margin: 0; padding: 0; }
