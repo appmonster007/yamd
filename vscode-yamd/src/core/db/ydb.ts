@@ -44,6 +44,16 @@ export interface SavedView {
   limit?: number;
   date?: string;
   cover?: string;
+  /** Timeline: the end-date property (date is the start). */
+  dateEnd?: string;
+  /** Chart: the category property rows are bucketed by. */
+  x?: string;
+  /** Chart: the property `aggregate` is applied to (not needed for `count`). */
+  y?: string;
+  /** Chart: `count` (default), `sum`, `avg`, `min` or `max`. */
+  aggregate?: string;
+  /** Chart: `bar` (default), `line` or `pie`. */
+  shape?: string;
 }
 
 export type Row = { id: string } & Record<string, unknown>;

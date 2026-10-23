@@ -173,8 +173,18 @@ function view(SQL: SqlJsStatic, job: Extract<Job, { kind: 'view' }>): JobResult 
       // The extension resolves cover images relative to the database file.
       resolveImage: (src) => `yamd-cover:${src}`,
     });
-    const boardProblem = settings.type === 'board' && /class="db-error"/.test(html) ? { code: 'Y855' as const, message: /<\/span> ([^<]*)<\/div>/.exec(html)?.[1] ?? 'Invalid board.' } : undefined;
-    return { html, problem: boardProblem, schema: o.schema };
+    // Any view type (board, gallery, calendar, timeline, chart) can reject its own attributes
+    // (a group/date/cover/x/y of the wrong property type) and render an inline db-error box; surface
+    // whichever code and message it actually used rather than assuming Y855 or a board-only check.
+    const errorCode = /class="db-error-code">([^<]+)</.exec(html)?.[1];
+    const errorMessage = /<\/span> ([^<]*)<\/div>/.exec(html)?.[1] ?? `Invalid ${settings.type} view.`;
+    const viewProblem =
+      errorCode === 'Y851'
+        ? { code: 'Y851' as const, message: errorMessage }
+        : errorCode === 'Y855'
+          ? { code: 'Y855' as const, message: errorMessage }
+          : undefined;
+    return { html, problem: viewProblem, schema: o.schema };
   } finally {
     o.db.close();
   }

@@ -7,9 +7,13 @@ import { READ_ONLY_TYPES, titleProperty } from './ydb';
 import type { Property, SavedView, Schema } from './ydb';
 import type { QueryResult } from './engine';
 
-export const VIEW_TYPES = ['table', 'list', 'gallery', 'calendar', 'board'] as const;
-/** Property types a board can group by. */
+export const VIEW_TYPES = ['table', 'list', 'gallery', 'calendar', 'board', 'timeline', 'chart'] as const;
+/** Property types a board (or a timeline's `group`) can group by. */
 export const BOARD_GROUP_TYPES = new Set(['select', 'status', 'person', 'checkbox']);
+/** Property types usable as a gallery's `cover`. */
+const COVER_TYPES = new Set(['url', 'text']);
+const AGGREGATES = new Set(['count', 'sum', 'avg', 'min', 'max']);
+const CHART_SHAPES = new Set(['bar', 'line', 'pie']);
 
 export interface ViewRow {
   /** Stable row id: the `.ydb` id, or the SQLite rowid. */
@@ -197,6 +201,10 @@ function list(data: ViewData): string {
 }
 
 function gallery(data: ViewData): string {
+  const coverProp = data.settings.cover ? propertyMap(data.schema).get(data.settings.cover) : undefined;
+  if (data.settings.cover && (!coverProp || !COVER_TYPES.has(coverProp.type))) {
+    return viewError(`A gallery can't use "${data.settings.cover}" as a cover. Use a url property or an embedded image reference.`, 'Y855');
+  }
   const cols = columnsFor(data);
   const cover = data.settings.cover;
   return `<div class="db-gallery">${data.rows
@@ -212,6 +220,9 @@ function gallery(data: ViewData): string {
 function calendar(data: ViewData): string {
   const dateProp = data.settings.date ?? data.schema.properties.find((p) => p.type === 'date')?.name;
   if (!dateProp) return viewError('This calendar needs a date property: add date=<property>.', 'Y851');
+  if (data.settings.date && propertyMap(data.schema).get(data.settings.date)?.type !== 'date') {
+    return viewError(`A calendar can't place rows by "${data.settings.date}". Use a date property.`, 'Y855');
+  }
   const month = data.month ?? data.today.slice(0, 7);
   const [y, m] = month.split('-').map(Number) as [number, number];
   const first = new Date(Date.UTC(y, m - 1, 1));
@@ -234,6 +245,109 @@ function calendar(data: ViewData): string {
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
   const title = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
   return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><button type="button" class="db-month" data-delta="-1" aria-label="Previous month">‹</button><span class="db-month-title">${title}</span><button type="button" class="db-month" data-delta="1" aria-label="Next month">›</button></div><div class="db-calendar-grid">${weekdays}${cells.join('')}</div></div>`;
+}
+
+interface TimelineItem {
+  row: ViewRow;
+  start: string;
+  end: string;
+}
+
+function timeline(data: ViewData): string {
+  if (!data.settings.date) return viewError('A timeline needs a start date property: add date=<property>.', 'Y851');
+  const startProp = propertyMap(data.schema).get(data.settings.date);
+  if (!startProp || startProp.type !== 'date') {
+    return viewError(`A timeline can't start rows by "${data.settings.date}". Use a date property.`, 'Y855');
+  }
+  const endProp = data.settings.dateEnd ? propertyMap(data.schema).get(data.settings.dateEnd) : undefined;
+  if (data.settings.dateEnd && (!endProp || endProp.type !== 'date')) {
+    return viewError(`A timeline can't end rows by "${data.settings.dateEnd}". Use a date property.`, 'Y855');
+  }
+  const group = data.settings.group ? propertyMap(data.schema).get(data.settings.group) : undefined;
+  if (data.settings.group && (!group || !BOARD_GROUP_TYPES.has(group.type))) {
+    return viewError(`A timeline can't group by "${data.settings.group}" (${group?.type ?? 'unknown'}). Use a select, status, person or checkbox property.`, 'Y855');
+  }
+  const items: TimelineItem[] = [];
+  for (const r of data.rows) {
+    const s = r.values[startProp.name];
+    if (typeof s !== 'string' || !s) continue;
+    const e = endProp ? r.values[endProp.name] : undefined;
+    items.push({ row: r, start: s, end: typeof e === 'string' && e ? e : s });
+  }
+  if (!items.length) return '<div class="db-timeline db-empty">No dated rows.</div>';
+  const time = (d: string) => new Date(d).getTime();
+  const min = Math.min(...items.map((i) => time(i.start)));
+  const max = Math.max(...items.map((i) => time(i.end)));
+  const span = Math.max(max - min, 86400000);
+  const pct = (t: number) => ((t - min) / span) * 100;
+  const bar = (i: TimelineItem) => {
+    const left = pct(time(i.start));
+    const width = Math.max(pct(time(i.end)) - left, 1.5);
+    const title = titleOf(data, i.row);
+    return `<div class="db-timeline-bar" data-row-id="${escapeHtml(i.row.id)}" style="left:${left}%;width:${width}%" title="${escapeHtml(title)}">${escapeHtml(title)}</div>`;
+  };
+  if (!group) {
+    return `<div class="db-timeline"><div class="db-timeline-row"><div class="db-timeline-track">${items.map(bar).join('')}</div></div></div>`;
+  }
+  const byRowId = new Map(items.map((i) => [i.row.id, i]));
+  const lanes = groupRows({ ...data, rows: items.map((i) => i.row) }, group);
+  return `<div class="db-timeline">${lanes
+    .map((g) => {
+      const bars = g.rows.map((r) => byRowId.get(r.id)).filter((i): i is TimelineItem => i !== undefined).map(bar).join('');
+      const label = g.value === null ? 'No value' : g.label;
+      return `<div class="db-timeline-row" data-group-value="${escapeHtml(JSON.stringify(g.value))}"><span class="db-timeline-label">${escapeHtml(label)}</span><div class="db-timeline-track">${bars}</div></div>`;
+    })
+    .join('')}</div>`;
+}
+
+function chart(data: ViewData): string {
+  if (!data.settings.x) return viewError('A chart needs a category property: add x=<property>.', 'Y851');
+  const xProp = propertyMap(data.schema).get(data.settings.x);
+  if (!xProp) return viewError(`A chart can't bucket by "${data.settings.x}": no such property.`, 'Y855');
+  if (data.settings.aggregate && !AGGREGATES.has(data.settings.aggregate)) {
+    return viewError(`Unknown aggregate "${data.settings.aggregate}". Use count, sum, avg, min or max.`, 'Y855');
+  }
+  const aggregate = data.settings.aggregate ?? 'count';
+  const yProp = data.settings.y ? propertyMap(data.schema).get(data.settings.y) : undefined;
+  if (aggregate !== 'count') {
+    if (!data.settings.y) return viewError(`aggregate=${aggregate} needs a property: add y=<property>.`, 'Y851');
+    if (!yProp || !['number', 'formula'].includes(yProp.type)) {
+      return viewError(`A chart can't ${aggregate} "${data.settings.y}". Use a number property.`, 'Y855');
+    }
+  }
+  if (data.settings.shape && !CHART_SHAPES.has(data.settings.shape)) {
+    return viewError(`Unknown chart shape "${data.settings.shape}". Use bar, line or pie.`, 'Y855');
+  }
+  const shape = data.settings.shape ?? 'bar';
+  const points = groupRows(data, xProp).map((g) => {
+    const label = g.value === null ? 'No value' : g.label;
+    if (aggregate === 'count') return { label, value: g.rows.length };
+    const nums = g.rows.map((r) => Number(r.values[yProp!.name])).filter((n) => !Number.isNaN(n));
+    const value = !nums.length
+      ? 0
+      : aggregate === 'sum'
+        ? nums.reduce((a, b) => a + b, 0)
+        : aggregate === 'avg'
+          ? nums.reduce((a, b) => a + b, 0) / nums.length
+          : aggregate === 'min'
+            ? Math.min(...nums)
+            : Math.max(...nums);
+    return { label, value };
+  });
+  if (shape === 'pie') {
+    const total = points.reduce((a, p) => a + p.value, 0) || 1;
+    let angle = 0;
+    const slices = points.map((p, i) => {
+      const start = angle;
+      angle += (p.value / total) * 360;
+      return `<div class="db-chart-slice" data-color="${i % 8}" style="--start:${start}deg;--end:${angle}deg" title="${escapeHtml(p.label)}: ${p.value}"></div>`;
+    });
+    return `<div class="db-chart db-chart-pie">${slices.join('')}<ul class="db-chart-legend">${points.map((p, i) => `<li data-color="${i % 8}">${escapeHtml(p.label)} (${p.value})</li>`).join('')}</ul></div>`;
+  }
+  const max = Math.max(...points.map((p) => p.value), 1);
+  return `<div class="db-chart db-chart-${shape}">${points
+    .map((p, i) => `<div class="db-chart-bar" data-color="${i % 8}" style="--value:${(p.value / max) * 100}%" title="${escapeHtml(p.label)}: ${p.value}"><span class="db-chart-label">${escapeHtml(p.label)}</span></div>`)
+    .join('')}</div>`;
 }
 
 function board(data: ViewData): string {
@@ -265,9 +379,19 @@ export function viewError(message: string, code: string): string {
 export function renderView(data: ViewData): string {
   const type = data.settings.type;
   const body =
-    type === 'list' ? list(data) : type === 'gallery' ? gallery(data) : type === 'calendar' ? calendar(data) : type === 'board' ? board(data) : table(data);
+    type === 'list' ? list(data)
+    : type === 'gallery' ? gallery(data)
+    : type === 'calendar' ? calendar(data)
+    : type === 'board' ? board(data)
+    : type === 'timeline' ? timeline(data)
+    : type === 'chart' ? chart(data)
+    : table(data);
   const shown = data.rows.length;
-  return `<div class="db-view-body" data-db-type="${escapeHtml(type)}" data-schema="${schemaAttr(data.schema)}"${data.interactive ? ' data-interactive' : ''}>${toolbar(data, shown)}${body}</div>`;
+  const ignored = irrelevantAttrs(data.settings);
+  const notice = ignored.length
+    ? `<div class="db-notice"><span class="db-notice-code">Y856</span> ${escapeHtml(`${ignored.join(', ')} ${ignored.length === 1 ? "doesn't apply" : "don't apply"} to a ${type} view, and ${ignored.length === 1 ? 'is' : 'are'} ignored.`)}</div>`
+    : '';
+  return `<div class="db-view-body" data-db-type="${escapeHtml(type)}" data-schema="${schemaAttr(data.schema)}"${data.interactive ? ' data-interactive' : ''}>${toolbar(data, shown)}${notice}${body}</div>`;
 }
 
 /** The HTML for a query result: a table, a list of the first column, or the first cell. */
@@ -305,5 +429,28 @@ export function viewSettings(schema: Schema, attrs: Record<string, string | numb
     ...(limit !== undefined ? { limit } : {}),
     ...(str('date') !== undefined ? { date: str('date') } : {}),
     ...(str('cover') !== undefined ? { cover: str('cover') } : {}),
+    ...(str('date-end') !== undefined ? { dateEnd: str('date-end') } : {}),
+    ...(str('x') !== undefined ? { x: str('x') } : {}),
+    ...(str('y') !== undefined ? { y: str('y') } : {}),
+    ...(str('aggregate') !== undefined ? { aggregate: str('aggregate') } : {}),
+    ...(str('shape') !== undefined ? { shape: str('shape') } : {}),
   };
+}
+
+/** Which view-specific attributes actually apply to each view type. */
+const TYPE_SPECIFIC_ATTRS: Record<string, (keyof SavedView)[]> = {
+  table: [],
+  list: [],
+  gallery: ['cover'],
+  calendar: ['date'],
+  board: ['group'],
+  timeline: ['date', 'dateEnd', 'group'],
+  chart: ['x', 'y', 'aggregate', 'shape'],
+};
+const ALL_TYPE_SPECIFIC_ATTRS = ['group', 'date', 'dateEnd', 'cover', 'x', 'y', 'aggregate', 'shape'] as const;
+
+/** Y856: view-specific attributes present but not meaningful for the resolved `type`, ignored. */
+export function irrelevantAttrs(settings: SavedView & { type: string }): (keyof SavedView)[] {
+  const relevant = new Set(TYPE_SPECIFIC_ATTRS[settings.type] ?? []);
+  return ALL_TYPE_SPECIFIC_ATTRS.filter((k) => settings[k] !== undefined && !relevant.has(k));
 }

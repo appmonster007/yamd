@@ -262,6 +262,47 @@ describe('views', () => {
     assert.equal(view(tasks(), { type: 'board', group: 'Points' }).problem?.code, 'Y855');
   });
 
+  test('gallery Y855 for a non-url, non-text cover', () => {
+    assert.equal(view(tasks(), { type: 'gallery', cover: 'Points' }).problem?.code, 'Y855');
+    assert.match(view(tasks(), { type: 'gallery', cover: 'Link' }).html ?? '', /class="db-gallery"/);
+  });
+
+  test('calendar Y855 for a non-date property', () => {
+    assert.equal(view(tasks(), { type: 'calendar', date: 'Points' }).problem?.code, 'Y855');
+  });
+
+  test('timeline places rows by start/end date, with optional grouping', () => {
+    const html = view(tasks(), { type: 'timeline', date: 'Due', group: 'Owner' }).html ?? '';
+    assert.match(html, /class="db-timeline"/);
+    assert.match(html, /db-timeline-bar/);
+    assert.equal(view(tasks(), { type: 'timeline' }).problem?.code, 'Y851');
+    assert.equal(view(tasks(), { type: 'timeline', date: 'Points' }).problem?.code, 'Y855');
+    assert.equal(view(tasks(), { type: 'timeline', date: 'Due', 'date-end': 'Points' }).problem?.code, 'Y855');
+    assert.equal(view(tasks(), { type: 'timeline', date: 'Due', group: 'Points' }).problem?.code, 'Y855');
+  });
+
+  test('chart aggregates rows by category', () => {
+    const counts = view(tasks(), { type: 'chart', x: 'Status' }).html ?? '';
+    assert.match(counts, /class="db-chart db-chart-bar"/);
+    const sum = view(tasks(), { type: 'chart', x: 'Status', aggregate: 'sum', y: 'Points' }).html ?? '';
+    assert.match(sum, /db-chart-bar/);
+    const pie = view(tasks(), { type: 'chart', x: 'Status', shape: 'pie' }).html ?? '';
+    assert.match(pie, /class="db-chart db-chart-pie"/);
+    assert.equal(view(tasks(), { type: 'chart' }).problem?.code, 'Y851');
+    assert.equal(view(tasks(), { type: 'chart', x: 'Status', aggregate: 'sum' }).problem?.code, 'Y851');
+    assert.equal(view(tasks(), { type: 'chart', x: 'Status', aggregate: 'sum', y: 'Title' }).problem?.code, 'Y855');
+    assert.equal(view(tasks(), { type: 'chart', x: 'Status', aggregate: 'bogus' }).problem?.code, 'Y855');
+    assert.equal(view(tasks(), { type: 'chart', x: 'Status', shape: 'bogus' }).problem?.code, 'Y855');
+  });
+
+  test('Y856 for a view attribute that does not apply to the chosen type', () => {
+    const html = view(tasks(), { type: 'table', cover: 'Link' }).html ?? '';
+    assert.match(html, /Y856/);
+    assert.match(html, /cover.*table/);
+    const clean = view(tasks(), { type: 'board', group: 'Status' }).html ?? '';
+    assert.doesNotMatch(clean, /Y856/);
+  });
+
   test('invalid filter is Y851', () => {
     const r = view(tasks(), { filter: 'Status =' });
     assert.equal(r.problem?.code, 'Y851');
