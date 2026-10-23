@@ -431,23 +431,48 @@ export function viewError(message: string, code: string): string {
   return `<div class="db-error" role="alert"><span class="db-error-code">${escapeHtml(code)}</span> ${escapeHtml(message)}</div>`;
 }
 
-/** The HTML for a `::db` view. */
-export function renderView(data: ViewData): string {
+function viewBody(data: ViewData): string {
   const type = data.settings.type;
-  const body =
-    type === 'list' ? list(data)
+  return type === 'list' ? list(data)
     : type === 'gallery' ? gallery(data)
     : type === 'calendar' ? calendar(data)
     : type === 'board' ? board(data)
     : type === 'timeline' ? timeline(data)
     : type === 'chart' ? chart(data)
     : table(data);
+}
+
+function ignoredAttrsMessage(ignored: (keyof SavedView)[], type: string): string {
+  return `${ignored.join(', ')} ${ignored.length === 1 ? "doesn't apply" : "don't apply"} to a ${type} view, and ${ignored.length === 1 ? 'is' : 'are'} ignored.`;
+}
+
+/** The HTML for a `::db` view. */
+export function renderView(data: ViewData): string {
+  const body = viewBody(data);
   const shown = data.rows.length;
   const ignored = irrelevantAttrs(data.settings);
   const notice = ignored.length
-    ? `<div class="db-notice"><span class="db-notice-code">Y856</span> ${escapeHtml(`${ignored.join(', ')} ${ignored.length === 1 ? "doesn't apply" : "don't apply"} to a ${type} view, and ${ignored.length === 1 ? 'is' : 'are'} ignored.`)}</div>`
+    ? `<div class="db-notice"><span class="db-notice-code">Y856</span> ${escapeHtml(ignoredAttrsMessage(ignored, data.settings.type))}</div>`
     : '';
-  return `<div class="db-view-body" data-db-type="${escapeHtml(type)}" data-schema="${schemaAttr(data.schema)}"${data.interactive ? ' data-interactive' : ''}>${toolbar(data, shown)}${notice}${body}</div>`;
+  return `<div class="db-view-body" data-db-type="${escapeHtml(data.settings.type)}" data-schema="${schemaAttr(data.schema)}"${data.interactive ? ' data-interactive' : ''}>${toolbar(data, shown)}${notice}${body}</div>`;
+}
+
+/**
+ * Checks a view's settings against its schema alone — no rows, no SQL engine — so the editor can
+ * surface Y851/Y855/Y856 the moment a `.ydb`-backed `::db[...]` reference is typed, not only when
+ * the preview renders it. SQLite-backed views aren't checked this way yet: their schema can only be
+ * read by opening the file through the SQL engine, which this (synchronous) path can't do.
+ */
+export function viewProblem(schema: Schema, attrs: Record<string, string | number | boolean> | undefined): { code: string; message: string } | undefined {
+  const settings = viewSettings(schema, attrs);
+  if (!(VIEW_TYPES as readonly string[]).includes(settings.type)) {
+    return { code: 'Y851', message: `Unknown view type "${settings.type}". Use ${VIEW_TYPES.join(', ')}.` };
+  }
+  const data: ViewData = { key: '', ref: '', schema, rows: [], total: 0, settings, interactive: false, today: '1970-01-01' };
+  const match = /class="db-error-code">([^<]+)<\/span> ([^<]*)<\/div>/.exec(viewBody(data));
+  if (match) return { code: match[1] as string, message: match[2] as string };
+  const ignored = irrelevantAttrs(settings);
+  return ignored.length ? { code: 'Y856', message: ignoredAttrsMessage(ignored, settings.type) } : undefined;
 }
 
 /** The HTML for a query result: a table, a list of the first column, or the first cell. */

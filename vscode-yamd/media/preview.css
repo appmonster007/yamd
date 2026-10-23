@@ -284,7 +284,7 @@ code.math { font-style: italic; }
 .toc li { margin: 0; line-height: 1.7; }
 .toc li + li { margin-top: 0; }
 
-.footnotes { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
+.footnotes, .bibliography { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
 .footnote-ref a { font-size: 0.8em; }
 
 .citation, .xref-missing, .var-missing, .placeholder { color: var(--yamd-muted); }
@@ -376,7 +376,7 @@ mark.review-mark { background: color-mix(in srgb, var(--yamd-warning) 25%, trans
 
 /* ---- Shared controls (kanban and databases) ---- */
 
-.yamd-button, .db-toolbar button, .db-board-new, .db-month, .kanban-add-input {
+.db-toolbar button, .db-board-new, .db-month, .kanban-add-input {
   font: inherit;
   font-size: 12px;
   line-height: 18px;

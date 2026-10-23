@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
 import { describe, test } from 'node:test';
 import { lint, parse } from '../src/core';
 import type { LintOptions } from '../src/core';
@@ -206,5 +209,63 @@ describe('excluded content', () => {
     assert.deepEqual(codes('$$\n#x\n$$'), []);
     assert.deepEqual(codes('%% #Title {{ x }} %%'), []);
     assert.deepEqual(codes('%%\n#Title\n%%'), []);
+  });
+});
+
+describe('database diagnostics', () => {
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), 'yamd-lint-db-')));
+  writeFileSync(path.join(dir, 'tasks.ydb'), 'yamdb: 0.1\nproperties:\n  Title: title\n  Status:\n    type: status\n    options: [Todo, Done]\n');
+  writeFileSync(path.join(dir, 'broken.ydb'), 'yamdb: 0.1\nproperties: not-a-map\n');
+  writeFileSync(path.join(dir, 'outside.ydb'), 'yamdb: 0.1\nproperties: {Title: title}\n');
+  const fsAccess = { exists: existsSync, realpath: realpathSync };
+  const dbOptions = (docFile = 'note.yamd'): LintOptions => ({
+    databases: {
+      docPath: path.join(dir, docFile),
+      fs: fsAccess,
+      readFile: (p) => {
+        try {
+          return readFileSync(p, 'utf8');
+        } catch {
+          return undefined;
+        }
+      },
+    },
+  });
+
+  test('an unknown database or alias is Y850', () => {
+    assert.ok(find('::db[nope]', 'Y850', dbOptions()));
+  });
+
+  test("a database outside the note's folder is Y951", () => {
+    assert.ok(find('::db[../outside.ydb]', 'Y951', dbOptions()));
+  });
+
+  test('an invalid .ydb file is Y852, found without running any query', () => {
+    assert.ok(find('::db[broken.ydb]', 'Y852', dbOptions()));
+  });
+
+  test('a view attribute of the wrong type is Y855, found without running any query', () => {
+    const d = find('::db[tasks.ydb]{type=board group=Title}', 'Y855', dbOptions());
+    assert.ok(d);
+    assert.equal(d.severity, 'error');
+  });
+
+  test("an attribute that doesn't apply to the chosen type is Y856 (info)", () => {
+    const d = find('::db[tasks.ydb]{shape=pie}', 'Y856', dbOptions());
+    assert.ok(d);
+    assert.equal(d.severity, 'info');
+  });
+
+  test('a valid reference and settings report no database diagnostics', () => {
+    assert.deepEqual(codes('::db[tasks.ydb]{type=board group=Status}', dbOptions()).filter((c) => /^Y8[5-9]|^Y9[0-9]/.test(c)), []);
+  });
+
+  test('without the databases option, database checks are skipped entirely', () => {
+    assert.deepEqual(codes('::db[nope]').filter((c) => c.startsWith('Y8')), []);
+  });
+
+  test('a SQLite-backed reference is still resolved (Y850/Y951), but its schema is not checked', () => {
+    writeFileSync(path.join(dir, 'crm.sqlite'), '');
+    assert.deepEqual(codes('::db[crm.sqlite]{type=board group=nonexistent}', dbOptions()).filter((c) => /^Y8[5-9]/.test(c)), []);
   });
 });

@@ -3,7 +3,7 @@
  * worker with a timeout, filling preview placeholders, and the write paths for `.ydb` (undoable
  * text edits) and SQLite (confirmed, checked against the file on disk, atomic).
  */
-import { existsSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import * as vscode from 'vscode';
@@ -16,13 +16,14 @@ import { dbNodes } from '../core/db/nodes';
 import { buildNotesTables } from '../core/db/notesTables';
 import type { DbNode } from '../core/db/nodes';
 import { databaseAliases, inside, resolveDatabase, ydbTableName } from '../core/db/scope';
-import type { DatabaseRef, FileAccess } from '../core/db/scope';
+import type { DatabaseRef } from '../core/db/scope';
 import { viewError } from '../core/db/views';
 import { addRow, deleteRow, loadYdb, moveRow, READ_ONLY_TYPES, saveView, setCell } from '../core/db/ydb';
 import type { Property, SavedView, YdbEdit } from '../core/db/ydb';
 import type { YamdDocument } from '../core/types';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath } from '../workspace/index';
+import { nodeFsAccess as fsAccess } from './fsAccess';
 
 /** What a note's database results were built from. */
 interface Deps {
@@ -60,17 +61,6 @@ export interface DbMessage {
   sort?: string[];
   delta?: number;
 }
-
-const fsAccess: FileAccess = {
-  exists: (p) => existsSync(p),
-  realpath: (p) => {
-    try {
-      return realpathSync.native(p);
-    } catch {
-      return p;
-    }
-  },
-};
 
 function settings() {
   const q = vscode.workspace.getConfiguration('yamd.queries');

@@ -1,4 +1,9 @@
 import { extractCards } from './study/cards';
+import { dbNodes } from './db/nodes';
+import { databaseAliases, resolveDatabase } from './db/scope';
+import type { FileAccess } from './db/scope';
+import { viewProblem } from './db/views';
+import { loadYdb } from './db/ydb';
 import { lookupVariable } from './frontmatter';
 import { buildBoard, buildCalendarCards, buildTimeline } from './kanban';
 import { isNotePath, resolveNote, splitTarget, summarize } from './notes';
@@ -17,6 +22,14 @@ export interface LintOptions {
   fileExists?: (path: string) => boolean;
   /** Other notes, for checking wikilinks, embeds and block references across notes. */
   notes?: { lookup: NoteLookup; path: string };
+  /**
+   * For checking `::db[...]` references and `.ydb` view settings (§6.2). `docPath` is this
+   * document's own absolute path; `fs` resolves candidate database files (aliases, extension
+   * guessing, folder scope) the same way the extension does when it opens one. Without it,
+   * database checks are skipped. SQLite-backed references are resolved (`Y850`/`Y951`) but not
+   * opened — reading their schema needs the SQL engine, which this synchronous pass can't use.
+   */
+  databases?: { docPath: string; fs: FileAccess; readFile: (absPath: string) => string | undefined };
 }
 
 /** Full and collapsed references (`[text][label]`, `[label][]`) that GFM leaves as text when undefined. */
@@ -104,7 +117,34 @@ class Linter {
     this.visualShorthandRules();
     this.blockIdRules();
     this.frontMatterRules();
+    this.databaseRules();
     return this.out.sort((a, b) => a.range.start - b.range.start);
+  }
+
+  /** `::db[...]` references and, for `.ydb`-backed views, their settings against the real schema. */
+  private databaseRules() {
+    const databases = this.options.databases;
+    if (!databases) return;
+    const aliases = databaseAliases(this.doc.frontMatter?.data);
+    for (const node of dbNodes(this.doc)) {
+      if (!node.ref) continue;
+      const resolved = resolveDatabase(databases.docPath, node.ref, aliases, databases.fs);
+      if (!resolved.ok) {
+        this.report(resolved.code, 'error', resolved.message, node.range);
+        continue;
+      }
+      if (node.kind !== 'view' || resolved.ref.kind !== 'ydb') continue;
+      const text = databases.readFile(resolved.ref.file);
+      if (text === undefined) continue;
+      const loaded = loadYdb(text);
+      if (!loaded.db) {
+        const first = loaded.diagnostics[0];
+        this.report('Y852', 'error', `The database file is invalid: ${first?.message ?? 'unknown error'}`, node.range);
+        continue;
+      }
+      const problem = viewProblem(loaded.db, node.attrs?.values);
+      if (problem) this.report(problem.code, problem.code === 'Y856' ? 'info' : 'error', problem.message, node.range);
+    }
   }
 
   private collectIds() {

@@ -1,4 +1,4 @@
-import { existsSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, renameSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../core';
@@ -11,18 +11,8 @@ import type { Row, YdbEdit } from '../core/db/ydb';
 import { setProperty } from '../core/properties';
 import { globToRegExp } from '../workspace/index';
 import type { DatabaseService } from './databases';
+import { nodeFsAccess as fsAccess } from './fsAccess';
 import { CONSOLE_BODY, sidebarHtml } from './webviewShell';
-
-const fsAccess = {
-  exists: (p: string) => existsSync(p),
-  realpath: (p: string) => {
-    try {
-      return realpathSync.native(p);
-    } catch {
-      return p;
-    }
-  },
-};
 
 // ---- Diagnostics ----
 

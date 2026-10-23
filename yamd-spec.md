@@ -635,6 +635,7 @@ These rules are enforced by `yamd check`:
 - A parser must accept **any** input and always produce output.
 - Every recovered or suspicious construct also produces a diagnostic with a code, a severity, a line, a column and a suggested fix.
 - Editors show diagnostics inline, and `yamd check` exits non-zero on errors so it can run in CI.
+- For `Y850`–`Y856` (database-view diagnostics): `Y850` and `Y951` (resolving `::db[...]`'s reference) are checked inline for both `.ydb` and SQLite databases; `Y852`, `Y855` and `Y856` (a `.ydb` file's own structure and its view settings) are checked inline too, since reading a `.ydb` schema needs no SQL engine. `Y851` (a raw SQL error) and `Y950`/`Y952` (query safety and the time limit) always need the SQL engine to run, so they only ever show in the live preview. Checking `Y852`/`Y855`/`Y856` inline for a SQLite-backed view needs the same engine to read its schema and is **pending** — until then, a SQLite view's settings are checked only when the preview renders it.
 
 | Code   | Severity | Meaning                                                          |
 | ------ | -------- | ---------------------------------------------------------------- |

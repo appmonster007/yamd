@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { lint, parse } from '../core';
@@ -6,6 +6,7 @@ import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { LintOptions, Severity } from '../core';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath } from '../workspace/index';
+import { nodeFsAccess } from './fsAccess';
 
 const SEVERITY: Record<Severity, vscode.DiagnosticSeverity> = {
   error: vscode.DiagnosticSeverity.Error,
@@ -102,6 +103,19 @@ export class DiagnosticsProvider implements vscode.Disposable {
     const resolve = fileResolver(doc);
     const options: LintOptions = resolve ? { fileExists: (p) => resolve(p) !== undefined } : {};
     if (this.index && doc.uri.scheme === 'file') options.notes = { lookup: this.index.store, path: notePath(doc.uri) };
+    if (doc.uri.scheme === 'file') {
+      options.databases = {
+        docPath: doc.uri.fsPath,
+        fs: nodeFsAccess,
+        readFile: (p) => {
+          try {
+            return readFileSync(p, 'utf8');
+          } catch {
+            return undefined;
+          }
+        },
+      };
+    }
     const results = lint(parse(text), options)
       .filter((d) => !ignore.has(d.code))
       // A huge note can have thousands of findings; the Problems panel stays usable with the first ones.
