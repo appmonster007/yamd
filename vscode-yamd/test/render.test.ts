@@ -333,42 +333,30 @@ describe('footnotes and cross-references', () => {
   });
 });
 
-describe('arrow annotations', () => {
-  test('a span with an arrow attribute renders as a real link to its target', () => {
-    const out = html('[mitosis]{arrow=def-mitosis}');
-    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
+describe('ref= references', () => {
+  test('a span with a ref attribute renders as a real link to its target', () => {
+    const out = html('[mitosis]{ref=def-mitosis}');
+    assert.match(out, /<a href="#def-mitosis">mitosis<\/a>/);
   });
 
-  test('a span without an arrow attribute is unaffected', () => {
+  test('a span without a ref attribute is unaffected', () => {
     const out = html('[small print]{.muted}');
-    assert.doesNotMatch(out, /data-yamd-arrow-to/);
     assert.match(out, /<span class="muted">small print<\/span>/);
   });
 
-  test('an arrow attribute combines with other attributes on the same span', () => {
-    const out = html('[mitosis]{.key-term arrow=def-mitosis}');
-    assert.match(out, /<a href="#def-mitosis" class="key-term" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
+  test('a ref attribute combines with other attributes on the same span', () => {
+    const out = html('[mitosis]{.key-term ref=def-mitosis}');
+    assert.match(out, /<a href="#def-mitosis" class="key-term">mitosis<\/a>/);
   });
 
-  test('an element with a block ID keeps its id for use as an arrow target', () => {
+  test('an element with a block ID keeps its id for use as a ref target', () => {
     const out = html('Mitosis is nuclear division. ^def-mitosis');
     assert.match(out, /<p id="\^def-mitosis"/);
   });
 
-  test('arrow-style=curve renders a data-yamd-arrow-style attribute', () => {
-    const out = html('[mitosis]{arrow=def-mitosis arrow-style=curve}');
-    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis" data-yamd-arrow-style="curve">mitosis<\/a>/);
-  });
-
-  test('arrow-style is ignored without an arrow attribute', () => {
-    const out = html('[mitosis]{arrow-style=curve}');
-    assert.doesNotMatch(out, /data-yamd-arrow-style/);
-  });
-
-  test('an unrecognized arrow-style value is dropped', () => {
-    const out = html('[mitosis]{arrow=def-mitosis arrow-style=zigzag}');
-    assert.match(out, /<a href="#def-mitosis" data-yamd-arrow-to="def-mitosis">mitosis<\/a>/);
-    assert.doesNotMatch(out, /data-yamd-arrow-style/);
+  test('ref can target a block ID, kept with its caret', () => {
+    const out = html('[mitosis]{ref=^def-mitosis}');
+    assert.match(out, /<a href="#\^def-mitosis">mitosis<\/a>/);
   });
 });
 

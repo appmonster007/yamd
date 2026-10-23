@@ -20,26 +20,12 @@
   --yamd-radius: 6px;
   --yamd-mono: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace);
   --yamd-text-width: 880px;
-  /* Arrow connectors are colored by hue alone (JS sets --yamd-arrow-hue per arrow); saturation and
-     lightness stay fixed and theme-tuned so every hue stays readable against the editor background. */
-  --yamd-arrow-saturation: 65%;
-  --yamd-arrow-lightness: 62%;
-}
-
-body.vscode-light {
-  --yamd-arrow-lightness: 38%;
 }
 
 body.vscode-high-contrast,
 body.vscode-high-contrast-light {
   --yamd-border: var(--vscode-contrastBorder, currentColor);
   --yamd-tint: transparent;
-  --yamd-arrow-saturation: 90%;
-  --yamd-arrow-lightness: 45%;
-}
-
-body.vscode-high-contrast-light {
-  --yamd-arrow-lightness: 32%;
 }
 
 /* ---- Base ---- */
@@ -61,45 +47,6 @@ body {
 }
 
 .yamd-body > :first-child { margin-top: 24px; }
-
-/* ---- Arrow annotations ---- */
-
-/* Negative z-index puts this layer below in-flow content (paragraphs, callouts, code blocks) in
-   the stacking order, so a connector passes behind the text and boxes it routes past instead of
-   drawing over them. */
-#yamd-arrows {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* Each path's JS-assigned --yamd-arrow-hue (a golden-angle step, so no two arrows share a hue
-   however many there are) drives both the line's `color` and, through marker inheritance, its
-   arrowhead's fill — so arrows that run close together or cross always stay distinguishable. */
-#yamd-arrows .yamd-arrow-path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  opacity: 0.9;
-  color: hsl(var(--yamd-arrow-hue, 210) var(--yamd-arrow-saturation) var(--yamd-arrow-lightness));
-}
-
-#yamd-arrows marker path {
-  fill: currentColor;
-}
-
-/* An arrow source is a real link to its target's #id (render.ts), so it's clickable and jumps to
- * it even without the preview script. The selector's extra specificity beats the later `a {
- * text-decoration: none }` base rule regardless of source order. */
-a[data-yamd-arrow-to] {
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-decoration-color: var(--yamd-accent);
-}
 
 p, ul, ol, dl, table, pre, blockquote, details, figure { margin: 0 0 1em; }
 

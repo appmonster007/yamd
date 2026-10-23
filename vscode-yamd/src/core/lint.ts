@@ -339,7 +339,7 @@ class Linter {
         if (!this.ids.has(n.id)) this.report('Y701', 'warning', `No element has the id "${n.id}".`, n.range);
         break;
       case 'span': {
-        const target = n.attrs.values['arrow'];
+        const target = n.attrs.values['ref'];
         if (typeof target === 'string' && !this.ids.has(target)) {
           this.report('Y701', 'warning', `No element has the id "${target}".`, n.range);
         }

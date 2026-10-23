@@ -362,7 +362,6 @@ export class PreviewManager implements vscode.Disposable {
 </head>
 <body>
 <main id="root" class="yamd-body"></main>
-<svg id="yamd-arrows" aria-hidden="true"><defs><marker id="yamd-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z"></path></marker></defs></svg>
 <script nonce="${n}" src="${script}"></script>
 </body>
 </html>`;
