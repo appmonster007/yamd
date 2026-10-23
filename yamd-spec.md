@@ -234,6 +234,7 @@ Directives are the **only** extension mechanism. They come in three forms:
 - **Unknown directives degrade gracefully.** A container renders its contents as normal blocks, and a leaf or inline directive renders its label as text. Both also produce diagnostic `Y601`.
 - Vendor-specific directives must be prefixed with `x-`, for example `:::x-acme-chart`, so they can never collide with future standard ones.
 - **A container's name is optional.** `::: {attrs} ... :::` groups several blocks under one set of attributes with no semantic meaning of its own — the generic way to apply, say, `.warning` to more than one paragraph at once (§5). It's the same container form as `:::note`, just nameless.
+- **A leaf directive's `[label]` is optional**, the same way: it's left out when the directive has no content of its own to take, as in `::toc{depth=3}`, `::pagebreak` and `::bibliography`.
 
 See [Standard directives](#6-standard-directives) for the built-in set.
 
@@ -431,7 +432,7 @@ To transclude another file or one of its sections, use an embed (`![[note]]`, `!
 
 ### 6.1 Kanban boards
 
-`:::kanban` is **sugar for an implicit, single-use database rendered as a board** (`::db[...]{type=board group=Status}`, §6.2) — it exists only so a board can be written and read as plain prose, degrading to headings and task lists, not as a second feature with its own rules. Writing
+`:::kanban` is **sugar for an implicit, single-use database rendered as a board** (`::db[...]{type=board group=Status}`, §6.2.1) — it exists only so a board can be written and read as plain prose, degrading to headings and task lists, not as a second feature with its own rules. Writing
 
 ```yamd
 :::kanban {title="Sprint 12"}
@@ -446,7 +447,7 @@ To transclude another file or one of its sections, use an embed (`![[note]]`, `!
 :::
 ```
 
-means: each heading starts a **column**, and is a value of an implicit `Status` property (a `status`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2). This implicit database has no backing `.ydb` file and no alias: it can't be referenced by another `::db[...]` or by a query (§6.2) — it exists only to render the one `:::kanban` block it's written in.
+means: each heading starts a **column**, and is a value of an implicit `Status` property (a `status`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2.1). This implicit database has no backing `.ydb` file and no alias: it can't be referenced by another `::db[...]` or by a query (§6.2) — it exists only to render the one `:::kanban` block it's written in.
 
 Because of that, a board's rules are the database's rules, stated once, whichever way the board was written:
 
@@ -474,18 +475,18 @@ databases:
 
 #### 6.2.1 Views
 
-`::db[ref]{view type filter sort group columns limit date date-end cover chart x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order. An attribute that isn't meaningful for the chosen `type` (e.g. `chart` on a `table` view) is ignored and produces information `Y856`.
+`::db[ref]{view type filter sort group columns limit date date-end cover shape x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order. An attribute that isn't meaningful for the chosen `type` (e.g. `shape` on a `table` view) is ignored and produces information `Y856`.
 
 - **Board** groups rows by `group` (must be `select`, `status`, `person` or `checkbox`, `Y855` otherwise) — see [Kanban boards](#61-kanban-boards) for the markup shorthand.
 - **Gallery** shows each row as a card image named by `cover` (must be a `url` property or an embedded image reference, `Y855` otherwise).
 - **Calendar** places each row on the date named by `date` (must be a `date` property, `Y855` otherwise).
 - **Timeline** is a calendar stretched into a bar: `date` and `date-end` name the start and end `date` properties (`Y855` if either isn't one); a row with no `date-end` renders as a single point. `group` (same as board) lays out one row per group instead of one shared track.
-- **Chart** aggregates rows instead of listing them: `x` names the category property rows are bucketed by, `aggregate` is `count` (default), `sum`, `avg`, `min` or `max` applied to the property named by `y` (required unless `aggregate=count`; wrong property type for the chosen aggregate is `Y855`), and `chart` picks the shape — `bar` (default), `line` or `pie`.
+- **Chart** aggregates rows instead of listing them: `x` names the category property rows are bucketed by, `aggregate` is `count` (default), `sum`, `avg`, `min` or `max` applied to the property named by `y` (required unless `aggregate=count`; wrong property type for the chosen aggregate is `Y855`), and `shape` picks how it's drawn — `bar` (default), `line` or `pie`.
 
 ```yamd
 ::db[tasks]{type=timeline date=start date-end=due group=owner}
 
-::db[tasks]{type=chart x=Status aggregate=count chart=pie}
+::db[tasks]{type=chart x=Status aggregate=count shape=pie}
 ```
 
 **Queries.** A ` ```query {db=ref view=table|list|value} ` block runs read-only SQL and shows the result; `:query[SQL]{db=ref}` shows the first cell inline. A `.ydb` database is a table named after its file; `multi_select` and `relation` values are JSON arrays, checkboxes 0 or 1, dates ISO text. Without `db`, a query runs over the notes in the note's folder and below: `notes` (path, title, folder, created, modified, `properties` JSON and one column per front matter key), `tags` (path, tag), `links` (source, target) and `tasks` (path, line, text, done). ` ```sql ` blocks are only code and never run.
@@ -587,7 +588,7 @@ These rules are enforced by `yamd check`:
 | `Y601` | warning  | Unknown directive (§3.10)                                        |
 | `Y602` | error    | Circular embed (§4.11)                                           |
 | `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
-| `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1, §6.2) |
+| `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1, §6.2.1) |
 | `Y701` | warning  | Missing link, image, anchor, reference, footnote or `ref=` target (§10, §4.5)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |
