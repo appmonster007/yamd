@@ -197,6 +197,19 @@ function propsLine(data: ViewData, r: ViewRow, cols: Property[]): string {
     .join('');
 }
 
+/** Like `propsLine`, but one labeled row per property instead of a compact run of chips — for a
+ * calendar event's full detail, where every property should read as its own "Name: value" line. */
+function propsDetail(data: ViewData, r: ViewRow, cols: Property[]): string {
+  return cols
+    .filter((p) => p.type !== 'title')
+    .map((p) => {
+      const shown = displayValue(p, r.values[p.name], data);
+      return shown ? `<div class="db-prop-row" data-prop="${escapeHtml(p.name)}"><span class="db-prop-label">${escapeHtml(p.name)}</span><span class="db-prop-value">${shown}</span></div>` : '';
+    })
+    .filter(Boolean)
+    .join('');
+}
+
 function list(data: ViewData): string {
   const cols = columnsFor(data);
   return `<ul class="db-list">${data.rows.map((r) => `<li data-row-id="${escapeHtml(r.id)}"><span class="db-title">${escapeHtml(titleOf(data, r))}</span>${propsLine(data, r, cols)}</li>`).join('\n')}</ul>`;
@@ -239,7 +252,7 @@ function calendar(data: ViewData): string {
   }
   const cols = columnsFor(data).filter((p) => p.name !== dateProp);
   const eventHtml = (r: ViewRow): string => {
-    const detailLine = propsLine(data, r, cols);
+    const detailLine = propsDetail(data, r, cols);
     const detail = detailLine ? `<div class="db-event-detail">${detailLine}</div>` : '';
     const title = escapeHtml(titleOf(data, r));
     return `<div class="db-event" tabindex="0" data-row-id="${escapeHtml(r.id)}" data-title="${title}"><div class="db-event-summary">${title}</div>${detail}</div>`;

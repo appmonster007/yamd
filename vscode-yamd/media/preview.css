@@ -676,10 +676,13 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-calendar .db-event:not(.expanded) .db-event-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .db-event-summary:hover { cursor: pointer; }
 .db-event-detail { display: none; margin-top: 4px; font-size: 11.5px; color: var(--yamd-muted); }
-.db-event.expanded .db-event-detail { display: block; }
+.db-event.expanded .db-event-detail { display: flex; flex-direction: column; gap: 3px; }
 .db-event.expanded { white-space: normal; }
 .db-event-detail p { margin: 0 0 4px; }
 .db-event-detail .kanban-card-meta { margin-top: 0; }
+.db-prop-row { display: flex; gap: 8px; align-items: baseline; }
+.db-prop-label { flex: 0 0 auto; min-width: 70px; color: var(--yamd-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+.db-prop-value { min-width: 0; overflow-wrap: anywhere; }
 .db-event input[type="checkbox"], .db-timeline-bar input[type="checkbox"] { vertical-align: middle; margin: 0 2px 0 0; }
 .kanban-calendar[data-interactive] .db-event { cursor: grab; }
 .db-event:focus-visible, .db-event:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }

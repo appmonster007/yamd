@@ -270,7 +270,7 @@ describe('views', () => {
   test('calendar weeks get a week number, and events get a collapsible detail of the view\'s other columns', () => {
     const html = view(tasks(), { type: 'calendar', date: 'Due', columns: 'Owner' }, { month: '2026-10' }).html ?? '';
     assert.match(html, /class="db-week-number" data-week="\d+">Wk \d+/);
-    assert.match(html, /class="db-event-detail"><span class="db-prop" data-prop="Owner" title="Owner">Ada<\/span><\/div>/);
+    assert.match(html, /class="db-event-detail"><div class="db-prop-row" data-prop="Owner"><span class="db-prop-label">Owner<\/span><span class="db-prop-value">Ada<\/span><\/div><\/div>/);
     assert.match(html, /<div class="db-agenda" hidden>/);
   });
 
