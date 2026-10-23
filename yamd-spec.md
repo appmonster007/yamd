@@ -305,7 +305,7 @@ Use `[text]{attrs}` to style any run of text:
 [Warning]{color=red} [small print]{.muted} [centered]{align=center}
 ```
 
-A span's `ref=target-id` attribute marks it as a reference to another labeled element in the document — a word pointing at its definition, a correction pointing at the phrase it fixes — anywhere a plain link isn't the right fit (the target is mid-paragraph or in another document section, not something you'd normally link to by title). The target is anything that can carry an `{#id}`: a labeled span, a block's own `{#id}` (directly above it or starting its first line, §5), a heading's trailing `{#id}`, or a cross-reference label (`{#fig:…}`, §4.7):
+A span's `ref=target-id` attribute marks it as a reference to another labeled element in the document — a word pointing at its definition, a correction pointing at the phrase it fixes — anywhere a plain link isn't the right fit (the target is mid-paragraph or in another document section, not something you'd normally link to by title). The target is anything that can carry an `{#id}`: a labeled span, a block's own `{#id}` (directly above it or starting its first line, §5), a heading's trailing `{#id}`, a cross-reference label (`{#fig:…}`, §4.7), or a block ID (`^id`, kept with its `^`, §4.11):
 
 ```yamd
 [mitosis]{ref=def-mitosis} is how a cell divides. Mix that with other
@@ -351,7 +351,7 @@ YAMD Studio adds editor-only affordances on top of `ref=` — color-coding each 
 
 ### 4.11 Embeds and block IDs
 
-- `![[note]]` shows another note in place, `![[note#Heading]]` the section under that heading (up to the next heading of the same or higher level), and `![[note#^id]]` one block. `![[image.png]]{width=300}` embeds an image.
+- `![[note]]` shows another note in place, `![[note#Heading]]` the section under that heading (up to the next heading of the same or higher level), and `![[note#^id]]` one block. `![[image.png]]{width=300}` embeds an image. An embed's note target resolves exactly the same way a wikilink does — Core by relative/root path only, Studio adding project-wide filename/alias search on top (§4.3) — since an embed is a wikilink that renders its target in place rather than linking to it.
 - Embedded content renders with the embedded note's own front matter (so its variables resolve) and links back to it. Embeds nest at most 5 levels; an embed that would include a note already being embedded shows a placeholder instead, and the linter reports `Y602`.
 - A paragraph or list item whose last line ends with a space and `^id` (letters, digits, `-`) gets that **block ID**. The `^id` isn't shown; it becomes the element's `id`. A block ID must be unique in its note (`Y708`).
 - Missing notes, headings and blocks in links and embeds produce `Y701`.
