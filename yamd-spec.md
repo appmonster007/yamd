@@ -230,6 +230,7 @@ Directives are the **only** extension mechanism. They come in three forms:
 - To nest containers, use more colons on the outer one (`::::` wraps `:::`).
 - **Unknown directives degrade gracefully.** A container renders its contents as normal blocks, and a leaf or inline directive renders its label as text. Both also produce diagnostic `Y601`.
 - Vendor-specific directives must be prefixed with `x-`, for example `:::x-acme-chart`, so they can never collide with future standard ones.
+- **A container's name is optional.** `::: {attrs} ... :::` groups several blocks under one set of attributes with no semantic meaning of its own — the generic way to apply, say, `.warning` to more than one paragraph at once (§5). It's the same container form as `:::note`, just nameless.
 
 See [Standard directives](#6-standard-directives) for the built-in set.
 
@@ -273,7 +274,8 @@ A `_` or `^` after a space stays literal (`a _{b}`), and the braces can contain 
 - Angle-bracket autolinks `<https://…>` are still accepted.
 - Internal links:
   - `[text](guide.yamd#install)` links by path.
-  - `[[guide]]`, `[[guide#Install]]`, `[[guide#^block]]` and `[[guide|label]]` are wiki-style links. A target resolves in this order: a path relative to the current note, a path from the project root, a note whose **file name** matches anywhere in the project, then a note whose `aliases` front matter contains it. Name and alias matching ignore case. When a name matches several notes, the shortest path wins and the linter reports `Y709`.
+  - `[[guide]]`, `[[guide#Install]]`, `[[guide#^block]]` and `[[guide|label]]` are wiki-style links. **Core** resolution is two steps: a path relative to the current note, then a path from the project root — matched as a path *suffix*, so `[[advanced/guide]]` matches `docs/advanced/guide.yamd`. A target that doesn't resolve this way is unresolved (`Y701`). A match against more than one note is **not** auto-resolved — it's reported as error `Y709`, with a suggested fix of adding enough trailing path segments to be unique. Resolution never silently guesses, so adding an unrelated note elsewhere in the project can never silently repoint an existing link.
+  - Project-wide resolution by bare **file name** or by a note's `aliases` front matter (ignoring case) is a YAMD Studio capability, built on top of the two steps above when neither matches — see [yamd-studio-spec.md](yamd-studio-spec.md). It requires an index of the whole project, which a renderer handling one file in isolation doesn't have.
   - `[[#install]]` links to a section of the same document.
 - The linter checks that every internal link target exists (`Y701`).
 
@@ -299,31 +301,17 @@ Use `[text]{attrs}` to style any run of text:
 [Warning]{color=red} [small print]{.muted} [centered]{align=center}
 ```
 
-A span's `arrow=target-id` attribute draws a connector from that span to the element whose `id` is `target-id`. The connector always points at exactly the element carrying that `id` — so to point at one specific word or sentence, label that word or sentence itself, the same `[text]{attrs}` span syntax as everything else in this section, the same way you'd mark it for a LaTeX `\label{}`:
+A span's `ref=target-id` attribute marks it as a reference to another labeled element in the document — a word pointing at its definition, a correction pointing at the phrase it fixes — anywhere a plain link isn't the right fit (the target is mid-paragraph or in another document section, not something you'd normally link to by title). The target is anything that can carry an `{#id}`: a labeled span, a block's own `{#id}` (directly above it or starting its first line, §5), a heading's trailing `{#id}`, or a cross-reference label (`{#fig:…}`, §4.7):
 
 ```yamd
-[mitosis]{arrow=def-mitosis} is how a cell divides. Mix that with other
+[mitosis]{ref=def-mitosis} is how a cell divides. Mix that with other
 processes and [mitosis is the process of nuclear
 division]{#def-mitosis}, one step in a longer paragraph.
 ```
 
-Source and target are the same shape — `[text]{arrow=id}` to point *from* a span, `[text]{#id}` to label the span being pointed *at* — so an arrow never lands vaguely on "the surrounding paragraph somewhere," only on the exact text you wrapped.
+A span with `ref=` renders as a real link to `#target-id` (`<a href="#target-id">`, the same as a cross-reference), so it's clickable and jumps to its target in any renderer. A `target-id` that doesn't resolve to any element in the document produces `Y701` (§12.1), same as any other missing anchor.
 
-To point at an entire block instead — a whole `:::definition` box, say — label the block itself: `{#id}` directly above it or starting its own first line (§5), a heading's own trailing `{#id}`, or a cross-reference label (`{#fig:…}`, §4.7). This is a different target than labeling one phrase inside the block: pick whichever matches what the arrow is actually pointing at. Either way the connector still lands on the block's visible content, not on empty space — a block like a plain paragraph is as wide as the page column regardless of how short its text is, and the preview anchors on the rendered text itself, not that full width.
-
-```yamd
-[mitosis]{arrow=def-mitosis-box} is how a cell divides.
-
-:::definition {#def-mitosis-box}
-Mitosis is the process of nuclear division.
-:::
-```
-
-An optional `arrow-style` attribute chooses how the connector is drawn: `wire` (the default) routes it as a right-angled line that steps out to the page margin and back in, like a schematic's wiring; `curve` routes it as a smooth bracket instead. `[mitosis]{arrow=def-mitosis arrow-style=curve}` uses the curved style for that one arrow.
-
-A block ID (`^id`, §4.11) also resolves as an arrow target, kept with its `^`, the same way `![[note#^id]]` keeps it (`arrow=^id`) — but prefer `{#id}` for anything you're labeling specifically to be an arrow target: it reads the same wherever it's used, and doesn't require the `^id` marker to sit at the very end of a line.
-
-A span with `arrow=` renders as a real link to `#target-id` (`<a href="#target-id">`, same as a cross-reference), so it's clickable and jumps to its target even without the preview — a visible connector line is drawn only in the interactive VS Code preview, as additional data, not a replacement for the link. The preview also assigns each arrow its own color automatically (no two repeat, however many a document has), so arrows that run close together or cross stay visually distinguishable; this coloring isn't configurable from the markup. A `target-id` that doesn't resolve to any element in the document produces `Y701` (§12.1), same as any other missing anchor.
+YAMD Studio adds editor-only affordances on top of `ref=` — color-coding each target and showing its line/column on hover — described in [yamd-studio-spec.md](yamd-studio-spec.md); none of that changes what gets rendered.
 
 ### 4.6 Footnotes
 
@@ -334,8 +322,11 @@ A span with `arrow=` renders as a real link to `#target-id` (`<a href="#target-i
 ### 4.7 Cross-references and citations
 
 - Give any element a label: `{#fig:…}`, `{#tbl:…}`, `{#eq:…}`, `{#sec:…}`.
-- Reference it with `[@fig:arch]`, which renders as "Figure 2" with a link.
-- Any other `[@key]` is a **citation** looked up in the `bibliography` file. Several citations go in one bracket: `[@smith2020; @lee2021, p. 4]`.
+- Reference it with `[@fig:arch]`, which renders as "Figure 2" with a link. Recognised prefixes are `fig`, `tbl`, `eq`, `sec`, plus `def`, `thm`, `lem`, `ex`, `q`, `rem` for the study-aid blocks in [yamd-studio-spec.md](yamd-studio-spec.md).
+- Any other `[@key]` is a **citation** looked up in the file named by the `bibliography` front matter key (§2.1), in BibTeX or CSL-JSON. Several citations go in one bracket: `[@smith2020; @lee2021, p. 4]`.
+- A `citation-style` front matter key picks the output style: `apa` (default), `mla`, `chicago`, `ieee` or `vancouver`.
+- Supported locators, added before the comma after the key: `p.`, `pp.`, `ch.`, `sec.`, `fig.`, `eq.`, `no.`, `vol.`, `ed.`, `trans.` — e.g. `[@dijkstra1968, p. 12]`.
+- `::bibliography` (or a bare `::bibliography` leaf) places the reference list; otherwise it appears at the end of the document.
 
 ### 4.8 Variables
 
@@ -364,7 +355,8 @@ A span with `arrow=` renders as a real link to `#target-id` (`<a href="#target-i
 ### 4.12 Aliases and template placeholders
 
 - `aliases: [Q3 Plan, Roadmap 2026]` in the front matter lets `[[Q3 Plan]]` link to the note.
-- In templates, `{{@date}}`, `{{@date:DD/MM/YYYY}}`, `{{@time}}` and `{{@title}}` are replaced when the template is inserted, and `{{@cursor}}` marks where the cursor goes. Formats use the tokens `YYYY`, `MM`, `DD`, `HH` and `mm`. Placeholders aren't variables: outside a template insertion they stay as written, with no `Y801`.
+- In templates, `{{@date}}`, `{{@date:DD/MM/YYYY}}`, `{{@time}}` and `{{@title}}` are replaced when the template is inserted, and `{{@cursor}}` marks where the cursor goes. Formats use the tokens `YYYY`, `MM`, `DD`, `HH` and `mm`.
+- Placeholders aren't variables — they're a one-time substitution done by the template-insertion action, not a value resolved every time the document renders. A `{{@...}}` placeholder found anywhere outside that action (typed directly, or left over in a note opened without going through template insertion) stays as written and produces information `Y802`, with a quick fix to run template insertion or remove it. This is why it gets a diagnostic where an undefined variable gets `Y801`: both report when `{{...}}` text didn't resolve the way it looked like it should.
 
 ---
 
@@ -376,14 +368,37 @@ Attributes give any element an ID, classes and key/value settings using one synt
 {#id .class1 .class2 key=value key2="value with spaces" flag}
 ```
 
-| Where       | Placement                                                         |
-| ----------- | ----------------------------------------------------------------- |
-| Block       | On its own line **directly above** the block, or **at the start** of the block's own first line: `{#id} The paragraph's text starts right here.` |
-| Heading     | At the end of the heading line: `## Title {#id}`                  |
-| Inline      | **Directly after** the element, with no space: `![a](b){width=50}` |
-| Code fence  | After the language: ` ```js {title="x.js"} `                      |
-| Directive   | After the name: `:::note {title="Heads up"}`                      |
-| Table cell  | At the end of the cell content                                    |
+**Placement — one default, one exception.** Attach attributes right after the
+element's own opening token, on the same line: a heading's text, an inline
+span's closing `]`/`)`, a code fence's language tag, a directive's name, or a
+table cell's content:
+
+````yamd
+## Title {#id}
+![a](b){width=50}
+```python {title="x.js"}
+:::note {title="Heads up"}
+Total {colspan=2}
+````
+
+The one exception is a plain block (paragraph, list) with no opening token to
+attach after — it gets a line of its own instead: directly above it, or at the
+very start of its own first line:
+
+```yamd
+{.warning}
+This paragraph is flagged.
+
+{.warning} Or inline, right at the start of the same line.
+```
+
+**Choosing scope.** Attributes apply to exactly what you select:
+
+| Scope           | Syntax                               | Example                                |
+| --------------- | ------------------------------------- | --------------------------------------- |
+| A few words      | `[text]{attrs}` (or `==text==` for highlighting) | `[save your work]{.warning}` |
+| One block        | attrs on the line above, or starting its first line | `{.warning}`⏎`This paragraph is flagged.` |
+| Several blocks   | anonymous container, `::: {attrs} ... :::` (§3.10) | `::: {.warning}`⏎`Para one.`⏎⏎`Para two.`⏎`:::` |
 
 Renderers must ignore keys they don't recognize. They must never render attribute text as visible content.
 
@@ -403,18 +418,17 @@ Renderers must ignore keys they don't recognize. They must never render attribut
 | `::db[ref]{…}`                       | Database view, see [Databases and queries](#62-databases-and-queries) |
 | `:query[SQL]{db=…}`                  | Inline query result                                           |
 | `::toc{depth=3}`                     | Table of contents                                             |
-| `::include[path.yamd]`               | Transclude another file; `{section=install}` includes one section |
 | `::pagebreak`                        | Page break in print or PDF output                             |
 | `::embed[https://…]{width=640}`      | Video or social embed from the renderer's allow-list          |
 | `::bibliography`                     | Where the reference list renders (it goes at the end by default) |
 | `:kbd[Ctrl+S]`                       | Keyboard key                                                  |
 | `:abbr[HTML]{title="HyperText Markup Language"}` | Abbreviation                                     |
 
-Includes are resolved like wikilinks (§4.3). Circular includes are an error (`Y602`).
+To transclude another file or one of its sections, use an embed (`![[note]]`, `![[note#Heading]]`, `![[note#^id]]`, §4.11) — there is no separate include directive.
 
 ### 6.1 Kanban boards
 
-A board is ordinary YAMD inside `:::kanban`, so it reads well as text and degrades to headings and task lists:
+`:::kanban` is **sugar for an implicit, single-use database rendered as a board** (`::db[...]{type=board group=Status}`, §6.2) — it exists only so a board can be written and read as plain prose, degrading to headings and task lists, not as a second feature with its own rules. Writing
 
 ```yamd
 :::kanban {title="Sprint 12"}
@@ -429,13 +443,15 @@ A board is ordinary YAMD inside `:::kanban`, so it reads well as text and degrad
 :::
 ```
 
-- Each heading inside the board starts a **column**; each top-level list item under it is a **card**. The card's first line is its title, and its indented lines are its body.
-- Column attributes: `{limit=N}` sets a work-in-progress limit, shown as `count/N` and highlighted when exceeded; `{complete}` marks a column whose cards are done.
-- Card metadata: `#tags` show as chips, `{due=YYYY-MM-DD}` shows a date badge (red when overdue and not done), and `{owner=name}` shows the owner. A ticked checkbox means done.
-- Content before the first column heading isn't shown on the board (warning `Y603`). A column over its limit gets information `Y604`.
+means: each heading starts a **column**, and is a value of an implicit `Status` property (a `select`); each top-level list item under it is a **card**, one row of the implicit database, with the card's first line as its `title` and its indented lines as a `text` body property. `#tags` becomes a `multi_select` property, `{due=YYYY-MM-DD}` a `date` property, `{owner=name}` a `person` property, and the checkbox a `checkbox` property — then the whole thing is grouped by `Status` and shown as a board, exactly as `::db[tasks]{type=board group=Status}` already does for a real `.ydb` file (§6.2).
+
+Because of that, a board's rules are the database's rules, stated once, whichever way the board was written:
+
+- `{limit=N}` / `count/N`, and `{complete}` marking a column done, are the board view's per-column display settings — the same ones `::db[...]{type=board}` honors for any database.
+- A column over its `{limit=N}` produces information `Y604`, and grouping by a property that isn't `select`/`status`/`person`/`checkbox` produces error `Y855` — both apply uniformly, whether the board came from `:::kanban` markup or a `::db[...]{type=board}` view of a `.ydb` file.
+- Content before the first column heading isn't shown on the board (warning `Y603`) — this one stays markup-specific, since it's a parse-time issue only the prose form can have.
 - Board headings are columns, not document sections: they are left out of the table of contents and the outline, and aren't checked by `Y704` and `Y705`.
 - Editors may let users drag cards. A move rewrites the card's lines (title and body) at the new place, ticking the card when it enters a `{complete}` column and unticking it when it leaves one.
-- A database can also be shown as a board: `::db[tasks]{type=board group=Status}` (§6.2). The group property must be a select, status, person or checkbox (`Y855` otherwise).
 
 ### 6.2 Databases and queries
 
@@ -453,7 +469,17 @@ databases:
 ---
 ```
 
-**Views.** `::db[ref]{view type filter sort group columns limit date cover}` shows a database as a `table`, `list`, `gallery`, `calendar` or `board`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order.
+**Views.** `::db[ref]{view type filter sort group columns limit date date-end cover chart x y aggregate}` shows a database as a `table` (a plain grid), `list`, `gallery`, `calendar`, `board`, `timeline` or `chart`. `view` names a saved view; the other attributes override it. `sort` lists properties, with `-` for descending; selects sort in option order.
+
+- **Calendar** places each row on the date named by `date` (must be a `date` property, `Y855` otherwise).
+- **Timeline** is a calendar stretched into a bar: `date` and `date-end` name the start and end `date` properties (`Y855` if either isn't one); a row with no `date-end` renders as a single point. `group` (same as board, §6.1) lays out one row per group instead of one shared track.
+- **Chart** aggregates rows instead of listing them: `x` names the category property rows are bucketed by, `aggregate` is `count` (default), `sum`, `avg`, `min` or `max` applied to the property named by `y` (required unless `aggregate=count`; wrong property type for the chosen aggregate is `Y855`), and `chart` picks the shape — `bar` (default), `line` or `pie`.
+
+```yamd
+::db[tasks]{type=timeline date=start date-end=due group=owner}
+
+::db[tasks]{type=chart x=Status aggregate=count chart=pie}
+```
 
 **Queries.** A ` ```query {db=ref view=table|list|value} ` block runs read-only SQL and shows the result; `:query[SQL]{db=ref}` shows the first cell inline. A `.ydb` database is a table named after its file; `multi_select` and `relation` values are JSON arrays, checkboxes 0 or 1, dates ISO text. Without `db`, a query runs over the notes in the note's folder and below: `notes` (path, title, folder, created, modified, `properties` JSON and one column per front matter key), `tags` (path, tag), `links` (source, target) and `tasks` (path, line, text, done). ` ```sql ` blocks are only code and never run.
 
@@ -461,175 +487,9 @@ databases:
 
 ---
 
-### 6.3 Study-aid blocks
+### 6.3 Study-aid blocks and flashcards
 
-A set of container directives for academic writing. They are numbered per kind within a note, can carry an optional `{title="…"}` and an `{#id}` for cross-referencing (§6.3.1), and are gathered by the VS Code extension for cheat-sheet generation.
-
-| Container       | Renders as  | Numbered |
-| --------------- | ----------- | -------- |
-| `:::definition` | Definition  | yes      |
-| `:::theorem`    | Theorem     | yes      |
-| `:::lemma`      | Lemma       | yes      |
-| `:::proof`      | Proof       | no       |
-| `:::example`    | Example     | yes      |
-| `:::question`   | Question    | yes      |
-| `:::remark`     | Remark      | no       |
-| `:::summary`    | Summary     | no       |
-| `:::derivation` | Derivation  | no       |
-
-```yamd
-:::theorem {title="Pythagorean theorem" #thm:pythagoras}
-For a right triangle with legs $a$, $b$ and hypotenuse $c$: $a^2 + b^2 = c^2$.
-:::
-
-:::proof
-Drop a perpendicular from the right angle…
-:::
-```
-
-#### 6.3.1 Cross-references
-
-`[@id]` or `[@prefix:key]` creates a numbered cross-reference to any block or figure with that ID. Recognised prefixes are `fig`, `tbl`, `eq`, `sec`, `def`, `thm`, `lem`, `ex`, `q`, `rem`. Keys not matching a known prefix are treated as citation keys (§6.5.2).
-
----
-
-### 6.4 Flashcards and spaced repetition
-
-YAMD has three ways to mark content as a flashcard. The VS Code extension collects them and schedules reviews using the SM-2 algorithm; the schedule is stored in `.yamd/srs.json`.
-
-**Container card** — a block with a `---` separator between the question and the answer:
-
-```yamd
-:::card
-What is the time complexity of binary search?
----
-$O(\log n)$ — each comparison halves the search space.
-:::
-```
-
-**Leaf card** — a one-line Q&A, useful for vocabulary or definitions:
-
-```yamd
-::card[What does "idempotent" mean?]{a="Applying the operation more than once has the same effect as once."}
-```
-
-**Cloze deletion** — hide a word or phrase inline. Each `:cloze[…]` in a paragraph becomes one card; cards in the same paragraph share a `{n=…}` group so they are shown independently:
-
-```yamd
-The :cloze[mitochondrion] is the :cloze[powerhouse] of the cell.
-
-The derivative of $\sin x$ is :cloze[$\cos x$]{n=1}.
-```
-
-- A card with no answer produces diagnostic `Y605`.
-- Each card has a stable ID: the explicit `{#id}`, or a hash of its text. Renaming a card (changing the text) produces a new ID and a new scheduling entry.
-- **Quiz mode** hides cloze answers in the preview so a note doubles as a self-test. The VS Code command `YAMD: Toggle Quiz Mode` switches it on and off.
-- **Review** (`YAMD: Review Flashcards`) shows due cards one at a time. Each is graded *Again*, *Hard*, *Good* or *Easy*; the SM-2 algorithm schedules the next date. `yamd.study.newCardsPerDay` limits how many unseen cards appear per session.
-- `YAMD: Prune Orphaned Card Data` removes scheduling data for cards that no longer exist in any note.
-
----
-
-### 6.5 Courses, deadlines and progress
-
-Notes name a course with `course: CS101` in their front matter. Tasks and kanban cards name due dates with `{due=YYYY-MM-DD}`. The VS Code dashboard (`YAMD: Open Study Dashboard`) shows an agenda, per-course progress bars, stale topics, a study-log heatmap and the review queue.
-
-#### 6.5.1 Agenda and deadlines
-
-A note's own `due:` front matter key marks the whole note as a submission. Task items anywhere in a note can carry `{due=…}` to mark individual deliverables. The dashboard groups them into *overdue*, *today*, *this week*, *later* and *done*.
-
-#### 6.5.2 Progress
-
-Checked tasks count towards completion. A note not opened or not marked `reviewed: YYYY-MM-DD` in front matter for `yamd.study.staleAfterDays` days (default 14) is flagged as stale.
-
----
-
-### 6.6 Study timer
-
-`YAMD: Start Study Timer` starts a focus session (default 25 minutes, configurable via `yamd.study.pomodoroMinutes`). A status-bar item counts down; clicking it shows a menu to pause, resume, finish or cancel. When the session ends at least one minute of focused time is logged. Optionally (`yamd.study.logToDailyNote: true`, default on) a line is appended to today's daily note under a **Study log** heading.
-
----
-
-### 6.7 Citations
-
-YAMD uses BibTeX. The `bibliography:` front matter key names a `.bib` file relative to the note or the workspace root. Citations use the key from that file:
-
-```yamd
----
-bibliography: refs.bib
-citation-style: apa   # apa (default) | mla | chicago | ieee | vancouver
----
-
-[@turing1950] argues that a machine passes the test when…
-
-Inline note: [@dijkstra1968, p. 12].
-```
-
-- Supported locators: `p.`, `pp.`, `ch.`, `sec.`, `fig.`, `eq.`, `no.`, `vol.`, `ed.`, `trans.`; add before the comma after the key.
-- `::bibliography` (or a leaf with no label `::bibliography`) places the reference list; otherwise it appears at the end of the document.
-- `YAMD: Add Citation` looks up a DOI, arXiv ID or ISBN and appends the BibTeX entry to the note's `.bib` file. Lookup requires network access; the command falls back to a paste-box when offline.
-
----
-
-### 6.8 Peer review summary
-
-The review-markup operators (§7) are plain text; the VS Code extension adds two commands:
-
-- `YAMD: Accept All Review Changes` — applies all insertions and deletions, removes markup.
-- `YAMD: Reject All Review Changes` — reverts to the original text, removes markup.
-
-The review panel (`YAMD: Review Flashcards` shares the panel) also shows a diff of pending changes for a quick pass.
-
----
-
-### 6.9 Export
-
-**HTML** (`YAMD: Export as HTML`) — a self-contained HTML file with a title page (when `title:` is set), a linked table of contents, and a print stylesheet. KaTeX math and syntax-highlighted code are inlined.
-
-**PDF** (`YAMD: Export as PDF`) — the same HTML is opened in the system browser. Use File → Print → Save as PDF for the final file.
-
-**Word (.docx)** (`YAMD: Export as Word (.docx)`) — a minimal OOXML package with headings, paragraphs, bold/italic/code/links, tables and task lists.
-
-**Slides** (`YAMD: Export as Slides (HTML)`) — each level-1 heading (or a `---` thematic break) starts a new slide. The output is a single HTML file with a keyboard-navigable presentation.
-
----
-
-### 6.10 Note templates
-
-`YAMD: New Study Note…` shows a template picker with four built-in templates: **Lecture notes**, **Lab report**, **Exam prep** and **Reading note**. Each template has placeholders `{{@date}}`, `{{@title}}`, `{{@course}}` and `{{@cursor}}` (where the cursor should land).
-
----
-
-### 6.11 Importing from other tools
-
-`YAMD: Import Notes from Folder…` converts a folder of notes to YAMD in a chosen destination:
-
-| Source             | Converted from                            |
-| ------------------ | ----------------------------------------- |
-| Obsidian vault     | Markdown with `[[links]]`, callouts, tags |
-| Notion export      | Markdown with Notion-style callouts       |
-| HTML files         | Headings, paragraphs, lists, code, links  |
-
-CSV files can be turned into `.ydb` databases with the column types inferred from the first ten rows.
-
----
-
-### 6.12 Reading list
-
-`YAMD: New Reading List` creates a `reading-list.ydb` database with columns for Title, Author, Course, Status (*To read* / *Reading* / *Done*), Pages and Due. It opens in the preview as a kanban board grouped by Status.
-
----
-
-### 6.13 Math symbols
-
-`YAMD: Insert Math Symbol` opens a searchable picker of common LaTeX symbols (Greek letters, operators, arrows, set notation, logic, calculus) and inserts the selected symbol as inline math.
-
----
-
-### 6.14 Diagnostics added by student features
-
-| Code  | Severity | Meaning                                         |
-| ----- | -------- | ----------------------------------------------- |
-| `Y605` | warning | Flashcard has no answer (§6.4)                  |
+Container directives for academic writing (`:::definition`, `:::theorem`, `:::lemma`, `:::proof`, `:::example`, `:::question`, `:::remark`, `:::summary`, `:::derivation`), flashcard markup (`:::card`, `:cloze[...]`), and the scheduling, dashboards and commands built on top of them are specific to the YAMD Studio extension, not the format. See [yamd-studio-spec.md](yamd-studio-spec.md).
 
 ---
 
@@ -681,7 +541,7 @@ Use `%% %%` comments for author notes and review markup for reviewer discussion.
 
 **Paths:** relative paths resolve from the file that contains them. Paths starting with `/` resolve from the project root, which is the nearest folder containing `yamd.yaml`, or the repository root. `yamd check` reports missing files, images and anchors (`Y701`).
 
-**Moving files:** `yamd mv old.yamd new.yamd` moves a file and rewrites every link and include that points to it.
+**Moving files:** `yamd mv old.yamd new.yamd` moves a file and rewrites every link and embed that points to it.
 
 ---
 
@@ -719,21 +579,22 @@ These rules are enforced by `yamd check`:
 | `Y401` | warning  | Lazy blockquote continuation (§3.4)                              |
 | `Y501` | error    | Unclosed code fence (§3.5)                                       |
 | `Y601` | warning  | Unknown directive (§3.10)                                        |
-| `Y602` | error    | Circular embed or include (§4.11, §6)                            |
+| `Y602` | error    | Circular embed (§4.11)                                           |
 | `Y603` | warning  | Content before the first column of a kanban board (§6.1)         |
-| `Y604` | info     | Kanban column over its `limit` (§6.1)                            |
+| `Y604` | info     | A board column over its `limit`, from `:::kanban` or `::db` (§6.1, §6.2) |
 | `Y605` | warning  | Flashcard has no answer (§6.4)                                   |
-| `Y701` | warning  | Missing link, image, anchor, reference, footnote or arrow target (§10, §4.5)  |
+| `Y701` | warning  | Missing link, image, anchor, reference, footnote or `ref=` target (§10, §4.5)  |
 | `Y702`–`Y707` | see §11 | Accessibility                                              |
 | `Y708` | error    | Block ID used twice in one note (§4.11)                          |
-| `Y709` | warning  | Link name matches more than one note (§4.3)                      |
+| `Y709` | error    | Link name matches more than one note; not auto-resolved (§4.3)  |
 | `Y801` | error    | Undefined variable (§4.8)                                        |
+| `Y802` | info     | Template placeholder used outside a template insertion (§4.12)  |
 | `Y850` | error    | Unknown database or alias (§6.2)                                 |
 | `Y851` | error    | SQL error in a view or query (§6.2)                              |
 | `Y852` | error    | Invalid `.ydb` structure or property type (§6.2)                 |
 | `Y853` | error/warning | Value doesn't match its property (warning for an unknown option) |
 | `Y854` | error    | Duplicate row `id` (§6.2)                                        |
-| `Y855` | error    | Board grouped by a property that can't be grouped (§6.1)         |
+| `Y855` | error    | A view attribute (`group`, `date`, `date-end`, `x`, `y`) names a property of the wrong type for that view, from `:::kanban` or `::db` (§6.1, §6.2) |
 | `Y901` | warning  | URL scheme not allowed (§9)                                      |
 | `Y950` | error    | Query refused as unsafe (§6.2)                                   |
 | `Y951` | error    | Database outside the note's folder (§6.2)                        |
@@ -744,7 +605,7 @@ These rules are enforced by `yamd check`:
 | Command        | Purpose                                                       |
 | -------------- | ------------------------------------------------------------- |
 | `yamd fmt`     | Canonical formatter with no style options                     |
-| `yamd check`   | Lint the syntax, links, includes, variables and accessibility |
+| `yamd check`   | Lint the syntax, links, embeds, variables and accessibility   |
 | `yamd render`  | Output HTML, PDF, DOCX or plain text                          |
 | `yamd convert` | Convert Markdown to YAMD (join hard-wrapped lines, escape YAMD-only syntax), or DOCX to YAMD, and YAMD back to Markdown |
 | `yamd mv`      | Move a file and update its references                         |
@@ -822,7 +683,7 @@ YAMD passes the CommonMark 0.31.2 and GFM spec examples except for the cases bel
 | Inconsistent footnotes, no citations              | Standard footnotes and citations (§4.6, §4.7)              |
 | No tracked changes                                | Review markup (§7)                                         |
 | No table of contents                              | `::toc` or `toc: true` (§6, §2.1)                          |
-| Large docs, no includes                           | `::include` (§6)                                           |
+| Large docs, no includes                           | Embeds transclude a whole note or one section (§4.11)      |
 | Front matter isn't standard                       | YAML only, with reserved keys (§2.1)                       |
 | Heading anchors differ across renderers           | One defined slug algorithm (§10)                           |
 | Renamed headings break links                      | Explicit IDs and `--pin-ids` (§10)                         |
