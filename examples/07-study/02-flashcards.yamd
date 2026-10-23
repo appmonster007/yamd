@@ -7,7 +7,7 @@ lang: en-US
 
 # {{ title }}
 
-YAMD has three ways to mark content as a flashcard. The extension collects them from every note and schedules reviews using SM-2 — the same algorithm behind Anki. The schedule is stored in `.yamd/srs.json` at the workspace root, so it travels with the notes when you share or commit the folder.
+YAMD has two ways to mark content as a flashcard. The extension collects them from every note and schedules reviews using SM-2 — the same algorithm behind Anki. The schedule is stored in `.yamd/srs.json` at the workspace root, so it travels with the notes when you share or commit the folder.
 
 ::toc{depth=2}
 
@@ -40,16 +40,34 @@ The linter reports **Y605**, "This card has no answer," so you won't forget to a
 
 ---
 
-## Leaf card
+## Short cards
 
-`::card[Question]{a="Answer"}` is a compact one-liner. Use it for vocabulary,
-formulae or definitions where a short string on each side is enough.
+A one-line Q&A, like vocabulary or a formula, is just a short container card —
+there's no separate one-liner syntax, since a short card is just a short `:::card`.
 
-::card[What does "idempotent" mean?]{a="Applying the operation more than once has the same effect as once."}
+:::card
+What does "idempotent" mean?
 
-::card[State the product rule.]{a="$(fg)' = f'g + fg'$"}
+---
 
-::card[What is the capital of France?]{a="Paris"}
+Applying the operation more than once has the same effect as once.
+:::
+
+:::card
+State the product rule.
+
+---
+
+$(fg)' = f'g + fg'$
+:::
+
+:::card
+What is the capital of France?
+
+---
+
+Paris
+:::
 
 ---
 

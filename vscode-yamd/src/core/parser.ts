@@ -46,7 +46,7 @@ export const KNOWN_CONTAINERS = new Set([
   'derivation',
   'card',
 ]);
-export const KNOWN_LEAVES = new Set(['toc', 'pagebreak', 'embed', 'bibliography', 'db', 'card']);
+export const KNOWN_LEAVES = new Set(['toc', 'pagebreak', 'embed', 'bibliography', 'db']);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** An mdast node, including YAMD's custom node types. */

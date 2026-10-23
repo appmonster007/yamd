@@ -12,7 +12,7 @@ describe('flashcards', () => {
   const src = [
     '---', 'course: CS101', '---', '',
     ':::card', 'What is a **stack**?', '', '---', '', 'A LIFO structure.', ':::', '',
-    '::card[Capital of France?]{a="Paris"}', '',
+    ':::card', 'Capital of France?', '', '---', '', 'Paris', ':::', '',
     'The :cloze[mitochondria] is the :cloze[powerhouse] of the cell.', '',
     ':::card', 'No answer here', ':::', '',
   ].join('\n');

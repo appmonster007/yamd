@@ -193,7 +193,7 @@ YAMD has a built-in set of tools for students and academic writers. Run **YAMD: 
 | Feature | How to use it |
 | ------- | ------------- |
 | Study-aid blocks | `:::definition`, `:::theorem`, `:::proof`, etc. |
-| Flashcards | `:::card`, `::card[Q]{a="A"}`, `:cloze[answer]` |
+| Flashcards | `:::card` (short Q&A included), `:cloze[answer]` |
 | Quiz mode | **YAMD: Toggle Quiz Mode** — hides cloze answers |
 | Review sessions | **YAMD: Review Flashcards** — SM-2 spaced repetition |
 | Deadlines | `due: YYYY-MM-DD` in front matter, or `{due=…}` on tasks |

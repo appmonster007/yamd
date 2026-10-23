@@ -500,11 +500,6 @@ ${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
         return `<div class="db-slot db-view" data-db-key="v${b.line}" data-line="${b.line}"><div class="db-loading">Database view: <code>${escapeHtml(b.rawLabel)}</code></div></div>`;
       case 'bibliography':
         return `<section class="bibliography" data-line="${b.line}" data-bibliography></section>`;
-      case 'card': {
-        const answer = attrString(b.attrs, 'a') ?? attrString(b.attrs, 'answer');
-        const details = answer ? `<details class="card-answer"><summary>Show answer</summary><p>${escapeHtml(answer)}</p></details>` : '';
-        return `<div${this.attrs(b.attrs, b.line, ['card'])} role="group" aria-label="Flashcard"><div class="card-front"><p>${this.inline(b.label)}</p></div>${details}</div>`;
-      }
       default:
         return `<p data-line="${b.line}">${this.inline(b.label)}</p>`;
     }

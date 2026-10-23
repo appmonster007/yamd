@@ -172,7 +172,6 @@ class DocxBuilder {
       case 'leaf':
         if (b.name === 'pagebreak') return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
         if (b.name === 'toc' || b.name === 'bibliography') return '';
-        if (b.name === 'card') return this.para(this.inline(b.label, { b: true })) + this.para(this.run(attrString(b.attrs, 'a') ?? '', { i: true }), { indent: 1 });
         return this.para(this.inline(b.label), { indent });
     }
   }

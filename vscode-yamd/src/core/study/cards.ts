@@ -1,9 +1,8 @@
 /**
- * Flashcards (§6.4): `:::card` blocks, `::card[Q]{a="A"}` lines and `:cloze[answer]` deletions are
- * collected into cards, and a spaced-repetition schedule (SM-2) decides when each is due.
+ * Flashcards: `:::card` blocks (short Q&A included) and `:cloze[answer]` deletions are collected
+ * into cards, and a spaced-repetition schedule (SM-2) decides when each is due.
  * Everything here is pure; the extension keeps the schedule in a JSON file.
  */
-import { attrString } from '../attrs';
 import { hashText } from '../kanban';
 import { walkBlocks } from '../parser';
 import type { Block, Diagnostic, InlineNode, YamdDocument } from '../types';
@@ -92,13 +91,6 @@ export function extractCards(doc: YamdDocument, path: string): { cards: Card[]; 
         return;
       }
       push({ id: b.attrs?.id ?? `c${hashText(front)}`, kind: 'qa', front, back, line: b.line });
-    } else if (b.type === 'leaf' && b.name === 'card') {
-      const back = attrString(b.attrs, 'a') ?? attrString(b.attrs, 'answer');
-      if (!back) {
-        diagnostics.push({ code: 'Y605', severity: 'warning', message: 'This card has no answer. Add {a="…"}.', range: lineRange(b.line) });
-        return;
-      }
-      push({ id: b.attrs?.id ?? `c${hashText(b.rawLabel)}`, kind: 'qa', front: b.rawLabel, back, line: b.line });
     } else if (b.type === 'paragraph' && hasCloze(b.children)) {
       const text = slice(doc, b.line, b.endLine);
       const seen = new Set<string>();

@@ -158,11 +158,29 @@ by at most 1. Examples: AVL tree, red–black tree.
 
 ## Review cards
 
-::card[What is the BST property?]{a="For every node $v$: left subtree keys < key($v$) < right subtree keys."}
+:::card
+What is the BST property?
 
-::card[What does an in-order BST traversal produce?]{a="The keys in sorted (non-decreasing) order."}
+---
 
-::card[What is the worst-case height of a BST built from $n$ keys?]{a="$n - 1$, when keys are inserted in sorted order."}
+For every node $v$: left subtree keys < key($v$) < right subtree keys.
+:::
+
+:::card
+What does an in-order BST traversal produce?
+
+---
+
+The keys in sorted (non-decreasing) order.
+:::
+
+:::card
+What is the worst-case height of a BST built from $n$ keys?
+
+---
+
+$n - 1$, when keys are inserted in sorted order.
+:::
 
 :::card {#card:search-complexity}
 What is the time complexity of BST search, and when is it achieved?
