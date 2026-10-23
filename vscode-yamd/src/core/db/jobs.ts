@@ -17,7 +17,7 @@ import {
   ydbRowsAfter,
 } from './engine';
 import type { NotesTables, QueryResult, SqlProblem } from './engine';
-import { renderResult, renderView, VIEW_TYPES, viewError, viewSettings } from './views';
+import { READ_ONLY_VIEW_TYPES, renderResult, renderView, VIEW_TYPES, viewError, viewSettings } from './views';
 import type { RelationTarget, ViewRow } from './views';
 import { loadYdb, titleProperty } from './ydb';
 import type { Row, Schema } from './ydb';
@@ -167,7 +167,8 @@ function view(SQL: SqlJsStatic, job: Extract<Job, { kind: 'view' }>): JobResult 
       total: result.total,
       settings,
       relations,
-      interactive: job.interactive && o.kind !== 'notes',
+      // Calendar, timeline and chart have no cell to edit or card to drag, even in a trusted workspace.
+      interactive: job.interactive && o.kind !== 'notes' && !READ_ONLY_VIEW_TYPES.has(settings.type),
       today: job.today,
       month: job.month,
       // The extension resolves cover images relative to the database file.

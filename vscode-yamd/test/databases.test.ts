@@ -248,6 +248,19 @@ describe('views', () => {
     assert.match(html, /October 2026/);
   });
 
+  test('calendar, timeline and chart stay read-only even in an interactive (trusted) workspace', () => {
+    const cases: Record<string, string>[] = [{ type: 'calendar', date: 'Due' }, { type: 'timeline', date: 'Started', 'date-end': 'Due' }, { type: 'chart', x: 'Status' }];
+    for (const attrs of cases) {
+      const html = view(tasks(), attrs, { interactive: true, month: '2026-10' }).html ?? '';
+      assert.doesNotMatch(html, /data-interactive/);
+      assert.doesNotMatch(html, /class="db-new"/);
+      assert.doesNotMatch(html, /class="db-save-view"/);
+    }
+    const board = view(tasks(), { type: 'board', group: 'Status' }, { interactive: true }).html ?? '';
+    assert.match(board, /data-interactive/);
+    assert.match(board, /class="db-new"/);
+  });
+
   test('calendar weeks get a week number, and events get a collapsible detail of the view\'s other columns', () => {
     const html = view(tasks(), { type: 'calendar', date: 'Due', columns: 'Owner' }, { month: '2026-10' }).html ?? '';
     assert.match(html, /class="db-week-number" data-week="\d+">Wk \d+/);

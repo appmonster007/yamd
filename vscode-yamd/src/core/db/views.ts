@@ -8,6 +8,8 @@ import type { Property, SavedView, Schema } from './ydb';
 import type { QueryResult } from './engine';
 
 export const VIEW_TYPES = ['table', 'list', 'gallery', 'calendar', 'board', 'timeline', 'chart'] as const;
+/** View types with no cell to edit or card to drag, even in a trusted workspace (§6.2.1). */
+export const READ_ONLY_VIEW_TYPES = new Set(['calendar', 'timeline', 'chart']);
 /** Property types a board (or a timeline's `group`) can group by. */
 export const BOARD_GROUP_TYPES = new Set(['select', 'status', 'person', 'checkbox']);
 /** Property types usable as a gallery's `cover`. */
