@@ -1,4 +1,4 @@
-import { NOTE_EXT, relativeHref, resolveNote, selectEmbed } from './notes';
+import { isNotePath, relativeHref, resolveNote, selectEmbed, stripNoteExt } from './notes';
 import type { NoteLookup } from './notes';
 import { parse } from './parser';
 import { render } from './render';
@@ -25,7 +25,7 @@ export function embedResolver(
     // An ambiguous match is never auto-resolved — the lint pass already reports Y709 (error),
     // and embedding the shortest-path guess here would silently show different content from
     // what that error describes, or repoint if some other note's path happens to get shorter.
-    if (!r || r.candidates.length > 1 || !r.path.toLowerCase().endsWith(NOTE_EXT)) return 'missing';
+    if (!r || r.candidates.length > 1 || !isNotePath(r.path)) return 'missing';
     const whole = t.heading === undefined && t.blockId === undefined;
     // A note embedding a part of itself is fine; embedding a note already in the chain is a cycle.
     if ((whole || r.path !== fromPath) && chain.includes(r.path)) return 'cycle';
@@ -44,7 +44,7 @@ export function embedResolver(
       },
     );
     const anchor = t.blockId ? `#^${t.blockId}` : t.heading ? `#${slugify(t.heading)}` : '';
-    const name = posix.basename(r.path).replace(/\.yamd$/i, '');
+    const name = stripNoteExt(posix.basename(r.path));
     const title = t.heading !== undefined ? `${name} › ${t.heading}` : t.blockId ? `${name} › ^${t.blockId}` : name;
     const embed: ResolvedEmbed = { path: r.path, href: relativeHref(fromPath, r.path) + anchor, title, html };
     return embed;

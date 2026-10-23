@@ -11,7 +11,7 @@ import { addGalleryCard, moveGalleryCard } from '../core/galleryEdit';
 import { addCard, moveCard, renameCard, toggleTask } from '../core/kanbanEdit';
 import type { LineEdit } from '../core/kanbanEdit';
 import { addTimelineCard, moveTimelineCard, renameTimelineCard } from '../core/timelineEdit';
-import { resolveNote, splitTarget } from '../core/notes';
+import { resolveNote, splitTarget, stripNoteExt } from '../core/notes';
 import { anchorLine, createNote } from '../workspace/features';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath, noteUri } from '../workspace/index';
@@ -297,7 +297,7 @@ export class PreviewManager implements vscode.Disposable {
       : fileResolver(doc)?.(decoded);
     if (!file && this.index && from) {
       // Wikilinks resolve by name and alias anywhere in the workspace.
-      const r = resolveNote(this.index.store, decoded.replace(/\.yamd$/i, ''), from);
+      const r = resolveNote(this.index.store, stripNoteExt(decoded), from);
       if (r && r.candidates.length > 1) {
         // Ambiguous: never auto-pick (the shortest path could silently change later as notes are
         // added or removed), so ask which one was meant instead of guessing.
@@ -308,7 +308,7 @@ export class PreviewManager implements vscode.Disposable {
       }
     }
     if (!file) {
-      const name = splitTarget(decoded).file.replace(/\.yamd$/i, '');
+      const name = stripNoteExt(splitTarget(decoded).file);
       const choice = await vscode.window.showInformationMessage(`YAMD: "${name}" does not exist. Create it?`, 'Create Note');
       if (choice) await createNote(from ? noteUri(from) : doc.uri, name);
       return;

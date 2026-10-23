@@ -28,6 +28,7 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "workspaceContains:**/*.yamd",
+    "workspaceContains:**/*.ymd",
     "onLanguage:ydb"
   ],
   "contributes": {
@@ -39,7 +40,8 @@
           "yamd"
         ],
         "extensions": [
-          ".yamd"
+          ".yamd",
+          ".ymd"
         ],
         "configuration": "./language-configuration.json"
       },

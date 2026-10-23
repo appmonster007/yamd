@@ -5,6 +5,7 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../core';
+import { stripNoteExt } from '../core/notes';
 import { collectStudyBlocks, buildCheatSheet } from '../core/study/blocks';
 import { extractCards } from '../core/study/cards';
 import { collectDeadlines } from '../core/study/deadlines';
@@ -145,7 +146,7 @@ async function exportNote(fmt: ExportFmt): Promise<void> {
     footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date())}`,
   };
 
-  const base = doc.uri.fsPath.replace(/\.yamd$/, '');
+  const base = stripNoteExt(doc.uri.fsPath);
 
   if (fmt === 'docx') {
     const bytes = buildDocx(parsed, { title: parsed.frontMatter?.data['title'] as string | undefined });
@@ -272,7 +273,7 @@ async function combineNotes(index: WorkspaceIndex): Promise<void> {
   await index.whenReady();
 
   const summaries = index.store.summaries().sort((a, b) => (a.title ?? a.path).localeCompare(b.title ?? b.path));
-  const items = summaries.map((s) => ({ label: s.title || path.basename(s.path, '.yamd'), description: s.path, path: s.path, picked: false }));
+  const items = summaries.map((s) => ({ label: s.title || stripNoteExt(path.basename(s.path)), description: s.path, path: s.path, picked: false }));
   const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Select notes to combine (space to select)', canPickMany: true });
   if (!picked?.length) return;
 
@@ -284,7 +285,7 @@ async function combineNotes(index: WorkspaceIndex): Promise<void> {
     const body = text.startsWith('---\n')
       ? (text.slice(text.indexOf('\n---\n', 4) + 5) || text)
       : text;
-    const noteTitle = summaries.find((s) => s.path === p.path)?.title || path.basename(p.path, '.yamd');
+    const noteTitle = summaries.find((s) => s.path === p.path)?.title || stripNoteExt(path.basename(p.path));
     parts.push(`## ${noteTitle}\n\n${body.trimStart()}\n\n`);
   }
 

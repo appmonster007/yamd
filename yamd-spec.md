@@ -1,7 +1,7 @@
 # YAMD Specification
 
 **Version:** 0.1 (draft)
-**File extension:** `.yamd`
+**File extension:** `.yamd` (`.ymd` is also accepted, as a shorter alias — same format, no difference in meaning)
 **Media type:** `text/yamd`
 
 YAMD is a plain-text markup format. It keeps what makes Markdown easy (readable source, minimal syntax, familiar markers) and fixes the problems listed in [markdown-pain-points.md](markdown-pain-points.md).

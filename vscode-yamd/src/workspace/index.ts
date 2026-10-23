@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import * as vscode from 'vscode';
-import { NoteStore } from '../core/notes';
+import { isNotePath, NoteStore } from '../core/notes';
 import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { ScanRequest, ScanResponse } from './indexWorker';
 
@@ -46,7 +46,7 @@ export class WorkspaceIndex implements vscode.Disposable {
     private readonly extensionUri: vscode.Uri,
   ) {
     this.store = this.newStore();
-    const watcher = vscode.workspace.createFileSystemWatcher('**/*.yamd');
+    const watcher = vscode.workspace.createFileSystemWatcher('**/*.{yamd,ymd}');
     this.disposables.push(
       watcher,
       watcher.onDidCreate((uri) => this.enqueue(uri)),
@@ -137,7 +137,7 @@ export class WorkspaceIndex implements vscode.Disposable {
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Window, title: 'YAMD: Indexing notes' },
       async (progress) => {
-        const found = await vscode.workspace.findFiles('**/*.yamd', this.excludeGlob());
+        const found = await vscode.workspace.findFiles('**/*.{yamd,ymd}', this.excludeGlob());
         const uris = found.filter((u) => u.scheme === 'file' && !this.excluded(u));
         // Open notes may have unsaved edits that only the editor knows about, so the host loads those.
         const open = new Set(vscode.workspace.textDocuments.map((d) => d.uri.toString()));
@@ -234,7 +234,7 @@ export class WorkspaceIndex implements vscode.Disposable {
   }
 
   private async load(uri: vscode.Uri, notify = true): Promise<void> {
-    if (uri.scheme !== 'file' || !uri.path.endsWith('.yamd') || this.excluded(uri)) return;
+    if (uri.scheme !== 'file' || !isNotePath(uri.path) || this.excluded(uri)) return;
     const doc = this.openDocument(uri);
     let text: string;
     if (doc) {
@@ -278,7 +278,7 @@ export class WorkspaceIndex implements vscode.Disposable {
    * events. They're gathered for a moment and loaded together, and a big batch goes to the worker.
    */
   private enqueue(uri: vscode.Uri) {
-    if (uri.scheme !== 'file' || !uri.path.endsWith('.yamd')) return;
+    if (uri.scheme !== 'file' || !isNotePath(uri.path)) return;
     this.pendingLoads.add(notePath(uri));
     clearTimeout(this.loadTimer);
     this.loadTimer = setTimeout(() => void this.flushLoads(), LOAD_BATCH_MS);

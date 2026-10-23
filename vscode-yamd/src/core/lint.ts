@@ -1,7 +1,7 @@
 import { extractCards } from './study/cards';
 import { lookupVariable } from './frontmatter';
 import { buildBoard, buildCalendarCards, buildTimeline } from './kanban';
-import { NOTE_EXT, resolveNote, splitTarget, summarize } from './notes';
+import { isNotePath, resolveNote, splitTarget, summarize } from './notes';
 import { slugify } from './slug';
 import type { NoteLookup, NoteSummary } from './notes';
 import { plainText } from './inline';
@@ -236,7 +236,7 @@ class Linter {
       this.report('Y709', 'error', `"${file}" matches ${r.candidates.length} notes: ${r.candidates.join(', ')}. Not resolved — write more of the path to choose.`, range);
       return true;
     }
-    if (!r.path.toLowerCase().endsWith(NOTE_EXT)) return true;
+    if (!isNotePath(r.path)) return true;
     const target = r.path === notes.path ? summarize(notes.path, this.doc.source, this.doc) : this.noteSummary(r.path);
     if (target && heading !== undefined && !target.headings.some((h) => h.id === heading || h.id === slugify(heading) || h.text.toLowerCase() === heading.toLowerCase())) {
       this.report('Y701', 'warning', `"${file || 'This note'}" has no heading "${heading}".`, range);

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { stripNoteExt } from '../core/notes';
 import { expandPlaceholders, formatDate, newNoteText } from '../core/templates';
 import { findTemplates } from './daily';
 
@@ -12,6 +13,11 @@ async function exists(uri: vscode.Uri): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Whether a note named `title` already exists in `folder`, under either accepted extension. */
+async function noteExists(folder: vscode.Uri, title: string): Promise<boolean> {
+  return (await exists(vscode.Uri.joinPath(folder, `${title}.yamd`))) || (await exists(vscode.Uri.joinPath(folder, `${title}.ymd`)));
 }
 
 /**
@@ -61,12 +67,12 @@ async function newNote(clicked?: vscode.Uri): Promise<void> {
       const v = value.trim();
       if (!v) return 'Enter a name.';
       if (INVALID.test(v)) return 'A name can’t contain / \\ : * ? " < > |';
-      if (await exists(vscode.Uri.joinPath(folder, `${v.replace(/\.yamd$/i, '')}.yamd`))) return `${v}.yamd already exists here.`;
+      if (await noteExists(folder, stripNoteExt(v))) return `${v} already exists here.`;
       return null;
     },
   });
   if (name === undefined) return;
-  const title = name.trim().replace(/\.yamd$/i, '');
+  const title = stripNoteExt(name.trim());
   await create(folder, title, title);
 }
 
@@ -82,7 +88,7 @@ async function newTimestampNote(clicked?: vscode.Uri): Promise<void> {
   const base = formatDate(now, format).replace(/[\\/:*?"<>|]/g, '-');
   let name = base;
   // Two notes in the same minute get -2, -3 and so on.
-  for (let n = 2; await exists(vscode.Uri.joinPath(folder, `${name}.yamd`)); n++) name = `${base}-${n}`;
+  for (let n = 2; await noteExists(folder, name); n++) name = `${base}-${n}`;
   await create(folder, name, formatDate(now, 'YYYY-MM-DD HH:mm'));
 }
 
@@ -110,12 +116,12 @@ async function newNoteFromTemplate(clicked?: vscode.Uri): Promise<void> {
       const v = value.trim();
       if (!v) return 'Enter a name.';
       if (INVALID.test(v)) return 'A name can’t contain / \\ : * ? " < > |';
-      if (await exists(vscode.Uri.joinPath(folder, `${v.replace(/\.yamd$/i, '')}.yamd`))) return `${v}.yamd already exists here.`;
+      if (await noteExists(folder, stripNoteExt(v))) return `${v} already exists here.`;
       return null;
     },
   });
   if (name === undefined) return;
-  const title = name.trim().replace(/\.yamd$/i, '');
+  const title = stripNoteExt(name.trim());
   const template = new TextDecoder().decode(await vscode.workspace.fs.readFile(picked.uri));
   const { text, cursor } = expandPlaceholders(template, { now: new Date(), title });
   const uri = vscode.Uri.joinPath(folder, `${title}.yamd`);

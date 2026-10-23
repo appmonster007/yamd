@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse, render } from '../core';
+import { stripNoteExt } from '../core/notes';
 import type { Card, Grade, Schedule } from '../core/study/cards';
 import { buildQueue, parseSchedule, previewIntervals, pruneSchedule, review, stringifySchedule } from '../core/study/cards';
 import { nonce } from '../extension/webviewShell';
@@ -65,7 +66,7 @@ export class ReviewPanel implements vscode.Disposable {
       intervals: previewIntervals(this.schedule.cards[c.id], today),
       path: c.path,
       line: c.line,
-      title: path.basename(c.path, '.yamd'),
+      title: stripNoteExt(path.basename(c.path)),
     };
   }
 

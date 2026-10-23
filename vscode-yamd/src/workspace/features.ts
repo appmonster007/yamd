@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { parse, walkBlocks } from '../core';
 import { parseIfCheap, warmParse } from '../core/parser';
 import { plainText } from '../core/inline';
-import { findBlock, findHeading, noteLinks, renameEdits, resolveNote } from '../core/notes';
+import { findBlock, findHeading, isNotePath, noteLinks, renameEdits, resolveNote, stripNoteExt } from '../core/notes';
 import { slugify } from '../core/slug';
 import type { NoteLink, NoteSummary } from '../core/notes';
 import { setProperty } from '../core/properties';
@@ -53,7 +53,7 @@ export async function openAt(uri: vscode.Uri, line?: number): Promise<void> {
 
 /** The shortest target that links to `p` without ambiguity. */
 function linkName(index: WorkspaceIndex, p: string, from: string): string {
-  const bare = p.replace(/\.yamd$/i, '');
+  const bare = stripNoteExt(p);
   const parts = bare.split('/');
   for (let i = parts.length - 1; i >= 0; i--) {
     const candidate = parts.slice(i).join('/');
@@ -171,7 +171,7 @@ class Links implements vscode.DocumentLinkProvider, vscode.DefinitionProvider {
       const target = this.index.store.resolveLink(link, from);
       let uri: vscode.Uri;
       if (target) {
-        const line = target.path.endsWith('.yamd') ? targetLine(this.index, target.path, link) : undefined;
+        const line = isNotePath(target.path) ? targetLine(this.index, target.path, link) : undefined;
         uri = noteUri(target.path).with({ fragment: line !== undefined ? `L${line + 1}` : '' });
       } else if (link.kind === 'markdown') {
         continue;
@@ -248,7 +248,7 @@ function onWillRename(index: WorkspaceIndex, e: vscode.FileWillRenameEvent) {
 export async function createNote(fromUri: vscode.Uri | undefined, name: string): Promise<void> {
   const base = fromUri ? vscode.Uri.joinPath(fromUri, '..') : vscode.workspace.workspaceFolders?.[0]?.uri;
   if (!base) return;
-  const clean = name.replace(/\.yamd$/i, '').trim();
+  const clean = stripNoteExt(name).trim();
   const uri = vscode.Uri.joinPath(base, `${clean}.yamd`);
   try {
     await vscode.workspace.fs.stat(uri);

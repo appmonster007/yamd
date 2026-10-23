@@ -4,6 +4,7 @@
  */
 import { attrString } from '../attrs';
 import { plainText } from '../inline';
+import { stripNoteExt } from '../notes';
 import { walkBlocks } from '../parser';
 import type { ContainerBlock, YamdDocument } from '../types';
 
@@ -94,7 +95,8 @@ export function buildCheatSheet(blocks: StudyBlock[], options: CheatSheetOptions
     out.push(`## ${info.label.endsWith('y') ? `${info.label.slice(0, -1)}ies` : `${info.label}s`}`, '');
     for (const b of picked) {
       const heading = b.title ?? firstLine(b.body);
-      out.push(`:::${kind} {title=${JSON.stringify(heading)}}`, b.body, ':::', '', `Source: [${b.path.split('/').pop()?.replace(/\.yamd$/, '') ?? b.path}](${options.link(b.path)})`, '');
+      const name = b.path.split('/').pop();
+      out.push(`:::${kind} {title=${JSON.stringify(heading)}}`, b.body, ':::', '', `Source: [${name ? stripNoteExt(name) : b.path}](${options.link(b.path)})`, '');
     }
   }
   if (out.length <= 10 && out[out.length - 1] === '') out.push('No matching study blocks were found.', '');

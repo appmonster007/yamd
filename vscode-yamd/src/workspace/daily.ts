@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { isNotePath, stripNoteExt } from '../core/notes';
 import { expandPlaceholders, formatDate, parseDate } from '../core/templates';
 
 function settings() {
@@ -78,7 +79,7 @@ async function stepDaily(direction: -1 | 1): Promise<void> {
   if (!base) return;
   const { folder, format } = settings();
   const dir = vscode.Uri.joinPath(base, folder);
-  const current = active ? parseDate(path.basename(active.fsPath, '.yamd'), format) : null;
+  const current = active ? parseDate(stripNoteExt(path.basename(active.fsPath)), format) : null;
   const from = current ?? new Date();
   let entries: [string, vscode.FileType][] = [];
   try {
@@ -87,8 +88,8 @@ async function stepDaily(direction: -1 | 1): Promise<void> {
     // No daily notes yet.
   }
   const dated = entries
-    .filter(([n, t]) => t === vscode.FileType.File && n.endsWith('.yamd'))
-    .map(([n]) => ({ name: n, date: parseDate(n.slice(0, -'.yamd'.length), format) }))
+    .filter(([n, t]) => t === vscode.FileType.File && isNotePath(n))
+    .map(([n]) => ({ name: n, date: parseDate(stripNoteExt(n), format) }))
     .filter((e): e is { name: string; date: Date } => e.date !== null)
     .sort((a, b) => a.date.getTime() - b.date.getTime());
   const day = (d: Date) => formatDate(d, 'YYYY-MM-DD');
@@ -106,8 +107,8 @@ async function stepDaily(direction: -1 | 1): Promise<void> {
 /** Template files in the `templates/` folder, for the quick pick in "Insert Template" and "New Note from Template". */
 export async function findTemplates(base: vscode.Uri): Promise<{ label: string; description: string; uri: vscode.Uri }[]> {
   const { templates } = settings();
-  const files = await vscode.workspace.findFiles(new vscode.RelativePattern(base, `${templates}/**/*.yamd`));
-  return files.map((uri) => ({ label: path.basename(uri.fsPath, '.yamd'), description: vscode.workspace.asRelativePath(uri), uri }));
+  const files = await vscode.workspace.findFiles(new vscode.RelativePattern(base, `${templates}/**/*.{yamd,ymd}`));
+  return files.map((uri) => ({ label: stripNoteExt(path.basename(uri.fsPath)), description: vscode.workspace.asRelativePath(uri), uri }));
 }
 
 async function insertTemplate(): Promise<void> {
@@ -125,7 +126,7 @@ async function insertTemplate(): Promise<void> {
   }
   const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Choose a template' });
   if (!pick) return;
-  const title = path.basename(editor.document.uri.fsPath, '.yamd');
+  const title = stripNoteExt(path.basename(editor.document.uri.fsPath));
   let text = await readText(pick.uri);
   const doc = editor.document;
   if (doc.getText().trim() === '') {

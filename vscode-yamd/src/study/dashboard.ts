@@ -2,6 +2,7 @@ import { statSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../core';
+import { stripNoteExt } from '../core/notes';
 import { buildQueue } from '../core/study/cards';
 import { DASHBOARD_CSS, dashboardBody } from '../core/study/dashboard';
 import type { DashboardData } from '../core/study/dashboard';
@@ -61,7 +62,7 @@ export async function gather(index: WorkspaceIndex): Promise<DashboardData> {
       byCourse: [...minutesByCourse(log, addDays(today, -30))].sort((a, b) => b[1] - a[1]),
       heatmap: heatmap(log, today),
     },
-    label: (p) => path.basename(p, '.yamd'),
+    label: (p) => stripNoteExt(path.basename(p)),
   };
 }
 

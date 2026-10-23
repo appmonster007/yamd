@@ -84,6 +84,13 @@ describe('resolution', () => {
     assert.equal(resolveNote(s, 'projects/2026/roadmap', 'dir/from.yamd')?.path, 'projects/2026/roadmap.yamd');
     assert.equal(resolveNote(s, 'missing', 'dir/from.yamd'), null);
   });
+
+  test('.ymd is accepted as an alias for .yamd', () => {
+    const t = store({ 'short.ymd': '# Short', 'long.yamd': '# Long' });
+    assert.equal(resolveNote(t, 'short', 'index.yamd')?.path, 'short.ymd');
+    assert.equal(resolveNote(t, 'long', 'index.yamd')?.path, 'long.yamd');
+    assert.equal(resolveNote(t, 'short.ymd', 'index.yamd')?.path, 'short.ymd');
+  });
 });
 
 describe('embeds', () => {

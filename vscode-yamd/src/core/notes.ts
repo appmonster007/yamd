@@ -10,6 +10,13 @@ import { slugify } from './slug';
 import type { Block, InlineNode, ListBlock, Range, YamdDocument } from './types';
 
 export const NOTE_EXT = '.yamd';
+/** Every extension a YAMD note may use, in the order tried when a link doesn't name one. */
+export const NOTE_EXTS = ['.yamd', '.ymd'];
+const NOTE_EXT_RE = /\.(?:yamd|ymd)$/i;
+/** Whether `path` ends in a recognized note extension (`.yamd` or `.ymd`). */
+export const isNotePath = (path: string) => NOTE_EXT_RE.test(path);
+/** Strips a trailing `.yamd`/`.ymd` extension, if present. */
+export const stripNoteExt = (path: string) => path.replace(NOTE_EXT_RE, '');
 
 /** File access that resolution needs. The workspace index and test fixtures implement it. */
 export interface NoteLookup {
@@ -44,18 +51,24 @@ const byLength = (a: string, b: string) => a.length - b.length || a.localeCompar
 export function resolveNote(lookup: NoteLookup, target: string, fromPath: string): Resolved | null {
   const t = target.trim();
   if (t === '') return { path: fromPath, candidates: [] };
-  const file = hasExtension(t) ? t : t + NOTE_EXT;
-  const relative = posix.normalize(posix.join(posix.dirname(fromPath), file));
-  if (lookup.has(relative)) return { path: relative, candidates: [] };
-  const fromRoot = posix.normalize(posix.join(lookup.root(fromPath), file.replace(/^\/+/, '')));
-  if (lookup.has(fromRoot)) return { path: fromRoot, candidates: [] };
+  const files = hasExtension(t) ? [t] : NOTE_EXTS.map((ext) => t + ext);
 
-  const lower = file.toLowerCase();
-  const suffix = `/${lower.replace(/^\/+/, '')}`;
-  const named = lookup
-    .byName(posix.basename(lower))
-    .filter((p) => !lower.includes('/') || `/${p.toLowerCase()}`.endsWith(suffix))
-    .sort(byLength);
+  for (const file of files) {
+    const relative = posix.normalize(posix.join(posix.dirname(fromPath), file));
+    if (lookup.has(relative)) return { path: relative, candidates: [] };
+  }
+  for (const file of files) {
+    const fromRoot = posix.normalize(posix.join(lookup.root(fromPath), file.replace(/^\/+/, '')));
+    if (lookup.has(fromRoot)) return { path: fromRoot, candidates: [] };
+  }
+
+  const namedAll: string[] = [];
+  for (const file of files) {
+    const lower = file.toLowerCase();
+    const suffix = `/${lower.replace(/^\/+/, '')}`;
+    namedAll.push(...lookup.byName(posix.basename(lower)).filter((p) => !lower.includes('/') || `/${p.toLowerCase()}`.endsWith(suffix)));
+  }
+  const named = [...new Set(namedAll)].sort(byLength);
   if (named.length) return { path: named[0] as string, candidates: named.length > 1 ? named : [] };
 
   const aliased = lookup.byAlias(t.toLowerCase()).sort(byLength);
@@ -302,7 +315,7 @@ export function summarize(path: string, text: string, parsed?: YamdDocument): No
   });
   const fmTitle = typeof fm['title'] === 'string' ? fm['title'] : undefined;
   const firstHeading = headings[0]?.text;
-  const title = fmTitle ?? (firstHeading && !firstHeading.includes('{{') ? firstHeading : undefined) ?? posix.basename(path).replace(/\.yamd$/i, '');
+  const title = fmTitle ?? (firstHeading && !firstHeading.includes('{{') ? firstHeading : undefined) ?? stripNoteExt(posix.basename(path));
   return {
     path,
     title,
@@ -737,7 +750,7 @@ export function renameEdits(store: NoteStore, oldPath: string, newPath: string):
     list.push(edit);
     edits.set(path, list);
   };
-  const isNote = /\.yamd$/i.test(oldPath);
+  const isNote = isNotePath(oldPath);
   // Resolution after the move, used to check name-based links.
   const after = new NoteStore([store.root(newPath)], (p) => p === newPath || (p !== oldPath && store.has(p)));
   if (isNote) {
@@ -765,8 +778,8 @@ export function renameEdits(store: NoteStore, oldPath: string, newPath: string):
       if (pathBased && stillResolves && !link.file.startsWith('.')) {
         // A root-relative path that still matches by suffix keeps working only if it names the new path.
         const written = link.file.toLowerCase().replace(/^\/+/, '');
-        const withExt = hasExtension(written) ? written : written + NOTE_EXT;
-        if (`/${newPath.toLowerCase()}`.endsWith(`/${withExt}`)) continue;
+        const withExts = hasExtension(written) ? [written] : NOTE_EXTS.map((ext) => written + ext);
+        if (withExts.some((w) => `/${newPath.toLowerCase()}`.endsWith(`/${w}`))) continue;
       }
       add(from, { range: link.fileRange, text: shortestName(after, newPath, fromAfter) });
     }
@@ -776,7 +789,7 @@ export function renameEdits(store: NoteStore, oldPath: string, newPath: string):
 
 /** The shortest wikilink target that resolves to `path` from `from`. */
 function shortestName(store: NoteStore, path: string, from: string): string {
-  const bare = path.replace(/\.yamd$/i, '');
+  const bare = stripNoteExt(path);
   const segments = bare.split('/');
   for (let i = segments.length - 1; i >= 0; i--) {
     const candidate = segments.slice(i).join('/');
