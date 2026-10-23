@@ -153,6 +153,10 @@ export interface TimelineGroup {
   title?: InlineNode[];
   attrs?: Attrs;
   cards: KanbanCard[];
+  /** The heading's own line; undefined for the shared track (no heading to anchor on). */
+  line?: number;
+  /** Last line of the group's content (the heading line when empty); undefined for the shared track. */
+  endLine?: number;
 }
 
 export interface TimelineBoard {
@@ -172,10 +176,12 @@ export function buildTimeline(container: ContainerBlock): TimelineBoard {
   const shared: TimelineGroup = { cards: [] };
   for (const b of container.children) {
     if (b.type === 'heading') {
-      group = { title: b.children, attrs: b.attrs, cards: [] };
+      group = { title: b.children, attrs: b.attrs, cards: [], line: b.line, endLine: b.line };
       board.groups.push(group);
     } else if (b.type === 'list') {
-      (group ?? shared).cards.push(...b.items.map(card));
+      const g = group ?? shared;
+      g.cards.push(...b.items.map(card));
+      if (g.line !== undefined) g.endLine = Math.max(g.endLine ?? g.line, b.endLine);
     }
   }
   if (shared.cards.length) board.groups.unshift(shared);

@@ -6,8 +6,11 @@ import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { RenderOptions } from '../core';
 import { embedResolver } from '../core/embeds';
 
+import { addCalendarCard, moveCalendarCard, renameCalendarCard } from '../core/calendarEdit';
+import { addGalleryCard, moveGalleryCard } from '../core/galleryEdit';
 import { addCard, moveCard, renameCard, toggleTask } from '../core/kanbanEdit';
 import type { LineEdit } from '../core/kanbanEdit';
+import { addTimelineCard, moveTimelineCard, renameTimelineCard } from '../core/timelineEdit';
 import { resolveNote, splitTarget } from '../core/notes';
 import { anchorLine, createNote } from '../workspace/features';
 import type { WorkspaceIndex } from '../workspace/index';
@@ -35,10 +38,31 @@ type FromWebview =
   | { type: 'kanbanMove'; board: number; card: CardRef; toColumn: number; toIndex: number; source?: string }
   | { type: 'kanbanAdd'; board: number; column: number; text: string; source?: string }
   | { type: 'kanbanRename'; board: number; card: CardRef; title: string; source?: string }
+  | { type: 'calendarMove'; board: number; card: CardRef; toDate: string; source?: string }
+  | { type: 'calendarAdd'; board: number; date: string; text: string; source?: string }
+  | { type: 'calendarRename'; board: number; card: CardRef; title: string; source?: string }
+  | { type: 'timelineMove'; board: number; card: CardRef; toGroup: number; newStart: string; source?: string }
+  | { type: 'timelineAdd'; board: number; group: number | null; text: string; source?: string }
+  | { type: 'timelineRename'; board: number; card: CardRef; title: string; source?: string }
+  | { type: 'galleryMove'; board: number; card: CardRef; toIndex: number; source?: string }
+  | { type: 'galleryAdd'; board: number; image: string; caption: string; source?: string }
   | DbMessage;
 
 /** Messages that change the document; only accepted in trusted workspaces. */
-const EDITS = new Set(['toggleTask', 'kanbanMove', 'kanbanAdd', 'kanbanRename']);
+const EDITS = new Set([
+  'toggleTask',
+  'kanbanMove',
+  'kanbanAdd',
+  'kanbanRename',
+  'calendarMove',
+  'calendarAdd',
+  'calendarRename',
+  'timelineMove',
+  'timelineAdd',
+  'timelineRename',
+  'galleryMove',
+  'galleryAdd',
+]);
 
 function nonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -322,6 +346,30 @@ export class PreviewManager implements vscode.Disposable {
         break;
       case 'kanbanRename':
         edit = renameCard(source, m.board, m.card, m.title);
+        break;
+      case 'calendarMove':
+        edit = moveCalendarCard(source, m.board, m.card, m.toDate);
+        break;
+      case 'calendarAdd':
+        edit = addCalendarCard(source, m.board, m.date, m.text);
+        break;
+      case 'calendarRename':
+        edit = renameCalendarCard(source, m.board, m.card, m.title);
+        break;
+      case 'timelineMove':
+        edit = moveTimelineCard(source, m.board, m.card, m.toGroup, m.newStart);
+        break;
+      case 'timelineAdd':
+        edit = addTimelineCard(source, m.board, m.group, m.text, new Date().toISOString().slice(0, 10));
+        break;
+      case 'timelineRename':
+        edit = renameTimelineCard(source, m.board, m.card, m.title);
+        break;
+      case 'galleryMove':
+        edit = moveGalleryCard(source, m.board, m.card, m.toIndex);
+        break;
+      case 'galleryAdd':
+        edit = addGalleryCard(source, m.board, m.image, m.caption);
         break;
       default:
         return;

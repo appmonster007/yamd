@@ -27,6 +27,13 @@ rows:
     Quarter: Q4 2026
     Votes: 42
 
+  - id: r5
+    Feature: VS Code extension
+    Stage: Shipped
+    Owner: Ada
+    Quarter: Q4 2026
+    Votes: 80
+
   - id: r2
     Feature: Databases
     Stage: Planned
@@ -41,21 +48,14 @@ rows:
     Quarter: Q1 2027
     Votes: 38
 
+  - id: r6
+    Feature: Real-time collaboration
+    Stage: Planned
+    Votes: 91
+
   - id: r4
     Feature: Mobile app
     Stage: Idea
     Owner: Grace
     Quarter: Q2 2027
     Votes: 64
-
-  - id: r5
-    Feature: VS Code extension
-    Stage: Shipped
-    Owner: Ada
-    Quarter: Q4 2026
-    Votes: 80
-
-  - id: r6
-    Feature: Real-time collaboration
-    Stage: Idea
-    Votes: 91

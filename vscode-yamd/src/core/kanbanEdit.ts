@@ -15,7 +15,13 @@ export interface CardRef {
   hash: string;
 }
 
-const ITEM_PREFIX = /^(\s*)([-*+]|\d{1,9}[.)])([ \t]+)(\[[ xX]\][ \t]+)?/;
+export const ITEM_PREFIX = /^(\s*)([-*+]|\d{1,9}[.)])([ \t]+)(\[[ xX]\][ \t]+)?/;
+
+/** The first card/row in `items` whose `line` matches and whose source still hashes to `hash`. */
+export function findByHash<T extends { line: number; endLine: number }>(items: T[], lines: string[], line: number, hash: string): T | undefined {
+  const found = items.find((c) => c.line === line);
+  return found && hashText(cardSource(lines, found)) === hash ? found : undefined;
+}
 
 function findBoard(doc: YamdDocument, boardLine: number): KanbanBoard | null {
   let found: ContainerBlock | null = null;
@@ -33,7 +39,7 @@ function findCard(board: KanbanBoard, line: number): { column: KanbanColumn; car
   return null;
 }
 
-const indentOf = (s: string) => /^\s*/.exec(s)?.[0].length ?? 0;
+export const indentOf = (s: string) => /^\s*/.exec(s)?.[0].length ?? 0;
 
 /** Indentation for cards in a column: that of its first card, or none. */
 function cardIndent(lines: string[], column: KanbanColumn): number {
@@ -42,7 +48,7 @@ function cardIndent(lines: string[], column: KanbanColumn): number {
 }
 
 /** Re-indents lines by a uniform delta, keeping relative nesting. */
-function reindent(cardLines: string[], delta: number): string[] {
+export function reindent(cardLines: string[], delta: number): string[] {
   if (delta === 0) return cardLines;
   return cardLines.map((l) => {
     if (l.trim() === '') return l;
@@ -140,6 +146,17 @@ export function addCard(source: string, boardLine: number, toColumn: number, tex
   return { startLine: after, endLine: after, text: `${doc.lines[after] ?? ''}\n\n${line}` };
 }
 
+/** Rewrites a card's title line, keeping its marker, checkbox, tags and attributes. */
+export function rewriteCardTitleLine(line: string, title: string): string {
+  const prefix = ITEM_PREFIX.exec(line)?.[0] ?? '';
+  const rest = line.slice(prefix.length);
+  const attrs = /\s*\{[^{}]*\}\s*$/.exec(rest)?.[0] ?? '';
+  const withoutAttrs = rest.slice(0, rest.length - attrs.length);
+  const tags = withoutAttrs.match(/(?:^|\s)#[\p{L}\p{N}_/-]*[\p{L}_/-][\p{L}\p{N}_/-]*(?=\s|$)/gu) ?? [];
+  const newTags = tags.filter((t) => !title.includes(t.trim())).join('');
+  return `${prefix}${title}${newTags}${attrs}`;
+}
+
 /** Replaces a card's title text, keeping its marker, checkbox, tags and attributes. */
 export function renameCard(source: string, boardLine: number, ref: CardRef, title: string): LineEdit | null {
   const clean = title.replace(/\s+/g, ' ').trim();
@@ -148,14 +165,7 @@ export function renameCard(source: string, boardLine: number, ref: CardRef, titl
   const board = findBoard(doc, boardLine);
   const found = board && findCard(board, ref.line);
   if (!found || hashText(cardSource(doc.lines, found.card)) !== ref.hash) return null;
-  const line = doc.lines[ref.line] ?? '';
-  const prefix = ITEM_PREFIX.exec(line)?.[0] ?? '';
-  const rest = line.slice(prefix.length);
-  const attrs = /\s*\{[^{}]*\}\s*$/.exec(rest)?.[0] ?? '';
-  const withoutAttrs = rest.slice(0, rest.length - attrs.length);
-  const tags = withoutAttrs.match(/(?:^|\s)#[\p{L}\p{N}_/-]*[\p{L}_/-][\p{L}\p{N}_/-]*(?=\s|$)/gu) ?? [];
-  const newTags = tags.filter((t) => !clean.includes(t.trim())).join('');
-  return { startLine: ref.line, endLine: ref.line, text: `${prefix}${clean}${newTags}${attrs}` };
+  return { startLine: ref.line, endLine: ref.line, text: rewriteCardTitleLine(doc.lines[ref.line] ?? '', clean) };
 }
 
 /** The editable title text of a card: its first line without marker, checkbox, tags or attributes. */
