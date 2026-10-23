@@ -1,0 +1,72 @@
+---
+yamd: 0.1
+title: Reference links
+lang: en-US
+---
+
+# {{ title }}
+
+Link a span of text to any labeled element elsewhere in the note — a word pointing at its definition, a correction pointing at the phrase it fixes — anywhere a plain link by title isn't the right fit.
+
+::toc{depth=2}
+
+## The basics
+
+Source and target are marked the same explicit way: `[text]{ref=id}` to point *from* a span, `[text]{#id}` to label the span being pointed *at* — the same `[text]{attrs}` syntax as any other span (§4.5), the same way you'd mark a target in LaTeX with `\label{}`. The reference always lands on exactly the text you wrapped, word or whole sentence, never just "somewhere in that paragraph":
+
+```yamd
+[mitosis]{ref=def-mitosis} is how a cell divides. There's more going on in
+cell biology than division alone, but [mitosis is the process of nuclear
+division]{#def-mitosis} specifically, one step among several in the cycle.
+```
+
+[mitosis]{ref=def-mitosis} is how a cell divides. There's more going on in cell biology than division alone, but [mitosis is the process of nuclear division]{#def-mitosis} specifically, one step among several in the cycle.
+
+To point at an entire block instead of one phrase — a whole definition box, say — label the block itself: `{#id}` on its own line directly above it.
+
+```yamd
+[mitosis]{ref=def-mitosis-box} is also how a cell divides.
+
+:::definition {#def-mitosis-box}
+Mitosis is the process of nuclear division.
+:::
+```
+
+[mitosis]{ref=def-mitosis-box} is also how a cell divides.
+
+:::definition {#def-mitosis-box}
+Mitosis is the process of nuclear division.
+:::
+
+A `ref=` span renders as a real link to `#target-id`, so it's clickable and jumps to its target in any renderer — including in exported HTML, with no preview script needed.
+
+## Block IDs
+
+`ref=` can also target a block's `^id` marker (kept with its `^`), since that's already a valid anchor everywhere else in the format (`![[note#^id]]` embeds use the same one). Prefer `{#id}` for anything you're labeling specifically to be a `ref=` target, though — it keeps both ends of the reference marked the same bracketed way, instead of a bracket on one end and a bare caret on the other:
+
+```yamd
+[mitosis]{ref=^def-mitosis-block} is how a cell divides.
+
+Mitosis is the process of nuclear division. ^def-mitosis-block
+```
+
+[mitosis]{ref=^def-mitosis-block} is how a cell divides.
+
+Mitosis is the process of nuclear division. ^def-mitosis-block
+
+## In YAMD Studio
+
+The format only guarantees the plain link above. YAMD Studio adds two editor-only affordances on top, neither of which changes what gets rendered: every distinct `ref=` target gets its own color (no two repeat on a page), so references to the same target stay visually grouped even without a drawn line between them, and hovering a `ref=` span shows the target's line and column with a "Jump to target" action.
+
+## Flow charts
+
+`ref=` is for annotating prose — pointing a word or sentence at its definition or source elsewhere in the note. A flow chart (steps, branches, shapes) is a different kind of diagram entirely: write it as a standard ` ```mermaid ` code block (§3.9) instead.
+
+````yamd
+```mermaid
+graph LR
+  start[Start] --> receive[Receive request] --> validate[Validate request]
+```
+````
+
+A renderer without diagram support shows the block as source; this is independent of the reference links above.
