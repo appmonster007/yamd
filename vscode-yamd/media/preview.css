@@ -639,6 +639,15 @@ tr:hover .db-delete, .db-delete:focus-visible { opacity: 1; }
 .db-calendar-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .db-month { padding: 0 8px; }
 .db-month-title { font-weight: 600; min-width: 9em; text-align: center; }
+.db-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.db-calendar-grid .db-event {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  cursor: default;
+}
+.db-calendar-grid .db-event:hover { background: color-mix(in srgb, var(--yamd-accent) 30%, transparent); }
 .db-calendar-weekdays, .db-week { display: grid; grid-template-columns: 2.2em repeat(7, minmax(0, 1fr)); gap: 4px; }
 .db-week + .db-week { margin-top: 4px; }
 .db-weekday { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--yamd-muted); text-align: center; padding-bottom: 2px; }
