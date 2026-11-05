@@ -56,7 +56,7 @@ Use a copy of `examples/` as the workspace.
 
 ## Writing and onboarding (1.2 additions)
 
-- [ ] First install: the welcome toast appears once; `YAMD: Open Walkthrough` shows six steps whose buttons work.
+- [ ] First install: the welcome toast appears once; `YAMD: Open Walkthrough` shows 15 steps whose buttons work.
 - [ ] `YAMD: Menu` and the status-bar item open the same list; each entry runs.
 - [ ] `YAMD: New Note` for each template: no leftover placeholders, `Build` is clean.
 - [ ] Snippets (`kanban`, `callout`) and completion (`source="`, `> [!`, `[@`) show in a real editor; hover over `source="…"` shows columns.

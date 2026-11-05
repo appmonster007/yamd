@@ -65,5 +65,5 @@ export const MENU: MenuGroup[] = [
       { label: '$(layout) Export one widget as HTML', command: 'yamd.exportWidget' },
     ],
   },
-  { title: 'Help', items: [{ label: '$(rocket) Welcome walkthrough', command: 'yamd.openWalkthrough' }] },
+  { title: 'Help', items: [{ label: '$(rocket) Welcome walkthrough', command: 'yamd.openWalkthrough' }, { label: '$(gear) YAMD settings', command: 'yamd.openSettings' }] },
 ];

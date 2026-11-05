@@ -325,6 +325,11 @@
         "command": "yamd.transcribeAudio",
         "title": "Transcribe Audio",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openSettings",
+        "title": "Open YAMD Settings",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -485,6 +490,9 @@
         {
           "command": "yamd.transcribeAudio",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openSettings"
         }
       ],
       "explorer/context": [
@@ -637,46 +645,100 @@
       {
         "id": "yamd.start",
         "title": "Get started with YAMD",
-        "description": "Boards, queries, references and voice notes in plain Markdown.",
+        "description": "Boards, queries, references, voice notes and study tools in plain Markdown.",
         "steps": [
           {
             "id": "sample",
             "title": "Create a sample note",
-            "description": "Make a note that uses each part of YAMD once.\n[Create Sample Note](command:yamd.createSampleNote)",
+            "description": "Make a note that uses each part of YAMD once, with a data file beside it.\n[Create Sample Note](command:yamd.createSampleNote)\n[New Note from a Template](command:yamd.newNote)",
             "media": {
               "markdown": "media/walkthrough/sample.md"
             },
             "completionEvents": [
-              "onCommand:yamd.createSampleNote"
+              "onCommand:yamd.createSampleNote",
+              "onCommand:yamd.newNote"
+            ]
+          },
+          {
+            "id": "menu",
+            "title": "Find everything in the menu",
+            "description": "One list of what YAMD can do, grouped by task. The YAMD item in the status bar opens it too.\n[Open the Menu](command:yamd.menu)",
+            "media": {
+              "markdown": "media/walkthrough/menu.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.menu"
             ]
           },
           {
             "id": "widget",
-            "title": "Open a widget",
-            "description": "Open a block as a draggable board beside the note.\n[Open Widget](command:yamd.openWidget)",
+            "title": "Open a board beside the note",
+            "description": "A kanban block opens as a board you can drag cards on. The note changes as you go, and undo works.\n[Open Widget](command:yamd.openWidget)\n[Insert a Widget](command:yamd.insertWidget)",
             "media": {
               "markdown": "media/walkthrough/widget.md"
             },
             "completionEvents": [
-              "onCommand:yamd.openWidget"
+              "onCommand:yamd.openWidget",
+              "onCommand:yamd.insertWidget"
+            ]
+          },
+          {
+            "id": "cards",
+            "title": "Add and edit cards",
+            "description": "Add a card from the keyboard, or edit due date, owner, tags and notes in a form.\n[Add Card](command:yamd.addCard)\n[Add Event](command:yamd.addEvent)\n[Add Timeline Item](command:yamd.addTimelineItem)",
+            "media": {
+              "markdown": "media/walkthrough/cards.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.addCard",
+              "onCommand:yamd.addEvent",
+              "onCommand:yamd.addTimelineItem"
+            ]
+          },
+          {
+            "id": "gallery",
+            "title": "Calendars, timelines and galleries",
+            "description": "The other widgets: a month of events, bars on lanes, a grid of images.\n[Open Calendar](command:yamd.openCalendar)\n[Open Timeline](command:yamd.openTimeline)\n[Add Image to Gallery](command:yamd.addImage)",
+            "media": {
+              "markdown": "media/walkthrough/gallery.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.openCalendar",
+              "onCommand:yamd.openTimeline",
+              "onCommand:yamd.addImage",
+              "onCommand:yamd.openGallery"
+            ]
+          },
+          {
+            "id": "writing",
+            "title": "Write faster",
+            "description": "Snippets, completion and insert commands write the markup for you.\n[Insert Callout](command:yamd.insertCallout)\n[Insert Figure, Table or Equation](command:yamd.insertTarget)\n[Insert Citation](command:yamd.insertCitation)",
+            "media": {
+              "markdown": "media/walkthrough/writing.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.insertCallout",
+              "onCommand:yamd.insertTarget",
+              "onCommand:yamd.insertCitation"
             ]
           },
           {
             "id": "query",
-            "title": "Run a query",
-            "description": "Read a CSV, JSON or SQLite file with SQL.\n[Insert Query](command:yamd.insertQuery)",
+            "title": "Query a data file",
+            "description": "Pick a CSV, JSON or SQLite file, the columns, a filter and a view; YAMD writes the block and runs it.\n[Insert Query](command:yamd.insertQuery)\n[Run All Queries](command:yamd.runAllQueries)",
             "media": {
               "markdown": "media/walkthrough/query.md"
             },
             "completionEvents": [
               "onCommand:yamd.insertQuery",
-              "onCommand:yamd.runQuery"
+              "onCommand:yamd.runQuery",
+              "onCommand:yamd.runAllQueries"
             ]
           },
           {
             "id": "build",
-            "title": "Build references",
-            "description": "Turn `[@id]` into numbered links and fill the contents.\n[Build](command:yamd.build)",
+            "title": "Build references and contents",
+            "description": "Turn `[@fig-name]` into numbered links, cite from a .bib file, and fill the contents.\n[Build](command:yamd.build)\n[Go to Reference Target](command:yamd.goToReference)",
             "media": {
               "markdown": "media/walkthrough/build.md"
             },
@@ -685,25 +747,77 @@
             ]
           },
           {
+            "id": "check",
+            "title": "Check the note",
+            "description": "One list of everything wrong, with fixes for the safe ones.\n[Check This Note](command:yamd.checkNote)",
+            "media": {
+              "markdown": "media/walkthrough/check.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.checkNote"
+            ]
+          },
+          {
             "id": "audio",
-            "title": "Record a voice note",
-            "description": "Save a recording next to the note and link it.\n[Record Audio](command:yamd.recordAudio)",
+            "title": "Record and transcribe",
+            "description": "Save a recording next to the note, link it, and turn it into text with a tool you choose.\n[Record Audio](command:yamd.recordAudio)\n[Transcribe Audio](command:yamd.transcribeAudio)",
             "media": {
               "markdown": "media/walkthrough/audio.md"
             },
             "completionEvents": [
-              "onCommand:yamd.recordAudio"
+              "onCommand:yamd.recordAudio",
+              "onCommand:yamd.transcribeAudio"
             ]
           },
           {
-            "id": "menu",
-            "title": "Find everything in the menu",
-            "description": "One list of what YAMD can do.\n[Open the Menu](command:yamd.menu)",
+            "id": "study",
+            "title": "Study from your notes",
+            "description": "Turn definitions and questions into flashcards and review them with spaced repetition.\n[Study This Note](command:yamd.studyThisNote)\n[Review Cards](command:yamd.reviewCards)\n[Open Dashboard](command:yamd.openDashboard)",
             "media": {
-              "markdown": "media/walkthrough/menu.md"
+              "markdown": "media/walkthrough/study.md"
             },
             "completionEvents": [
-              "onCommand:yamd.menu"
+              "onCommand:yamd.studyThisNote",
+              "onCommand:yamd.reviewCards",
+              "onCommand:yamd.openDashboard"
+            ]
+          },
+          {
+            "id": "export",
+            "title": "Share your work",
+            "description": "Export a page, slides, one Markdown file with everything inlined, or a single widget.\n[Export HTML](command:yamd.exportHtml)\n[Export as One Markdown File](command:yamd.exportMarkdown)\n[Export Widget](command:yamd.exportWidget)",
+            "media": {
+              "markdown": "media/walkthrough/export.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.exportHtml",
+              "onCommand:yamd.exportMarkdown",
+              "onCommand:yamd.exportWidget",
+              "onCommand:yamd.exportSlides"
+            ]
+          },
+          {
+            "id": "linked",
+            "title": "Link your notes",
+            "description": "Backlinks, the note graph and tags come from the Foam extension.\n[Show Backlinks](command:yamd.showBacklinks)\n[Show Note Graph](command:yamd.showGraph)\n[Show Tags](command:yamd.showTags)",
+            "media": {
+              "markdown": "media/walkthrough/linked.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.showBacklinks",
+              "onCommand:yamd.showGraph",
+              "onCommand:yamd.showTags"
+            ]
+          },
+          {
+            "id": "settings",
+            "title": "Make it yours",
+            "description": "A few settings change how YAMD behaves.\n[Open YAMD Settings](command:yamd.openSettings)\n[Open the Menu](command:yamd.menu)",
+            "media": {
+              "markdown": "media/walkthrough/settings.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.openSettings"
             ]
           }
         ]

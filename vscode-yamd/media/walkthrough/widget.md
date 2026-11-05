@@ -1,5 +1,17 @@
-# Open a widget
+# Widgets are fenced blocks
 
-A link appears above each widget block, like **Open kanban: welcome-board**. Click it, or run **Open Kanban** (or Calendar, Timeline, Gallery, Query) from the Command Palette.
+````
+```kanban sprint
+## Todo
+- [ ] Write the docs {due=2026-12-01 owner=ada}
 
-The widget opens beside the note. Drag a card to another column, double-click a title to rename it, or press the pencil to edit its details. Every change rewrites only that block in the note, and undo works.
+## Done
+- [x] Plan the release
+```
+````
+
+A link above each block reads **Open kanban: sprint**. Click it (or run **Open Widget** with the cursor in the block) to open the board beside the note.
+
+Drag a card to another column, double-click a title to rename it, tick a task, or add a card at the bottom of a column. Only the lines inside the block change.
+
+Types: `kanban`, `calendar`, `timeline`, `gallery` and `sql` (a query).

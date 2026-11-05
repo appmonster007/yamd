@@ -1,5 +1,12 @@
-# Run a query
+# SQL over your data files
 
-A `sql` block whose first line names a `source` file is a read-only query. Open it from the link above it to see a table, board or chart that refreshes when the file changes.
+````
+```sql
+-- id="open-bugs" source="bugs.csv" view="table"
+SELECT id, title, owner FROM bugs WHERE status = 'open';
+```
+````
 
-**Run Query** also writes a small Markdown table of the result under the block, so the note shows the answer without the extension. **Insert Query** builds a block for you from a file, columns and a view.
+Queries are **read-only** and run on a copy; the data file is never changed. The view can be `table`, `board` (needs `group="column"`) or `chart` (needs `x` and `y`).
+
+**Run Query** writes a Markdown snapshot of the result under the block so the note reads without the extension. **Run All Queries in This Note** refreshes every snapshot, and the `yamd.queries.refreshOnSave` setting does it on save.

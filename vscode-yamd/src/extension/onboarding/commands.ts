@@ -48,6 +48,7 @@ export function registerOnboarding(context: vscode.ExtensionContext): void {
       if (folder) await createNote(folder, 'Welcome to YAMD', SAMPLE_NOTE);
     }),
 
+    vscode.commands.registerCommand('yamd.openSettings', () => vscode.commands.executeCommand('workbench.action.openSettings', '@ext:appmonster007.vscode-yamd-ext')),
     vscode.commands.registerCommand('yamd.openWalkthrough', () => vscode.commands.executeCommand('workbench.action.openWalkthrough', 'appmonster007.vscode-yamd-ext#yamd.start', false)),
   );
 
