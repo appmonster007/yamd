@@ -9,7 +9,7 @@ EXT_DIR  := vscode-yamd
 VSIX     := $(shell node -p "require('./$(EXT_DIR)/package.json').name + '-' + require('./$(EXT_DIR)/package.json').version + '.vsix'")
 CODE     := $(shell command -v code 2>/dev/null || command -v code-insiders 2>/dev/null)
 
-.PHONY: help deps build typecheck test package package-fast install install-fast uninstall clean dev
+.PHONY: help deps build typecheck test test-integration package package-fast install install-fast uninstall clean dev
 
 help:
 	@echo "YAMD — available targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  make build         compile the extension into $(EXT_DIR)/dist/"
 	@echo "  make typecheck     run the TypeScript compiler with no output"
 	@echo "  make test          run the test suite"
+	@echo "  make test-integration  run the checks inside a real VS Code (needs VS Code 1.145+ installed)"
 	@echo "  make package       typecheck, test, and build $(EXT_DIR)/$(VSIX)"
 	@echo "  make package-fast  typecheck and build $(EXT_DIR)/$(VSIX), skipping tests"
 	@echo "  make install       package (with tests) and install into VS Code"
@@ -36,6 +37,9 @@ typecheck: deps
 
 test: deps
 	cd $(EXT_DIR) && npm test
+
+test-integration: build
+	cd $(EXT_DIR) && npm run test:integration
 
 package: deps
 	cd $(EXT_DIR) && npm run package

@@ -10,3 +10,4 @@ scripts/**
 .vscode/**
 *.vsix
 .probe/**
+test-integration/**

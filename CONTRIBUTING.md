@@ -94,3 +94,7 @@ Open a discussion or issue — there's no separate chat channel yet.
 | `webview` | Scripts that run inside the widget panel. |
 
 `core/**` never imports `vscode`, so every feature there is covered by `node:test` tests.
+
+## Testing in a real VS Code
+
+`make test` runs the unit tests (`core/**` never imports `vscode`). `make test-integration` starts VS Code's extension host with the extension from this checkout and a copy of `examples/`, then checks activation, commands, CodeLens, diagnostics and quick fixes, Build, Run Query, opening widgets, review commands, Go to Reference Target and the exports. It needs VS Code 1.145+ installed, opens a window briefly, and leaves its workspace copy in the system temp folder. It can't drag cards or click inside a widget panel; `docs/qa-checklist.md` lists what to try by hand.
