@@ -323,10 +323,6 @@ class Renderer {
     if (b.lang === 'mermaid') {
       return `<div${this.attrs(b.attrs, b.line, ['code-block', 'diagram-fallback'])}>${this.codeHeader(title ?? 'Diagram (shown as source)', 'mermaid')}<pre><code${lang}>${this.codeBody(b.value, undefined)}</code></pre></div>`;
     }
-    if (b.lang === 'query') {
-      // A placeholder the preview fills with the result; without a preview it shows the SQL.
-      return `<div class="db-slot db-query" data-db-key="q${b.line}" data-line="${b.line}"><pre><code class="language-sql">${this.codeBody(b.value, 'sql')}</code></pre></div>`;
-    }
     return `<div${this.attrs(b.attrs, b.line, ['code-block'])}>${this.codeHeader(title, b.lang)}<pre><code${lang}>${this.codeBody(b.value, b.lang)}</code></pre></div>`;
   }
 
@@ -526,8 +522,6 @@ class Renderer {
         const link = url ? `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>` : escapeHtml(b.rawLabel);
         return `<div class="embed-fallback" data-line="${b.line}">Embedded content: ${link}</div>`;
       }
-      case 'db':
-        return `<div class="db-slot db-view" data-db-key="v${b.line}" data-line="${b.line}"><div class="db-loading">Database view: <code>${escapeHtml(b.rawLabel)}</code></div></div>`;
       case 'bibliography':
         return `<section class="bibliography" data-line="${b.line}" data-bibliography></section>`;
       default:
@@ -750,7 +744,6 @@ class Renderer {
             ? `<span class="cloze cloze-hidden" tabindex="0" role="button" aria-label="Hidden answer. Press to reveal."><span class="cloze-answer">${inner}</span></span>`
             : `<span class="cloze">${inner}</span>`;
         }
-        if (n.name === 'query') return `<span class="db-slot db-inline" data-db-key="i${n.range.start}" title="${escapeHtml(this.doc.source.slice(n.range.start, n.range.end))}">…</span>`;
         return inner;
       }
     }

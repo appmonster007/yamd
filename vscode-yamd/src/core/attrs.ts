@@ -35,15 +35,6 @@ export function parseAttrBlock(text: string): Attrs | null {
 
 const TRAILING = /(?<![{\\])\{([^{}]*)\}\s*$/;
 
-/** Splits a trailing `{...}` attribute list off the end of a line. */
-export function splitTrailingAttrs(text: string): { text: string; attrs?: Attrs } {
-  const m = TRAILING.exec(text);
-  if (!m || /^[+\-~=>]/.test(m[1] ?? '')) return { text };
-  const attrs = parseAttrs(m[1] ?? '');
-  if (!attrs) return { text };
-  return { text: text.slice(0, m.index).replace(/\s+$/, ''), attrs };
-}
-
 export function mergeAttrs(a: Attrs | undefined, b: Attrs | undefined): Attrs | undefined {
   if (!a) return b;
   if (!b) return a;

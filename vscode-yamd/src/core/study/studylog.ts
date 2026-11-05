@@ -81,11 +81,6 @@ export function heatmap(log: StudyLog, today: string, weeks = 26): HeatCell[][] 
   );
 }
 
-/** The line added to the day's note: `- 14:05 · 25 min · CS101`. */
-export function logLine(time: string, minutes: number, course?: string): string {
-  return `- ${time} · ${minutes} min${course ? ` · ${course}` : ''}`;
-}
-
 export function formatMinutes(m: number): string {
   const h = Math.floor(m / 60);
   return h ? `${h}h ${m % 60}m` : `${m}m`;

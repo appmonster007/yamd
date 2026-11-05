@@ -314,39 +314,3 @@ function parseChunked(source: string, pre: Prelude): YamdDocument | null {
 
   return { source, lines, lineStarts, frontMatter: null, blocks, footnotes, refs, verbatimLines: verbatim, diagnostics };
 }
-
-/** Documents this long are parsed ahead of time without blocking (see `warmParse`). */
-export const WARM_MIN_CHARS = 150_000;
-
-/** Whether `parse(source)` is cheap right now: a small text, or one whose chunks are all parsed already. */
-export function isWarm(source: string): boolean {
-  if (source.length < WARM_MIN_CHARS || cache.has(source)) return true;
-  const jobs = chunkJobs(source, prelude(source));
-  return jobs !== null && jobs.every((job) => chunkCache.has(job.key));
-}
-
-/** The parse of `source` if that is cheap, or undefined for a large text that hasn't been warmed. */
-export function parseIfCheap(source: string): YamdDocument | undefined {
-  return isWarm(source) ? parse(source) : undefined;
-}
-
-/**
- * Parses the chunks of a large document that aren't cached yet, pausing between them so the
- * extension host stays responsive. A later `parse(source)` then only has to assemble them. Stops
- * early if `isCurrent` says the text has been replaced. Documents that can't be chunked are left
- * for a normal parse.
- */
-export async function warmParse(source: string, isCurrent: () => boolean = () => true): Promise<void> {
-  if (source.length < WARM_MIN_CHARS || cache.has(source)) return;
-  const jobs = chunkJobs(source, prelude(source));
-  if (!jobs) return;
-  let slice = performance.now();
-  for (const job of jobs) {
-    if (!isCurrent()) return;
-    if (!chunkCache.has(job.key)) chunkStore(job.key, job.build());
-    if (performance.now() - slice > 12) {
-      await new Promise<void>((resolve) => setImmediate(resolve));
-      slice = performance.now();
-    }
-  }
-}

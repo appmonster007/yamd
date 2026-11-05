@@ -9,7 +9,7 @@ import * as path from 'node:path';
 import { before, describe, test } from 'node:test';
 import commonmark from 'commonmark-spec';
 import { planChunks } from '../src/core/chunking';
-import { isDefinitionLine, isWarm, parse, parseIfCheap, parseUncached, setChunkMinChars, warmParse } from '../src/core/parser';
+import { isDefinitionLine, parse, parseUncached, setChunkMinChars } from '../src/core/parser';
 
 before(() => setChunkMinChars(1));
 
@@ -145,39 +145,7 @@ describe('warming large documents', () => {
   const base = examples.find((e) => e.name === 'getting-started.yamd')?.text.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/^::toc.*$/m, '') ?? '';
   const large = (tag: string) => Array.from({ length: 60 }, (_, i) => `${base}\n\nSection ${tag} ${i}\n`).join('\n\n');
 
-  test('a large cold text is not cheap until it has been warmed', async () => {
-    setChunkMinChars(3000);
-    const text = large('cold');
-    assert.ok(text.length > 150_000);
-    assert.equal(isWarm(text), false);
-    assert.equal(parseIfCheap(text), undefined);
-    await warmParse(text);
-    assert.equal(isWarm(text), true);
-    assert.ok(parseIfCheap(text));
-  });
 
-  test('a warmed parse equals a normal full parse', async () => {
-    setChunkMinChars(3000);
-    const text = large('equal');
-    await warmParse(text);
-    assert.deepStrictEqual(parse(text), parseUncached(text, 'full'));
-  });
 
-  test('warming stops when the text is no longer current, and small texts are always cheap', async () => {
-    setChunkMinChars(3000);
-    const text = large('stale');
-    await warmParse(text, () => false);
-    assert.equal(isWarm(text), false);
-    assert.equal(isWarm('# small'), true);
-  });
 
-  test('warming yields to the event loop', async () => {
-    setChunkMinChars(3000);
-    const text = large('yield');
-    let ticks = 0;
-    const timer = setInterval(() => ticks++, 1);
-    await warmParse(text);
-    clearInterval(timer);
-    assert.ok(ticks > 2, `the loop only ran ${ticks} times while warming`);
-  });
 });

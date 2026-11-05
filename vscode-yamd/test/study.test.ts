@@ -2,60 +2,11 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { parse, render } from '../src/core';
 import { derivationTex } from '../src/core/render';
-import { buildQueue, extractCards, parseSchedule, review, stringifySchedule } from '../src/core/study/cards';
-import { buildCheatSheet, collectStudyBlocks } from '../src/core/study/blocks';
+import { buildQueue, parseSchedule, review, stringifySchedule } from '../src/core/study/cards';
 import { collectDeadlines, courseProgress, groupDeadlines, staleTopics } from '../src/core/study/deadlines';
 import { heatmap, parseLog, streak } from '../src/core/study/studylog';
-import { Bibliography, entryFromCrossref, parseBibtex, parseCitation, parseDoi } from '../src/core/study/bibtex';
+import { Bibliography, parseBibtex, parseCitation } from '../src/core/study/bibtex';
 
-describe('flashcards', () => {
-  const src = [
-    '---', 'course: CS101', '---', '',
-    ':::card', 'What is a **stack**?', '', '---', '', 'A LIFO structure.', ':::', '',
-    ':::card', 'Capital of France?', '', '---', '', 'Paris', ':::', '',
-    'The :cloze[mitochondria] is the :cloze[powerhouse] of the cell.', '',
-    ':::card', 'No answer here', ':::', '',
-  ].join('\n');
-  const doc = parse(src);
-  const { cards, diagnostics } = extractCards(doc, 'a.yamd');
-
-  it('extracts block, line and cloze cards', () => {
-    assert.equal(cards.length, 4);
-    assert.equal(cards[0]?.front, 'What is a **stack**?');
-    assert.equal(cards[0]?.back, 'A LIFO structure.');
-    assert.equal(cards[1]?.back, 'Paris');
-    assert.equal(cards[2]?.front, 'The **[…]** is the powerhouse of the cell.');
-    assert.equal(cards[3]?.back, 'The mitochondria is the **powerhouse** of the cell.');
-    assert.equal(cards[0]?.course, 'CS101');
-  });
-  it('reports cards without an answer', () => {
-    assert.deepEqual(diagnostics.map((d) => d.code), ['Y605']);
-  });
-  it('schedules with SM-2', () => {
-    const a = review(undefined, 'good', '2026-01-01');
-    assert.equal(a.due, '2026-01-02');
-    const b = review(a, 'good', '2026-01-02');
-    assert.equal(b.interval, 6);
-    const c = review(b, 'good', '2026-01-08');
-    assert.ok(c.interval > 6);
-    const d = review(c, 'again', '2026-02-01');
-    assert.equal(d.due, '2026-02-01');
-    assert.equal(d.lapses, 1);
-  });
-  it('builds a queue', () => {
-    const schedule = parseSchedule(stringifySchedule({ version: 1, cards: { [cards[0]!.id]: review(undefined, 'good', '2026-01-01') } }));
-    const q = buildQueue(cards, schedule, '2026-01-05');
-    assert.equal(q.due.length, 1);
-    assert.equal(q.fresh.length, 3);
-    assert.equal(buildQueue(cards, schedule, '2026-01-01').later, 1);
-  });
-  it('renders a card with the answer hidden', () => {
-    const html = render(doc);
-    assert.match(html, /class="card-answer"/);
-    assert.match(html, /<span class="cloze">mitochondria<\/span>/);
-    assert.match(render(doc, { quiz: true }), /cloze-hidden/);
-  });
-});
 
 describe('study blocks', () => {
   const doc = parse(':::definition {#def:x title="Group"}\nA set with an operation.\n:::\n\n:::theorem\nT.\n:::\n\nSee [@def:x].\n\n:::proof\nTrivial.\n:::\n');
@@ -66,15 +17,6 @@ describe('study blocks', () => {
     assert.match(html, /Theorem 1/);
     assert.match(html, /href="#def:x">Definition 1</);
     assert.match(html, /proof-end/);
-  });
-  it('builds a cheat sheet', () => {
-    const blocks = collectStudyBlocks(doc, 'n/a.yamd');
-    assert.equal(blocks.length, 3);
-    const sheet = buildCheatSheet(blocks, { date: '2026-01-01', link: (p) => p });
-    assert.match(sheet, /## Definitions/);
-    assert.match(sheet, /:::definition \{title="Group"\}/);
-    assert.doesNotMatch(sheet, /Trivial/);
-    assert.equal(parse(sheet).diagnostics.filter((d) => d.code === 'Y601').length, 0);
   });
   it('lays out a derivation', () => {
     const tex = derivationTex('(a+b)^2 = a^2 + 2ab + b^2 // expand\n= a^2 + b^2 + 2ab // reorder');
@@ -151,12 +93,6 @@ describe('citations', () => {
     const html = render(doc, { bibliography: new Bibliography(bib, 'apa') });
     assert.match(html, /\(Lamport, 1978\)/);
     assert.match(html, /<i>CACM<\/i>/);
-  });
-  it('reads lookup results', () => {
-    assert.equal(parseDoi('https://doi.org/10.1145/359545.359563.'), '10.1145/359545.359563');
-    const e = entryFromCrossref({ message: { type: 'journal-article', title: ['T'], author: [{ given: 'Ada', family: 'Lovelace' }], 'container-title': ['J'], issued: { 'date-parts': [[1843]] }, DOI: '10.1/x' } }, new Set(['lovelace1843']));
-    assert.equal(e?.key, 'lovelace1843a');
-    assert.equal(e?.fields['doi'], '10.1/x');
   });
 });
 

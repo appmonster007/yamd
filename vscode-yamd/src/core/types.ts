@@ -11,16 +11,6 @@ export interface Attrs {
   values: Record<string, string | true>;
 }
 
-/**
- * Text taken from one or more source lines, with prefixes such as list markers
- * or `> ` removed. `map[i]` is the absolute source offset of `text[i]`, and
- * `map[text.length]` is the offset just past the end.
- */
-export interface SourceText {
-  text: string;
-  map: number[];
-}
-
 export type InlineNode =
   | { type: 'text'; value: string; range: Range }
   /** A line break. `soft` marks a plain newline (Markdown's soft wrap) rather than `\` or two spaces. */

@@ -26,4 +26,4 @@ export const KNOWN_CONTAINERS = new Set([
   'derivation',
   'card',
 ]);
-export const KNOWN_LEAVES = new Set(['toc', 'pagebreak', 'embed', 'bibliography', 'db']);
+export const KNOWN_LEAVES = new Set(['toc', 'pagebreak', 'embed', 'bibliography']);

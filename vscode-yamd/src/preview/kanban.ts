@@ -1,6 +1,5 @@
 // Runs inside the preview webview.
 import { boardEdit, root, state, vscode } from './shared';
-import { postDb } from './db';
 
 // ---- Kanban boards ----
 
@@ -34,18 +33,6 @@ export function move(card: HTMLElement, toColumn: number, toIndex: number) {
   const others = cardsIn(target, card);
   target.insertBefore(card, others[toIndex] ?? null);
   card.focus();
-  if (board.classList.contains('db-board')) {
-    // A database board: the column sets the grouped property; the position orders rows.
-    const column = target.closest<HTMLElement>('.kanban-column');
-    const next = cardsIn(target, card)[toIndex];
-    postDb(board, {
-      op: 'move',
-      rowId: card.dataset['rowId'],
-      groupValue: JSON.parse(column?.dataset['groupValue'] ?? 'null'),
-      beforeId: board.hasAttribute('data-reorder') ? (next?.dataset['rowId'] ?? null) : undefined,
-    });
-    return;
-  }
   const boardLine = Number(board.dataset['board']);
   pendingFocus = { board: boardLine, column: toColumn, index: toIndex };
   boardEdit('kanban', 'move', board, cardRef(card), { toColumn, toIndex }, board.dataset['source']);

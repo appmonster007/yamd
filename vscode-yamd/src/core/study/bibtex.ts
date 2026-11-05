@@ -84,11 +84,6 @@ export function parseBibtex(src: string): BibEntry[] {
   return entries;
 }
 
-export function toBibtex(e: BibEntry): string {
-  const lines = Object.entries(e.fields).map(([k, v]) => `  ${k.padEnd(9)} = {${v.replace(/([&%#_])/g, '\\$1')}}`);
-  return `@${e.type}{${e.key},\n${lines.join(',\n')}\n}\n`;
-}
-
 // ---- Names ----
 
 interface Person {
@@ -268,90 +263,3 @@ export function formatEntry(e: BibEntry, style: CitationStyle): string {
   return `${head}<i>${esc(title)}</i>${f['publisher'] ? `. ${esc(f['publisher'])}` : ''}, ${esc(year(e))}.${link}`;
 }
 
-// ---- Lookups ----
-
-/** Makes a key like `lamport1978`, avoiding keys in `taken`. */
-export function makeKey(e: Pick<BibEntry, 'fields'>, taken: Set<string>): string {
-  const family = (creators(e as BibEntry)[0]?.family ?? 'ref').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
-  const base = `${family || 'ref'}${/\d{4}/.exec(e.fields['year'] ?? '')?.[0] ?? ''}`;
-  let key = base;
-  for (let n = 2; taken.has(key); n++) key = `${base}${String.fromCharCode(95 + n)}`;
-  return key;
-}
-
-/** A DOI from `10.1000/xyz`, `doi:10.1000/xyz` or a doi.org URL. */
-export function parseDoi(input: string): string | undefined {
-  return /10\.\d{4,9}\/[^\s"<>]+/.exec(input.trim())?.[0].replace(/[.,;)]+$/, '');
-}
-
-/** An ISBN-10 or ISBN-13 from text, digits only. */
-export function parseIsbn(input: string): string | undefined {
-  const digits = input.replace(/[\s-]/g, '');
-  return /^(?:\d{13}|\d{9}[\dXx])$/.test(digits) ? digits.toUpperCase() : undefined;
-}
-
-type Json = Record<string, unknown>;
-const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
-const first = (v: unknown) => (Array.isArray(v) ? str(v[0]) : str(v));
-
-/** A Crossref `works/{doi}` response as an entry. */
-export function entryFromCrossref(response: unknown, taken: Set<string>): BibEntry | undefined {
-  const msg = (response as Json | undefined)?.['message'] as Json | undefined;
-  if (!msg) return undefined;
-  const authors = ((msg['author'] as Json[] | undefined) ?? []).map((a) => `${str(a['family']) ?? ''}, ${str(a['given']) ?? ''}`.replace(/, $/, '')).filter(Boolean);
-  const issued = (msg['issued'] as Json | undefined)?.['date-parts'] as number[][] | undefined;
-  const type = str(msg['type']) === 'journal-article' ? 'article' : str(msg['type']) === 'proceedings-article' ? 'inproceedings' : str(msg['type'])?.includes('book') ? 'book' : 'misc';
-  const fields: Record<string, string> = {};
-  if (authors.length) fields['author'] = authors.join(' and ');
-  const title = first(msg['title']);
-  if (title) fields['title'] = title.replace(/<[^>]+>/g, '');
-  const journal = first(msg['container-title']);
-  if (journal) fields[type === 'inproceedings' ? 'booktitle' : 'journal'] = journal;
-  if (issued?.[0]?.[0]) fields['year'] = String(issued[0][0]);
-  for (const k of ['volume', 'issue', 'page', 'publisher', 'DOI']) {
-    const v = str(msg[k]);
-    if (v) fields[k === 'issue' ? 'number' : k === 'page' ? 'pages' : k.toLowerCase()] = v;
-  }
-  if (!fields['title']) return undefined;
-  return { key: makeKey({ fields }, taken), type, fields };
-}
-
-/** An Open Library `api/books?bibkeys=ISBN:…&format=json&jscmd=data` response as an entry. */
-export function entryFromOpenLibrary(isbn: string, response: unknown, taken: Set<string>): BibEntry | undefined {
-  const book = (response as Json | undefined)?.[`ISBN:${isbn}`] as Json | undefined;
-  if (!book) return undefined;
-  const fields: Record<string, string> = {};
-  const authors = ((book['authors'] as Json[] | undefined) ?? []).map((a) => str(a['name'])).filter((s): s is string => !!s);
-  if (authors.length) fields['author'] = authors.join(' and ');
-  const title = str(book['title']);
-  if (!title) return undefined;
-  fields['title'] = [title, str(book['subtitle'])].filter(Boolean).join(': ');
-  const publisher = str(((book['publishers'] as Json[] | undefined) ?? [])[0]?.['name']);
-  if (publisher) fields['publisher'] = publisher;
-  const y = /\d{4}/.exec(str(book['publish_date']) ?? '')?.[0];
-  if (y) fields['year'] = y;
-  fields['isbn'] = isbn;
-  return { key: makeKey({ fields }, taken), type: 'book', fields };
-}
-
-const decodeHtml = (s: string) =>
-  s.replace(/&(amp|lt|gt|quot|#39|apos);/g, (_m, n: string) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'" })[n] ?? '').trim();
-
-/** A web page as an entry, from its `<title>`, `citation_*` or Open Graph tags. */
-export function entryFromHtml(url: string, html: string, taken: Set<string>, today: string): BibEntry {
-  const meta = (name: string) => {
-    const m = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']*)["']`, 'i').exec(html) ?? new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:name|property)=["']${name}["']`, 'i').exec(html);
-    return m?.[1] ? decodeHtml(m[1]) : undefined;
-  };
-  const title = meta('citation_title') ?? meta('og:title') ?? decodeHtml(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? url);
-  const fields: Record<string, string> = { title: title.replace(/\s+/g, ' ') };
-  const author = meta('citation_author') ?? meta('author');
-  if (author) fields['author'] = author;
-  const site = meta('og:site_name');
-  if (site) fields['publisher'] = site;
-  const y = /\d{4}/.exec(meta('citation_publication_date') ?? meta('article:published_time') ?? '')?.[0];
-  if (y) fields['year'] = y;
-  fields['url'] = url;
-  fields['urldate'] = today;
-  return { key: makeKey({ fields: { ...fields, ...(author ? {} : { author: new URL(url).hostname.replace(/^www\./, '') }) } }, taken), type: 'misc', fields };
-}

@@ -21,32 +21,6 @@ export function formatDate(date: Date, format: string): string {
   });
 }
 
-/** Parses a file name written with `format` back into a date, or returns null. */
-export function parseDate(text: string, format: string): Date | null {
-  const order: string[] = [];
-  const pattern = format.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/YYYY|MM|DD|HH|mm/g, (token) => {
-    order.push(token);
-    return token === 'YYYY' ? '(\\d{4})' : '(\\d{2})';
-  });
-  const m = new RegExp(`^${pattern}$`).exec(text);
-  if (!m) return null;
-  const parts: Record<string, number> = { YYYY: 1970, MM: 1, DD: 1, HH: 0, mm: 0 };
-  order.forEach((token, i) => (parts[token] = Number(m[i + 1])));
-  const date = new Date(parts['YYYY'] ?? 1970, (parts['MM'] ?? 1) - 1, parts['DD'] ?? 1, parts['HH'] ?? 0, parts['mm'] ?? 0);
-  return Number.isNaN(date.getTime()) || formatDate(date, format) !== text ? null : date;
-}
-
-/** A YAML scalar for a title: plain when that reads back as the same string, quoted otherwise. */
-function yamlString(s: string): string {
-  const plain = /^[\p{L}\p{N}][\p{L}\p{N} _.,()'-]*$/u.test(s) && !/^(true|false|null|yes|no|on|off|~|[\d.:+-]+)$/i.test(s);
-  return plain ? s : JSON.stringify(s);
-}
-
-/** The text of a new note: front matter with its title, today's date and language, then the title as H1. */
-export function newNoteText(title: string, now: Date, lang: string): string {
-  return `---\ntitle: ${yamlString(title)}\ndate: ${formatDate(now, 'YYYY-MM-DD')}\nlang: ${lang}\n---\n\n# {{ title }}\n\n`;
-}
-
 export interface Expanded {
   text: string;
   /** Offset where `{{@cursor}}` was, if the template had one. */

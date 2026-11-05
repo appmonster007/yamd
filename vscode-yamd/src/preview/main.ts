@@ -4,14 +4,12 @@ import { restoreCollapsed, restoreFocus, position } from './kanban';
 import './calendar';
 import './timeline';
 import './gallery';
-import { applyFill, fill, fills } from './db';
 
 
 
 type ToWebview =
   | { type: 'update'; html: string; full?: boolean }
   | { type: 'scroll'; line: number }
-  | { type: 'fill'; items: { key: string; html: string }[] };
 
 
 
@@ -59,7 +57,6 @@ function update(html: string, full = false) {
     root.replaceChildren(...incoming);
     lastBlocks = incomingHtml;
     addCopyButtons(root);
-    for (const [key, cached] of fills) applyFill(key, cached);
   } else {
     // Keep the blocks that start and end the same, and swap only the ones in between.
     let head = 0;
@@ -80,11 +77,6 @@ function update(html: string, full = false) {
     lastBlocks = incomingHtml;
     for (const el of added) {
       addCopyButtons(el);
-      // Database views keep showing their last result until fresh data arrives, so typing doesn't blank them.
-      for (const slot of matching<HTMLElement>(el, '.db-slot')) {
-        const cached = fills.get(slot.dataset['dbKey'] ?? '');
-        if (cached !== undefined) applyFill(slot.dataset['dbKey'] ?? '', cached);
-      }
     }
   }
   restoreCollapsed();
@@ -168,7 +160,7 @@ function topLine(): number {
 // blocks (boards, tasks, database views) keep their own double-click behavior.
 document.addEventListener('dblclick', (event) => {
   const target = event.target as Element | null;
-  if (!target || target.closest('input, button, textarea, select, a, summary, .kanban, .kanban-calendar, .kanban-timeline, .kanban-gallery, .db-slot')) return;
+  if (!target || target.closest('input, button, textarea, select, a, summary, .kanban, .kanban-calendar, .kanban-timeline, .kanban-gallery')) return;
   let el = target.closest<HTMLElement>('[data-line]');
   // Lines inside an embed belong to another note.
   if (!el || el.closest('[data-source]')) return;
@@ -185,7 +177,6 @@ window.addEventListener('scroll', () => {
 window.addEventListener('message', (event: MessageEvent<ToWebview>) => {
   const m = event.data;
   if (m.type === 'update') update(m.html, m.full);
-  else if (m.type === 'fill') fill(m.items);
   else if (m.type === 'scroll' && !syncing) scrollToLine(m.line);
 });
 
