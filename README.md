@@ -100,7 +100,7 @@ SELECT id, title, owner FROM bugs WHERE status = 'open';
 
 - **YAMD: Menu** (and a status-bar item) lists every action by task.
 - **YAMD: New Note** creates a note from a template: empty (with contents and bibliography), article, project board, meeting notes, reading list, weekly plan, or data note. **Create Sample Note** adds a note and a data file to try things on.
-- A 15-step **walkthrough** opens once after install (**YAMD: Open Walkthrough** reopens it).
+- A 14-step **walkthrough** opens once after install (**YAMD: Open Walkthrough** reopens it).
 - The YAMD sidebar lists the widgets in the open note, its **Outline** (headings, callouts, figure, table and equation targets), **Unlinked Mentions** (notes that name this one without linking to it, with a button that turns each into a `[[wikilink]]`), flashcards, deadlines and study progress.
 
 ### Audio

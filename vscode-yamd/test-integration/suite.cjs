@@ -326,6 +326,29 @@ exports.run = async function run() {
     assert(!fs.existsSync(plain) || fs.readFileSync(plain, 'utf8').length < 1000000, 'a note without diagrams got the script');
   });
 
+  test('Link This Mention turns the plain-text name into a wikilink, and refuses a stale line', async () => {
+    const { doc } = await open(root, '06-linked-notes/ideas.md');
+    const line = doc.getText().split('\n').findIndex((l) => l.includes('Ask Ada Lovelace'));
+    assert(line >= 0, 'example sentence missing');
+    const col = doc.lineAt(line).text.indexOf('Ada Lovelace');
+    const ada = path.join(root, '06-linked-notes', 'people', 'ada.md');
+    const node = { label: 'x', mention: { path: doc.uri.fsPath, line, col, length: 'Ada Lovelace'.length, target: 'ada', text: 'Ada Lovelace' } };
+    await vscode.commands.executeCommand('yamd.linkMention', { ...node, mention: { ...node.mention, text: 'Someone Else' } });
+    assert(!doc.lineAt(line).text.includes('[[ada'), 'a stale mention was linked');
+    await vscode.commands.executeCommand('yamd.linkMention', node);
+    assert(doc.lineAt(line).text.includes('Ask [[ada|Ada Lovelace]] to review'), doc.lineAt(line).text);
+    assert(fs.existsSync(ada), 'ada.md missing');
+    await vscode.commands.executeCommand('workbench.action.files.revert');
+  });
+
+  test('the walkthrough has every step with a page, and the opening command exists', async () => {
+    const steps = ext.packageJSON.contributes.walkthroughs[0].steps;
+    assert(steps.length === 14, `only ${steps.length} steps`);
+    for (const st of steps) assert(fs.existsSync(path.join(ext.extensionPath, st.media.markdown)), `${st.id}: page missing`);
+    const all = await vscode.commands.getCommands(true);
+    assert(all.includes('yamd.openWalkthrough') && all.includes('yamd.menu') && all.includes('yamd.openSource'), 'commands missing');
+  });
+
   const report = [];
   let failed = 0;
   for (const t of results) {

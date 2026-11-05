@@ -78,7 +78,7 @@ Backlinks, the note graph and tags come from Foam: **YAMD: Show Backlinks (Foam)
 
 ## Getting started and writing faster
 
-Run **YAMD: Menu** (or click YAMD in the status bar) for every command grouped by task, **YAMD: New Note** for a template, and **YAMD: Open Walkthrough** for a 15-step tour. While you write, type `kanban`, `callout`, `theorem`, `card` or `toc` for a snippet; completion fills in widget types, `source=` files, callout types, `[@citation]` keys and `[@fig-…]` ids, and hovering a `source=` file shows its tables and columns. **Insert Callout / Figure, Table or Equation / Citation / Query**, **Add Card / Event / Timeline Item / Image** and **Turn Selection into a Widget** write the markup for you.
+Run **YAMD: Menu** (or click YAMD in the status bar) for every command grouped by task, **YAMD: New Note** for a template, and **YAMD: Open Walkthrough** for a 14-step tour. While you write, type `kanban`, `callout`, `theorem`, `card` or `toc` for a snippet; completion fills in widget types, `source=` files, callout types, `[@citation]` keys and `[@fig-…]` ids, and hovering a `source=` file shows its tables and columns. **Insert Callout / Figure, Table or Equation / Citation / Query**, **Add Card / Event / Timeline Item / Image** and **Turn Selection into a Widget** write the markup for you.
 
 In a widget panel, the pencil on a card opens a form for due date, owner, tags and notes; the filter box accepts text, `@owner` and `#tag`; overdue items are red; gallery images enlarge on click.
 

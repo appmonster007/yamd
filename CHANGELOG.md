@@ -30,5 +30,8 @@ YAMD stops being a separate language: notes are plain Markdown, and the extensio
 - Check This Note lists missing images and data files, dangling references and unknown citation keys beside the widget, callout and marker diagnostics.
 - CI runs typecheck, tests and packaging; an integration suite drives a real VS Code window.
 
+### Packaging
+- **YAMD Studio** (`appmonster007.vscode-yamd-ext`) and **YAMD Studio Pack** (`appmonster007.yamd-pack`), an extension pack with no code that installs YAMD with Foam, SQLite3 Editor, Edit CSV, Rainbow CSV and Markdown All in One. `make release` builds both `.vsix` files.
+
 ### Removed from 0.1
 `.yamd` files, the custom editor, `.ydb` databases, document variables and DOCX export. Use Foam for links and the graph.

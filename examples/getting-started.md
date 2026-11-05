@@ -69,4 +69,4 @@ Distributed systems rely on logical clocks [(Lamport, 1978)](#ref-lamport1978 "c
 
 ## Where next
 
-Run **YAMD: Menu** (or click YAMD in the status bar) to see every action, and **YAMD: Open Walkthrough** for a 15-step tour. The other folders show one area each; [07-whats-new](07-whats-new/getting-started-tools.md) covers menus and templates, card details and filters, the query builder, exports, transcription, study and checks.
+Run **YAMD: Menu** (or click YAMD in the status bar) to see every action, and **YAMD: Open Walkthrough** for a 14-step tour. The other folders show one area each; [07-whats-new](07-whats-new/getting-started-tools.md) covers menus and templates, card details and filters, the query builder, exports, transcription, study and checks.

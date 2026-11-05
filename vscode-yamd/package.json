@@ -873,7 +873,7 @@
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\"",
-    "package": "npm run typecheck && npm test && vsce package --no-dependencies --allow-missing-repository --skip-license",
+    "package": "npm run typecheck && npm test && vsce package --no-dependencies --allow-missing-repository",
     "vscode:prepublish": "node esbuild.mjs --production",
     "test:integration": "node scripts/integration.mjs"
   },

@@ -39,7 +39,7 @@ Before sending a change, run:
 make typecheck test
 ```
 
-`make package` also builds a `.vsix` and is a good final check (use `make package-fast` to skip the test suite, e.g. if the wall-clock perf benchmark is flaky under load).
+`make release` builds both `.vsix` files to publish (the extension and `vscode-yamd-pack/`, the extension pack, which has no code and must keep the same version; a test checks that). `make package` also builds a `.vsix` and is a good final check (use `make package-fast` to skip the test suite, e.g. if the wall-clock perf benchmark is flaky under load).
 
 ## Making a change
 
