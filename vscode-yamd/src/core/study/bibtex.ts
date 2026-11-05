@@ -10,8 +10,8 @@ export interface BibEntry {
   fields: Record<string, string>;
 }
 
-export type CitationStyle = 'apa' | 'mla' | 'ieee';
-export const CITATION_STYLES: CitationStyle[] = ['apa', 'mla', 'ieee'];
+export type CitationStyle = 'apa' | 'mla' | 'ieee' | 'chicago' | 'harvard';
+export const CITATION_STYLES: CitationStyle[] = ['apa', 'mla', 'ieee', 'chicago', 'harvard'];
 
 export function citationStyle(value: unknown): CitationStyle {
   return typeof value === 'string' && (CITATION_STYLES as string[]).includes(value.toLowerCase()) ? (value.toLowerCase() as CitationStyle) : 'apa';
@@ -176,6 +176,8 @@ export class Bibliography {
       const e = this.byKey.get(c.key);
       if (!e) return c.key;
       if (this.style === 'apa') return `${shortNames(e, 'apa')}, ${year(e)}${c.locator ? `, ${c.locator}` : ''}`;
+      if (this.style === 'harvard') return `${shortNames(e, 'apa')}, ${year(e)}${c.locator ? `, ${c.locator}` : ''}`;
+      if (this.style === 'chicago') return `${shortNames(e, 'mla')} ${year(e)}${c.locator ? `, ${c.locator.replace(/^pp?\.\s*/, '')}` : ''}`;
       return `${shortNames(e, 'mla')}${c.locator ? ` ${c.locator.replace(/^pp?\.\s*/, '')}` : ''}`;
     });
     return `(${parts.join('; ')})`;
@@ -231,6 +233,28 @@ export function formatEntry(e: BibEntry, style: CitationStyle): string {
       return `${head}“${esc(end(title))}” <i>${esc(container ?? '')}</i>, ${esc(bits.join(', '))}.${link}`;
     }
     return `${head}<i>${esc(end(title))}</i> ${f['publisher'] ? `${esc(f['publisher'])}, ` : ''}${esc(year(e))}.${link}`;
+  }
+
+  if (style === 'chicago') {
+    const who = names.map((p, i) => (i === 0 ? `${p.family}, ${p.given}` : `${p.given} ${p.family}`).trim());
+    const author = who.length <= 1 ? (who[0] ?? '') : `${who.slice(0, -1).join(', ')}, and ${who[who.length - 1]}`;
+    const head = author ? `${esc(end(author))} ${esc(year(e))}. ` : `${esc(year(e))}. `;
+    if (isArticle) {
+      const vol = f['volume'] ? ` ${esc(f['volume'])}${f['number'] ? ` (${esc(f['number'])})` : ''}` : '';
+      return `${head}“${esc(end(title))}” <i>${esc(container ?? '')}</i>${vol}${pages ? `: ${esc(pages)}` : ''}.${link}`;
+    }
+    return `${head}<i>${esc(end(title))}</i>${f['publisher'] ? ` ${esc(end(f['publisher']))}` : ''}${link}`;
+  }
+
+  if (style === 'harvard') {
+    const who = names.map((p) => `${p.family}, ${initials(p.given)}`.trim());
+    const author = who.length <= 1 ? (who[0] ?? '') : `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]}`;
+    const head = author ? `${esc(author)} (${esc(year(e))}) ` : `(${esc(year(e))}) `;
+    if (isArticle) {
+      const bits = [f['volume'] ? `${f['volume']}${f['number'] ? `(${f['number']})` : ''}` : '', pages ? `pp. ${pages}` : ''].filter(Boolean);
+      return `${head}‘${esc(title)}’, <i>${esc(container ?? '')}</i>${bits.length ? `, ${esc(bits.join(', '))}` : ''}.${link}`;
+    }
+    return `${head}<i>${esc(title)}</i>${f['publisher'] ? `. ${esc(f['publisher'])}` : ''}.${link}`;
   }
 
   // IEEE

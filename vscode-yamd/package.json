@@ -685,6 +685,26 @@
         "command": "yamd.runQuery",
         "title": "Run Query (Write Snapshot)",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.build",
+        "title": "Build (Refresh Generated Sections)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertToc",
+        "title": "Insert Table of Contents",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertBibliography",
+        "title": "Insert Bibliography",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.goToReference",
+        "title": "Go to Reference Target",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -834,6 +854,22 @@
         },
         {
           "command": "yamd.runQuery",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.build",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertToc",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertBibliography",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.goToReference",
           "when": "editorLangId == markdown"
         }
       ],
@@ -1157,6 +1193,11 @@
           ],
           "default": "hide",
           "description": "What happens to syntax characters (such as ** and #) away from the cursor: hide them, or only dim them."
+        },
+        "yamd.build.onSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run YAMD: Build whenever a Markdown note is saved. Build only changes reference labels and the content between <!-- yamd:… --> markers."
         }
       }
     },

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { calloutProblems } from '../core/callouts';
 import { scanWidgets } from '../core/fences';
 import { lintWidgets, setIdChange, suggestId, usedIds, widgetTemplate, WIDGET_TEMPLATES } from '../core/widgetLint';
 import type { LineChange } from '../core/widgetLint';
@@ -42,6 +43,12 @@ class WidgetDiagnostics implements vscode.CodeActionProvider, vscode.Disposable 
       if (p.startLine !== p.line) d.relatedInformation = [];
       return d;
     });
+    for (const c of calloutProblems(lines)) {
+      const d = new vscode.Diagnostic(doc.lineAt(c.line).range, c.message, c.code === 'C001' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Warning);
+      d.code = c.code;
+      d.source = 'YAMD';
+      diagnostics.push(d);
+    }
     this.collection.set(doc.uri, diagnostics);
   }
 
@@ -49,6 +56,15 @@ class WidgetDiagnostics implements vscode.CodeActionProvider, vscode.Disposable 
     const actions: vscode.CodeAction[] = [];
     const lines = linesOf(doc);
     for (const d of context.diagnostics) {
+      if (d.source === 'YAMD' && d.code === 'C002') {
+        const fix = new vscode.CodeAction('Add a blank line after the callout', vscode.CodeActionKind.QuickFix);
+        fix.diagnostics = [d];
+        fix.isPreferred = true;
+        fix.edit = new vscode.WorkspaceEdit();
+        fix.edit.insert(doc.uri, doc.lineAt(d.range.start.line).range.end, '\n');
+        actions.push(fix);
+        continue;
+      }
       if (d.source !== 'YAMD' || (d.code !== 'W001' && d.code !== 'W002' && d.code !== 'W003')) continue;
       const block = scanWidgets(lines).find((w) => w.startLine === d.range.start.line);
       if (!block) continue;
