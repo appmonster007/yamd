@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { lint, parse, render } from '../src/core';
-import { embedResolver } from '../src/core/embeds';
+import { parse, render } from '../src/core';
 import { NoteStore, renameEdits, resolveNote, selectEmbed, summarize } from '../src/core/notes';
-import { setProperty } from '../src/core/properties';
 import { expandPlaceholders, formatDate, newNoteText, parseDate } from '../src/core/templates';
 import type { RenderOptions } from '../src/core';
 
@@ -48,10 +46,6 @@ describe('block IDs', () => {
     assert.deepEqual(summarize('a.yamd', '- one ^first\n- two').blocks, [{ id: 'first', line: 0 }]);
   });
 
-  test('duplicate IDs are Y708', () => {
-    const codes = lint(parse('---\nlang: en\n---\nA ^intro\n\nB ^intro')).map((d) => d.code);
-    assert.deepEqual(codes, ['Y708']);
-  });
 });
 
 describe('resolution', () => {
@@ -107,88 +101,16 @@ describe('embeds', () => {
     assert.equal(selectEmbed(parse(GUIDE), undefined, 'nope'), null);
   });
 
-  test('render an embedded section with a link back', () => {
-    const s = store({ 'guide.yamd': GUIDE, 'a.yamd': '![[guide#Install]]' });
-    const out = render(parse('![[guide#Install]]'), { resolveEmbed: embedResolver(s, 'a.yamd', options) });
-    assert.match(out, /<div class="embed" data-line="0" data-source="guide.yamd"><a class="embed-title" href="guide.yamd#install">guide › Install<\/a>/);
-    assert.match(out, /Run it\./);
-    assert.doesNotMatch(out, /Later\./);
-  });
 
-  test('variables resolve against the embedded note', () => {
-    const s = store({ 'v.yamd': '---\nvars:\n  x: inner\n---\nValue {{ x }}' });
-    const out = render(parse('![[v]]'), { resolveEmbed: embedResolver(s, 'a.yamd', options) });
-    assert.match(out, /Value inner/);
-  });
 
-  test('missing targets show a placeholder', () => {
-    const out = render(parse('![[nope]]'), { resolveEmbed: embedResolver(store({}), 'a.yamd', options) });
-    assert.match(out, /Note not found/);
-  });
 
-  test('circular embeds stop after one level', () => {
-    const s = store({ 'a.yamd': 'A text\n\n![[b]]', 'b.yamd': 'B text\n\n![[a]]' });
-    const out = render(parse(s.read('a.yamd') ?? ''), { resolveEmbed: embedResolver(s, 'a.yamd', options) });
-    assert.equal((out.match(/B text/g) ?? []).length, 1);
-    assert.match(out, /Circular embed/);
-  });
 
-  test('embeds nest at most 5 levels', () => {
-    const files: Record<string, string> = {};
-    for (let i = 0; i < 8; i++) files[`n${i}.yamd`] = `Level ${i}\n\n![[n${i + 1}]]`;
-    const s = store(files);
-    const out = render(parse(files['n0.yamd'] ?? ''), { resolveEmbed: embedResolver(s, 'n0.yamd', options) });
-    assert.match(out, /Level 5/);
-    assert.doesNotMatch(out, /Level 6/);
-  });
 
   test('image embeds', () => {
     assert.match(html('![[diagram.png]]{width=300}'), /<img src="diagram.png" alt="diagram.png" width="300"/);
   });
 });
 
-describe('cross-note diagnostics', () => {
-  const lintNote = (s: NoteStore, path: string) =>
-    lint(parse(s.read(path) ?? ''), { notes: { lookup: s, path } }).map((d) => `${d.code} ${d.message}`);
-
-  test('missing block', () => {
-    const s = store({ 'ideas.yamd': 'Text ^other', 'a.yamd': '---\nlang: en\n---\n[[ideas#^pricing]]' });
-    assert.deepEqual(lintNote(s, 'a.yamd'), ['Y701 "ideas" has no block "^pricing".']);
-  });
-
-  test('missing heading and note', () => {
-    const s = store({ 'g.yamd': '# G\n\n## Install', 'a.yamd': '---\nlang: en\n---\n[[g#Install]] [[g#Nope]] [[missing]]' });
-    assert.deepEqual(lintNote(s, 'a.yamd').map((d) => d.slice(0, 4)), ['Y701', 'Y701']);
-  });
-
-  test('circular embed', () => {
-    const s = store({ 'a.yamd': '---\nlang: en\n---\n![[b]]', 'b.yamd': '---\nlang: en\n---\n![[a]]' });
-    assert.match(lintNote(s, 'a.yamd').join(), /Y602/);
-    assert.match(lintNote(s, 'b.yamd').join(), /Y602/);
-  });
-
-  test('ambiguous link is not auto-resolved, and Y709 is an error', () => {
-    const s = store({ 'a/notes.yamd': '', 'b/notes.yamd': '', 'i.yamd': '---\nlang: en\n---\n[[notes]]' });
-    const d = lint(parse(s.read('i.yamd') ?? ''), { notes: { lookup: s, path: 'i.yamd' } });
-    assert.deepEqual(d.map((x) => x.code), ['Y709']);
-    assert.equal(d[0]?.severity, 'error');
-    assert.match(d[0]?.message ?? '', /a\/notes\.yamd, b\/notes\.yamd/);
-  });
-
-  test('ambiguous embed renders as unresolved, not a silent shortest-path guess', () => {
-    const s = store({ 'a/notes.yamd': 'A content', 'b/notes.yamd': 'B content' });
-    const out = render(parse('![[notes]]'), { resolveEmbed: embedResolver(s, 'i.yamd', () => ({})) });
-    assert.doesNotMatch(out, /A content|B content/);
-    assert.match(out, /embed-missing/);
-  });
-
-  test('template placeholders are not variables, but get a Y802 info note outside template insertion', () => {
-    const d = lint(parse('---\nlang: en\n---\nDate: {{@date}}'));
-    assert.deepEqual(d.map((x) => x.code), ['Y802']);
-    assert.equal(d[0]?.severity, 'info');
-    assert.match(html('Date: {{@date}}'), /<span class="placeholder">\{\{@date\}\}<\/span>/);
-  });
-});
 
 describe('note store', () => {
   test('titles', () => {
@@ -297,17 +219,6 @@ describe('new notes', () => {
 });
 
 describe('properties', () => {
-  test('editing keeps other keys and comments', () => {
-    const src = '---\ntitle: T # the title\nstatus: draft\n---\nBody';
-    const e = setProperty(src, 'status', 'published');
-    assert.deepEqual(e, { startLine: 0, endLine: 3, text: '---\ntitle: T # the title\nstatus: published\n---' });
-  });
 
-  test('adding a property creates front matter', () => {
-    assert.deepEqual(setProperty('Body', 'due', '2026-11-01'), { startLine: 0, endLine: -1, text: '---\ndue: 2026-11-01\n---' });
-  });
 
-  test('removing a property', () => {
-    assert.equal(setProperty('---\na: 1\nb: 2\n---', 'a', undefined)?.text, '---\nb: 2\n---');
-  });
 });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { lint, parse, render } from '../src/core';
+import { parse, render } from '../src/core';
 import { buildBoard } from '../src/core/kanban';
 import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/kanbanEdit';
 import { cardSource, hashText } from '../src/core/kanban';
@@ -185,11 +185,6 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.match(html, /data-date="2026-10-14"[^]*?Team sync/);
   });
 
-  test('a calendar card with no {due=...} is not shown, and reports Y606', () => {
-    const src = ':::calendar\n- [ ] Undated\n- [ ] Dated {due=2026-10-10}\n:::';
-    assert.doesNotMatch(render(parse(src), { today: '2026-10-16' }), /Undated/);
-    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
-  });
 
   test('calendar weeks get a week number, and events get a collapsible detail with owner/tags/body', () => {
     const src = ':::calendar\n- [ ] Submit report #finance {due=2026-10-10 owner=ada}\n  Needs the Q3 numbers.\n:::';
@@ -228,11 +223,6 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.equal((html.match(/db-timeline-row/g) ?? []).length, 1);
   });
 
-  test('a timeline card with no {start=...} is not shown, and reports Y606', () => {
-    const src = ':::timeline\n- [ ] Undated\n- [ ] Dated {start=2026-10-01}\n:::';
-    assert.doesNotMatch(render(parse(src)), /Undated/);
-    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
-  });
 
   test(':::gallery turns each image plus its caption into a card', () => {
     const src = ':::gallery {title="Trip photos"}\n![Golden Gate Bridge](ggb.jpg)\nShot at sunset. #landscape\n\n![Yosemite Falls](yosemite.jpg)\nPeak flow in spring.\n:::';

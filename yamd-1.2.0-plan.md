@@ -1,5 +1,7 @@
 # YAMD 1.2.0 Implementation Plan
 
+> **Status (2026-11-05): phases 0-9 implemented on branch `yamd-1.2`.** Deviations from the plan below: the older micromark parser and renderer were kept as the engine behind the widget panels and exports (via `core/compat.ts` and `core/export/prepare.ts`), and a slim `StudyIndex` replaced the workspace index for the study tools. Phase 10 (manual QA in VS Code) is the remaining step.
+
 Spec: [yamd-1.2.0-spec.md](yamd-1.2.0-spec.md) (decisions D1–D55, defaults §22). This plan turns it into phases with tasks, files, tests and exit gates. Effort is relative (S/M/L), not calendar time.
 
 ## Approach

@@ -41,15 +41,6 @@ const contexts = await Promise.all([
     format: 'iife',
     target: 'es2022',
   }),
-  // Parses notes off the extension host's thread for the first scan of a workspace.
-  esbuild.context({
-    ...shared,
-    entryPoints: ['src/workspace/indexWorker.ts'],
-    outfile: 'dist/indexWorker.js',
-    platform: 'node',
-    format: 'cjs',
-    target: 'node20',
-  }),
   // Syntax highlighting and math, loaded by the extension when a preview first needs them.
   esbuild.context({
     ...shared,
@@ -59,26 +50,10 @@ const contexts = await Promise.all([
     format: 'cjs',
     target: 'node20',
   }),
+  // The flashcard review panel's script.
   esbuild.context({
     ...shared,
-    entryPoints: ['src/extension/dbWorker.ts'],
-    outfile: 'dist/dbWorker.js',
-    platform: 'node',
-    format: 'cjs',
-    target: 'node20',
-  }),
-  esbuild.context({
-    ...shared,
-    entryPoints: ['src/graph/main.ts'],
-    outfile: 'dist/graph.js',
-    platform: 'browser',
-    format: 'iife',
-    target: 'es2022',
-  }),
-  // Scripts for the sidebar webviews.
-  esbuild.context({
-    ...shared,
-    entryPoints: { properties: 'src/sidebar/properties.ts', console: 'src/sidebar/console.ts', review: 'src/study/reviewMain.ts' },
+    entryPoints: { review: 'src/study/reviewMain.ts' },
     outdir: 'dist',
     platform: 'browser',
     format: 'iife',

@@ -162,29 +162,9 @@ describe('citations', () => {
 
 describe('peer review', () => {
   const src = 'A {++new++} and {--old--} and {~~cat~>dog~~} here {==marked==}{>>why?<<} end.\n';
-  it('lists items', async () => {
-    const { collectReview } = await import('../src/core/study/review');
-    const items = collectReview(parse(src));
-    assert.deepEqual(items.map((i) => i.kind), ['insert', 'delete', 'substitute', 'comment']);
-    assert.equal(items[3]?.comment, 'why?');
-  });
-  it('accepts and rejects', async () => {
-    const { resolveReview } = await import('../src/core/study/review');
-    assert.equal(resolveReview(parse(src), 'accept'), 'A new and  and dog here marked end.\n');
-    assert.equal(resolveReview(parse(src), 'reject'), 'A  and old and cat here marked end.\n');
-  });
 });
 
 describe('docx export', () => {
-  it('writes a valid package', async () => {
-    const { buildDocx } = await import('../src/core/study/docx');
-    const doc = parse('# Title\n\nHello **bold** [link](https://example.com).\n\n- a\n- [x] b\n\n> quoted\n\n| h |\n| - |\n| c |\n\n```py\nprint(1)\n```\n\n:::definition {title="X"}\nBody\n:::\n');
-    const bytes = buildDocx(doc, { title: 'T', author: 'A', date: '2026-01-01', titlePage: true });
-    assert.equal(String.fromCharCode(bytes[0]!, bytes[1]!), 'PK');
-    const text = Buffer.from(bytes).toString('latin1');
-    for (const name of ['word/document.xml', '[Content_Types].xml', 'word/styles.xml']) assert.ok(text.includes(name), name);
-    assert.ok(text.includes('<w:b/>') && text.includes('Heading1') && text.includes('rIdLink1'));
-  });
 });
 
 describe('html export', () => {
@@ -206,33 +186,3 @@ describe('html export', () => {
   });
 });
 
-describe('importers', async () => {
-  const imp = await import('../src/core/study/importers');
-  it('converts Obsidian callouts and image embeds', () => {
-    const out = imp.obsidianToYamd('> [!warning] Careful\n> Do not **panic**.\n\n![[diagram one.png|300]]\n\nSee [[Other note]] and ![[Other note#Intro]].\n');
-    assert.match(out, /^:::warning \{title="Careful"\}\nDo not \*\*panic\*\*\.\n:::/);
-    assert.match(out, /!\[diagram one\]\(diagram%20one\.png\)\{width=300\}/);
-    assert.match(out, /\[\[Other note\]\] and !\[\[Other note#Intro\]\]/);
-    assert.equal(parse(out).diagnostics.filter((d) => d.code === 'Y601').length, 0);
-  });
-  it('cleans Notion names and links', () => {
-    assert.equal(imp.cleanNotionName('Lecture 1 0123456789abcdef0123456789abcdef.md'), 'Lecture 1.md');
-    const out = imp.notionToYamd('See [Week 2](Week%202%20fedcba9876543210fedcba9876543210.md) and [web](https://x.org).\n');
-    assert.equal(out, 'See [Week 2](<Week 2.yamd>) and [web](https://x.org).\n');
-  });
-  it('turns CSV into a database', () => {
-    const ydb = imp.csvToYdb('Name,Points,Due\n"Essay, draft",10,2026-03-01\nQuiz,5,\n', 'Work');
-    assert.match(ydb, /yamdb: 0\.1/);
-    assert.match(ydb, /Points: number/);
-    assert.match(ydb, /Due: date/);
-    assert.match(ydb, /Name: Essay, draft/);
-  });
-  it('converts HTML', () => {
-    const html = '<html lang="en"><head><title>Week 3</title></head><body><h1>Week 3</h1><p>Some <b>bold</b> and <span style="font-style:italic">italic</span> with a <a href="https://e.org">link</a>.</p><ul><li>one<ul><li>nested</li></ul></li><li>two</li></ul><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table><pre>x = 1</pre></body></html>';
-    const out = imp.htmlToYamd(html, 'x');
-    assert.match(out, /^---\ntitle: Week 3\nlang: en\n---\n\n# Week 3\n\nSome \*\*bold\*\* and \*italic\* with a \[link\]\(https:\/\/e\.org\)\./);
-    assert.match(out, /- one\n   - nested\n- two/);
-    assert.match(out, /\| A \| B \|\n\| --- \| --- \|\n\| 1 \| 2 \|/);
-    assert.match(out, /```\nx = 1\n```/);
-  });
-});

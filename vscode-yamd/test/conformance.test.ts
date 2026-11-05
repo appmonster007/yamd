@@ -11,7 +11,6 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from 'node:test';
 import commonmark from 'commonmark-spec';
 import { parse, render } from '../src/core';
-import { convertFromMarkdown } from '../src/core/convert';
 
 interface Example {
   number: number;
@@ -136,14 +135,3 @@ const ROUND_TRIP_EXCEPTIONS: Record<string, string> = {
   '148': 'joins a line inside raw <pre> HTML',
 };
 
-test('converted Markdown renders as GFM did', () => {
-  const failures: string[] = [];
-  for (const example of suites.commonmark) {
-    const n = String(example.number);
-    if (n in known.commonmark || n in ROUND_TRIP_EXCEPTIONS) continue;
-    const converted = convertFromMarkdown(example.markdown).text;
-    const actual = render(parse(converted), { rawHtml: 'trust' });
-    if (collapse(actual) !== collapse(example.html)) failures.push(`#${n}: ${JSON.stringify(converted)}`);
-  }
-  assert.deepEqual(failures, []);
-});

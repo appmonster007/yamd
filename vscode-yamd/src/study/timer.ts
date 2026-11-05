@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { formatMinutes, logLine, parseLog, stringifyLog } from '../core/study/studylog';
-import { appendToDailyNote } from '../workspace/daily';
+import { formatMinutes, parseLog, stringifyLog } from '../core/study/studylog';
 import { readData, todayIso, writeData } from './workspace';
 
 const LOG = 'study-log.json';
@@ -13,10 +12,6 @@ export async function recordSession(minutes: number, course?: string, when = new
   const log = await loadLog();
   log.sessions.push({ date: todayIso(when), minutes, ...(course ? { course } : {}) });
   await writeData(LOG, stringifyLog(log));
-  const time = `${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}`;
-  if (vscode.workspace.getConfiguration('yamd.study').get<boolean>('logToDailyNote', true)) {
-    await appendToDailyNote(when, 'Study log', logLine(time, minutes, course));
-  }
 }
 
 /** A focus timer in the status bar. A finished or stopped session is added to the study log. */

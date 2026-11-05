@@ -24,9 +24,9 @@ From the repository root, the `Makefile` wraps the extension's npm scripts:
 
 ```bash
 make deps        # npm install
-make build        # generate the grammar and bundle into dist/
+make build        # bundle into dist/
 make typecheck
-make test          # parser, renderer, linter, grammar, editing, conformance and migration tests
+make test          # parser, renderer, widgets, query, build, export, study and conformance tests
 ```
 
 (Equivalently, run the same `npm run <script>` commands from inside `vscode-yamd/`. Run `make help` for the full list of targets, including `install` for installing the built extension into VS Code.)

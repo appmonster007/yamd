@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { lint, render } from '../src/core';
+import { render } from '../src/core';
 import { NoteStore, summarize } from '../src/core/notes';
 import type { NoteLookup } from '../src/core/notes';
 import { parse, parseUncached } from '../src/core/parser';
@@ -19,14 +19,6 @@ describe('parse cache', () => {
     assert.deepEqual(parse(src), parseUncached(src));
   });
 
-  test('rendering and linting do not change a shared document', () => {
-    const doc = parse('# A\n\n::toc\n\n## B\n\n[x](#nope)');
-    const before = JSON.stringify(doc.blocks);
-    render(doc);
-    lint(doc);
-    render(doc, { interactive: true });
-    assert.equal(JSON.stringify(doc.blocks), before);
-  });
 
   test('old entries are dropped, not kept forever', () => {
     const first = parse('first document');
@@ -104,25 +96,6 @@ describe('incremental link resolution', () => {
 });
 
 describe('lint and other notes', () => {
-  test('uses the lookup\'s summaries instead of parsing linked notes again', () => {
-    const store = new NoteStore();
-    store.set('guide.yamd', '# Guide\n\n## Install');
-    let summaryCalls = 0;
-    let reads = 0;
-    const lookup: NoteLookup = {
-      has: (p) => store.has(p),
-      read: (p) => (reads++, store.read(p)),
-      root: (p) => store.root(p),
-      byName: (n) => store.byName(n),
-      byAlias: (a) => store.byAlias(a),
-      summary: (p) => (summaryCalls++, store.summary(p)),
-    };
-    const src = '---\nlang: en\n---\n[[guide#Install]] [[guide#Missing]]';
-    const found = lint(parse(src), { notes: { lookup, path: 'a.yamd' } }).map((d) => d.code);
-    assert.deepEqual(found, ['Y701']);
-    assert.ok(summaryCalls > 0);
-    assert.equal(reads, 0);
-  });
 });
 
 describe('graph cache and revisions', () => {
