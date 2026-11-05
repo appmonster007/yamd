@@ -670,6 +670,16 @@
         "command": "yamd.openWidget",
         "title": "Open Widget",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.nameBlock",
+        "title": "Name Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertWidget",
+        "title": "Insert Widget",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -807,7 +817,15 @@
         },
         {
           "command": "yamd.openWidget",
-          "when": "false"
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.nameBlock",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertWidget",
+          "when": "editorLangId == markdown"
         }
       ],
       "file/newFile": [

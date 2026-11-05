@@ -6,7 +6,8 @@ import { registerDatabaseFeatures } from './dbFeatures';
 import { registerDatabaseWizard } from './databaseWizard';
 import { DiagnosticsProvider } from './diagnostics';
 import { registerInsertCommands } from './insertCommands';
-import { registerWidgetLens } from './widgetLens';
+import { registerWidgetDiagnostics } from './widgetDiagnostics';
+import { registerWidgetPanels } from './widgetPanel';
 import { registerMigration } from './migration';
 import { LivePreview } from './livePreview';
 import { PreviewManager } from './preview';
@@ -83,7 +84,8 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   registerEditingCommands(context);
   registerMigration(context);
-  registerWidgetLens(context);
+  registerWidgetDiagnostics(context);
+  registerWidgetPanels(context);
 }
 
 export function deactivate(): void {}
