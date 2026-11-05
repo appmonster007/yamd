@@ -11,7 +11,7 @@ import type { BibEntry } from '../../core/citations/bibtex';
 import { linesOf } from '../widgets/widgets';
 
 /** A TextEdit for a line diff: whole lines are replaced, including the end of the note. */
-function lineDiffEdit(doc: vscode.TextDocument, d: LineDiff): vscode.TextEdit {
+export function lineDiffEdit(doc: vscode.TextDocument, d: LineDiff): vscode.TextEdit {
   const last = doc.lineCount;
   const endsInside = d.start + d.removeCount < last;
   const end = endsInside ? new vscode.Position(d.start + d.removeCount, 0) : doc.lineAt(last - 1).range.end;

@@ -6,7 +6,7 @@ import { linesOf, widgetsOf } from '../widgets/widgets';
 /** `YAMD: Run Query`: writes a Markdown snapshot of a query block's result under the block. */
 export function registerQueryCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand('yamd.runQuery', async () => {
+    vscode.commands.registerCommand('yamd.runQuery', async (uriArg?: unknown, lineArg?: unknown) => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== 'markdown') {
         void vscode.window.showInformationMessage('YAMD: Open a Markdown note with a query block first.');
@@ -23,7 +23,7 @@ export function registerQueryCommands(context: vscode.ExtensionContext): void {
         return;
       }
       const at = editor.selection.active.line;
-      let block = queries.find((w) => w.startLine <= at && at <= w.endLine);
+      let block = uriArg instanceof vscode.Uri && typeof lineArg === 'number' ? queries.find((w) => w.startLine === lineArg) : queries.find((w) => w.startLine <= at && at <= w.endLine);
       if (!block) {
         const pick = await vscode.window.showQuickPick(queries.map((w) => ({ label: w.label, description: w.attrs['source'], w })), { placeHolder: 'Run which query?' });
         block = pick?.w;

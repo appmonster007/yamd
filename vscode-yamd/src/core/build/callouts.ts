@@ -6,8 +6,8 @@ import { scanFences } from '../widgets/fences';
 
 /** Study callouts are numbered per type within a note. */
 export const STUDY_TYPES = ['definition', 'theorem', 'lemma', 'proof', 'example', 'question', 'remark', 'summary', 'derivation'] as const;
-const PLAIN_TYPES = ['note', 'tip', 'important', 'warning', 'caution', 'danger', 'card'] as const;
-const CALLOUT_TYPES: readonly string[] = [...STUDY_TYPES, ...PLAIN_TYPES];
+export const PLAIN_TYPES = ['note', 'tip', 'important', 'warning', 'caution', 'danger', 'card'] as const;
+export const CALLOUT_TYPES: readonly string[] = [...STUDY_TYPES, ...PLAIN_TYPES];
 
 interface Callout {
   type: string;

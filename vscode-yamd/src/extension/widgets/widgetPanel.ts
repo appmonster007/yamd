@@ -2,26 +2,16 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { escapeHtml, parse, render } from '../../core/markdown';
 import type { RenderOptions } from '../../core/markdown';
-import { computeBoardEdit } from '../../core/widgets/boardEdit';
 import type { BoardEditMessage } from '../../core/widgets/boardEdit';
 import type { WidgetBlock } from '../../core/widgets/fences';
 import { scanWidgets } from '../../core/widgets/fences';
-import { bodyEdit } from '../../core/widgets/widgetBody';
+import { applyBlockEdit, syntheticSource } from './editBlock';
 import { highlight, renderMath } from '../shared/richLoader';
 import { querySource, renderQueryWidget } from '../query/queryWidget';
 import { nonce } from '../shared/webviewShell';
-import { folderImages, fileResolver, linesOf, MARKDOWN, widgetsOf } from './widgets';
+import { fileResolver, linesOf, MARKDOWN, widgetsOf } from './widgets';
 
 const BOARD_TYPES = new Set(['kanban', 'calendar', 'timeline', 'gallery']);
-
-/** The note's block as a one-container document, so the board renderer and its edit logic apply unchanged. */
-function syntheticSource(doc: vscode.TextDocument, block: WidgetBlock): string {
-  const body: string[] = [];
-  for (let l = block.bodyStartLine; l <= block.bodyEndLine; l++) body.push(doc.lineAt(l).text);
-  if (block.type === 'gallery' && block.attrs['source'] && body.every((l) => l.trim() === '')) body.push(...folderImages(doc, block.attrs['source']));
-  return [`:::${block.type}`, ...body, ':::'].join('\n');
-}
-
 
 interface Entry {
   panel: vscode.WebviewPanel;
@@ -153,24 +143,9 @@ class WidgetPanels implements vscode.Disposable {
     if (!vscode.workspace.isTrusted) return;
     const doc = await vscode.workspace.openTextDocument(entry.uri);
     const block = this.find(entry, doc);
-    if (!block || !block.closed || vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) === false) return;
-    const synthetic = syntheticSource(doc, block);
-    const edit = computeBoardEdit(synthetic, m);
-    const change = edit ? bodyEdit(synthetic, edit, block.bodyStartLine) : null;
-    if (!change) {
-      // The note changed since the widget rendered it; show the current state instead.
-      await this.refresh(entry, true, doc);
-      return;
-    }
-    const range = new vscode.Range(change.startLine, 0, change.startLine + change.removeCount, 0);
-    const text = change.lines.map((l) => `${l}\n`).join('');
-    const workspaceEdit = new vscode.WorkspaceEdit();
-    workspaceEdit.replace(doc.uri, range, text);
-    if (await vscode.workspace.applyEdit(workspaceEdit)) {
-      if (!doc.isUntitled) await doc.save();
-    } else {
-      await this.refresh(entry, true, doc);
-    }
+    if (!block) return;
+    // If the note changed since the widget rendered it, or the edit was refused, show the current state instead.
+    if (!(await applyBlockEdit(doc, block, m))) await this.refresh(entry, true, doc);
   }
 
   private shell(webview: vscode.Webview): string {
@@ -206,9 +181,20 @@ class WidgetLensProvider implements vscode.CodeLensProvider {
   }
 
   provideCodeLenses(doc: vscode.TextDocument): vscode.CodeLens[] {
-    return widgetsOf(doc).map(
-      (w) => new vscode.CodeLens(new vscode.Range(w.startLine, 0, w.startLine, 0), { title: `$(layout) Open ${w.type}: ${w.label}`, command: 'yamd.openWidget', arguments: [doc.uri, w.startLine] }),
-    );
+    const extra: Record<string, { title: string; command: string }> = {
+      kanban: { title: '$(add) Add card', command: 'yamd.addCard' },
+      calendar: { title: '$(add) Add event', command: 'yamd.addEvent' },
+      timeline: { title: '$(add) Add item', command: 'yamd.addTimelineItem' },
+      gallery: { title: '$(add) Add image', command: 'yamd.addImage' },
+      sql: { title: '$(play) Run query', command: 'yamd.runQuery' },
+    };
+    return widgetsOf(doc).flatMap((w) => {
+      const range = new vscode.Range(w.startLine, 0, w.startLine, 0);
+      const lenses = [new vscode.CodeLens(range, { title: `$(layout) Open ${w.type}: ${w.label}`, command: 'yamd.openWidget', arguments: [doc.uri, w.startLine] })];
+      const more = extra[w.type];
+      if (more) lenses.push(new vscode.CodeLens(range, { title: more.title, command: more.command, arguments: [doc.uri, w.startLine] }));
+      return lenses;
+    });
   }
 }
 

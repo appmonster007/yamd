@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
+import { registerOnboarding } from './onboarding/commands';
 import { registerAudio } from './audio/recorder';
+import { registerTools } from './writing/tools';
+import { registerRefresh } from './query/refresh';
+import { registerWritingCommands } from './writing/commands';
+import { registerCompletion } from './writing/completion';
+import { registerAddCommands } from './widgets/add';
 import { registerAliases } from './companions/aliases';
 import { registerBuildCommands } from './build/buildCommands';
 import { registerReviewCommands } from './build/reviewCommands';
@@ -31,6 +37,12 @@ export function activate(context: vscode.ExtensionContext): void {
   registerStudy(context, studyIndex, reviewPanel, dashboard, timer);
   registerSidebarViews(context, studyIndex);
   registerAudio(context);
+  registerOnboarding(context);
+  registerWritingCommands(context);
+  registerCompletion(context);
+  registerAddCommands(context);
+  registerRefresh(context);
+  registerTools(context);
 }
 
 export function deactivate(): void {}

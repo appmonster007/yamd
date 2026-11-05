@@ -229,6 +229,97 @@
         "title": "Record Audio and Add Link",
         "category": "YAMD",
         "icon": "$(mic)"
+      },
+      {
+        "command": "yamd.menu",
+        "title": "Menu",
+        "category": "YAMD",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "yamd.newNote",
+        "title": "New Note…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.createSampleNote",
+        "title": "Create Sample Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openWalkthrough",
+        "title": "Open Walkthrough",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCallout",
+        "title": "Insert Callout…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTarget",
+        "title": "Insert Figure, Table or Equation…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCitation",
+        "title": "Insert Citation…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.selectionToWidget",
+        "title": "Turn Selection into a Widget…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addCard",
+        "title": "Add Card",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addEvent",
+        "title": "Add Event",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addTimelineItem",
+        "title": "Add Timeline Item",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addImage",
+        "title": "Add Image to Gallery",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.runAllQueries",
+        "title": "Run All Queries in This Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertQuery",
+        "title": "Insert Query…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.checkNote",
+        "title": "Check This Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.studyThisNote",
+        "title": "Study This Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportMarkdown",
+        "title": "Export as Single Markdown File",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportWidget",
+        "title": "Export Widget as HTML",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -325,6 +416,66 @@
         {
           "command": "yamd.recordAudio",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.createSampleNote",
+          "when": "true"
+        },
+        {
+          "command": "yamd.insertCallout",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertTarget",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertCitation",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.selectionToWidget",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.addCard",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.addEvent",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.addTimelineItem",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.addImage",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.runAllQueries",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.insertQuery",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.checkNote",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.studyThisNote",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.exportMarkdown",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.exportWidget",
+          "when": "editorLangId == markdown"
         }
       ],
       "explorer/context": [
@@ -332,6 +483,11 @@
           "command": "yamd.newStudyNote",
           "group": "yamd@1",
           "when": "explorerResourceIsFolder || explorerResourceIsRoot"
+        },
+        {
+          "command": "yamd.newNote",
+          "when": "explorerResourceIsFolder || explorerResourceIsRoot",
+          "group": "yamd@0"
         }
       ],
       "view/title": [
@@ -394,6 +550,16 @@
           "type": "string",
           "default": "audio",
           "description": "Folder, relative to the note, where YAMD: Record Audio and Add Link saves recordings. It must be inside the note's folder."
+        },
+        "yamd.statusBar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a YAMD button in the status bar while a Markdown note is open. It opens the YAMD menu."
+        },
+        "yamd.queries.refreshOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "When a note is saved, refresh the result snapshots under query blocks that already have one."
         }
       }
     },
@@ -446,6 +612,88 @@
       {
         "view": "yamd.deadlines",
         "contents": "No deadlines. Add `{due=YYYY-MM-DD}` to a task."
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "yamd.start",
+        "title": "Get started with YAMD",
+        "description": "Boards, queries, references and voice notes in plain Markdown.",
+        "steps": [
+          {
+            "id": "sample",
+            "title": "Create a sample note",
+            "description": "Make a note that uses each part of YAMD once.\n[Create Sample Note](command:yamd.createSampleNote)",
+            "media": {
+              "markdown": "media/walkthrough/sample.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.createSampleNote"
+            ]
+          },
+          {
+            "id": "widget",
+            "title": "Open a widget",
+            "description": "Open a block as a draggable board beside the note.\n[Open Widget](command:yamd.openWidget)",
+            "media": {
+              "markdown": "media/walkthrough/widget.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.openWidget"
+            ]
+          },
+          {
+            "id": "query",
+            "title": "Run a query",
+            "description": "Read a CSV, JSON or SQLite file with SQL.\n[Insert Query](command:yamd.insertQuery)",
+            "media": {
+              "markdown": "media/walkthrough/query.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.insertQuery",
+              "onCommand:yamd.runQuery"
+            ]
+          },
+          {
+            "id": "build",
+            "title": "Build references",
+            "description": "Turn `[@id]` into numbered links and fill the contents.\n[Build](command:yamd.build)",
+            "media": {
+              "markdown": "media/walkthrough/build.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.build"
+            ]
+          },
+          {
+            "id": "audio",
+            "title": "Record a voice note",
+            "description": "Save a recording next to the note and link it.\n[Record Audio](command:yamd.recordAudio)",
+            "media": {
+              "markdown": "media/walkthrough/audio.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.recordAudio"
+            ]
+          },
+          {
+            "id": "menu",
+            "title": "Find everything in the menu",
+            "description": "One list of what YAMD can do.\n[Open the Menu](command:yamd.menu)",
+            "media": {
+              "markdown": "media/walkthrough/menu.md"
+            },
+            "completionEvents": [
+              "onCommand:yamd.menu"
+            ]
+          }
+        ]
+      }
+    ],
+    "snippets": [
+      {
+        "language": "markdown",
+        "path": "./snippets/yamd.code-snippets"
       }
     ]
   },

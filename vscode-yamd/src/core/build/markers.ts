@@ -80,7 +80,7 @@ export function writeRegion(lines: string[], name: string, content: string[], op
   return [...lines.slice(0, opts.insertAfter + 1), ...block, ...lines.slice(opts.insertAfter + 1)];
 }
 
-export const REGION_NAMES = ['toc', 'bibliography'] as const;
+export const REGION_NAMES = ['toc', 'bibliography', 'cards'] as const;
 export const INSTRUCTION_NAMES = ['pagebreak', 'attrs'] as const;
 
 export const isRegionName = (name: string) => (REGION_NAMES as readonly string[]).includes(name) || name.startsWith('query:');

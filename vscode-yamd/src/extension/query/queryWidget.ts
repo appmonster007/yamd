@@ -6,6 +6,8 @@ import * as vscode from 'vscode';
 import type { WidgetBlock } from '../../core/widgets/fences';
 import { loadCsv, loadJson, loadSqlite, MAX_ROWS, readOnlyProblem, runQuery, sourceKind } from '../../core/query/engine';
 import type { QueryProblem, QueryResult } from '../../core/query/engine';
+import { describeDb } from '../../core/query/schema';
+import type { TableInfo } from '../../core/query/schema';
 import { renderQueryResult } from '../../core/query/views';
 import { errorBox } from '../../core/query/views';
 import { linesOf } from '../widgets/widgets';
@@ -68,4 +70,31 @@ export async function renderQueryWidget(doc: vscode.TextDocument, block: WidgetB
   const outcome = await runBlockQuery(doc, block);
   if (!outcome.ok) return errorBox(outcome.problem.code, outcome.problem.message);
   return renderQueryResult(outcome.result, { view: block.attrs['view'] ?? 'table', group: block.attrs['group'], type: block.attrs['type'], x: block.attrs['x'], y: block.attrs['y'] });
+}
+
+const schemaCache = new Map<string, { stamp: string; tables: TableInfo[] }>();
+
+/** The tables and columns of a query block's data file, for completion and hover; undefined if it can't be read. */
+export async function describeSource(doc: vscode.TextDocument, block: WidgetBlock): Promise<TableInfo[] | undefined> {
+  const file = querySource(doc, block);
+  if (!file || !allowed(doc, file)) return undefined;
+  const kind = sourceKind(file.fsPath);
+  if (!kind) return undefined;
+  let db: Database | undefined;
+  try {
+    const stat = await vscode.workspace.fs.stat(file);
+    const stamp = `${stat.mtime}:${stat.size}`;
+    const hit = schemaCache.get(file.fsPath);
+    if (hit?.stamp === stamp) return hit.tables;
+    const SQL = await engine();
+    const bytes = await readFile(file.fsPath);
+    db = kind === 'csv' ? loadCsv(SQL, file.fsPath, bytes.toString('utf8')) : kind === 'json' ? loadJson(SQL, file.fsPath, bytes.toString('utf8')) : loadSqlite(SQL, new Uint8Array(bytes));
+    const tables = describeDb(db);
+    schemaCache.set(file.fsPath, { stamp, tables });
+    return tables;
+  } catch {
+    return undefined;
+  } finally {
+    db?.close();
+  }
 }

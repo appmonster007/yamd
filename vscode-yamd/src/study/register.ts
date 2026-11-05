@@ -4,10 +4,10 @@ import { toInternal } from '../core/markdown/compat';
 import { parse } from '../core/markdown';
 import { collectDeadlines, groupDeadlines } from '../core/study/deadlines';
 import type { Deadline } from '../core/study/deadlines';
-import { expandPlaceholders, formatDate } from '../core/templates/placeholders';
 import { STUDY_TEMPLATES } from '../core/study/templates';
 import { pruneSchedule } from '../core/study/cards';
 import { stringifySchedule } from '../core/study/cards';
+import { chooseFolder, createNote } from '../extension/shared/files';
 import type { DashboardPanel } from './dashboard';
 import type { ReviewPanel } from './review';
 import { loadSchedule } from './review';
@@ -25,37 +25,9 @@ async function newStudyNote(clicked?: vscode.Uri): Promise<void> {
   const title = await vscode.window.showInputBox({ prompt: 'Note title', placeHolder: 'Lecture 1' });
   if (title === undefined) return;
   const course = (await vscode.window.showInputBox({ prompt: 'Course (optional)', placeHolder: 'CS101' })) ?? '';
-
-  let folder: vscode.Uri | undefined;
-  if (clicked?.scheme === 'file') {
-    try {
-      const stat = await vscode.workspace.fs.stat(clicked);
-      folder = stat.type & vscode.FileType.Directory ? clicked : vscode.Uri.joinPath(clicked, '..');
-    } catch {
-      /* fall through */
-    }
-  }
-  if (!folder) {
-    const active = vscode.window.activeTextEditor?.document.uri;
-    if (active?.scheme === 'file') folder = vscode.Uri.joinPath(active, '..');
-  }
-  folder ??= vscode.workspace.workspaceFolders?.[0]?.uri;
-  if (!folder) {
-    void vscode.window.showInformationMessage('YAMD: Open a folder first.');
-    return;
-  }
-  const slug = (title || template.label).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'note';
-  const uri = vscode.Uri.joinPath(folder, `${slug}.md`);
-  const noteTitle = title || template.label;
-  const { text, cursor } = expandPlaceholders(template.text, { now: new Date(), title: noteTitle, vars: { course } });
-  await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(text));
-  const doc = await vscode.workspace.openTextDocument(uri);
-  const editor = await vscode.window.showTextDocument(doc);
-  if (cursor !== undefined) {
-    const pos = doc.positionAt(cursor);
-    editor.selection = new vscode.Selection(pos, pos);
-    editor.revealRange(new vscode.Range(pos, pos));
-  }
+  const folder = await chooseFolder(clicked);
+  if (!folder) return;
+  await createNote(folder, title || template.label, template, { course });
 }
 
 function courses(index: StudyIndex): string[] {
@@ -143,5 +115,4 @@ export function registerStudy(context: vscode.ExtensionContext, index: StudyInde
       void vscode.window.showInformationMessage(`YAMD: Removed the schedule of ${before - Object.keys(kept.cards).length} deleted cards.`);
     }),
   );
-  void formatDate;
 }
