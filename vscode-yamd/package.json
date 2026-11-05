@@ -155,6 +155,11 @@
         "command": "yamd.studyTimerMenu",
         "title": "Study Timer Menu",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.queryCsvWithRbql",
+        "title": "Query CSV with RBQL (Rainbow CSV)",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -318,6 +323,7 @@
     "foam.foam-vscode",
     "yy0931.vscode-sqlite3-editor",
     "janisdd.vscode-edit-csv",
+    "mechatroner.rainbow-csv",
     "yzhang.markdown-all-in-one"
   ],
   "extensionDependencies": [

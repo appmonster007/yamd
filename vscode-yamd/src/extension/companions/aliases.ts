@@ -75,6 +75,16 @@ export function registerAliases(context: vscode.ExtensionContext): void {
       const picked = await pickDataFile();
       if (picked) await openData(picked.uri);
     }),
+    vscode.commands.registerCommand('yamd.queryCsvWithRbql', async () => {
+      const picked = await pickDataFile();
+      if (!picked || dataKind(picked.uri.fsPath) !== 'csv') {
+        if (picked) void vscode.window.showInformationMessage('YAMD: RBQL queries work on CSV files.');
+        return;
+      }
+      if (!(await ensureCompanion(COMPANIONS.rainbow))) return;
+      await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(picked.uri));
+      await vscode.commands.executeCommand('rainbow-csv.RBQL');
+    }),
     vscode.commands.registerCommand('yamd.openDailyNote', async () => {
       if (await ensureCompanion(COMPANIONS.foam)) await vscode.commands.executeCommand('foam-vscode.open-daily-note');
     }),
