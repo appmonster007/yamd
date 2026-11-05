@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { calloutProblems } from '../../core/build/callouts';
+import { lintMarkers } from '../../core/build/markers';
 import { scanWidgets } from '../../core/widgets/fences';
 import { lintWidgets, setIdChange, suggestId, usedIds, widgetTemplate, WIDGET_TEMPLATES } from '../../core/widgets/widgetLint';
 import type { LineChange } from '../../core/widgets/widgetLint';
@@ -46,6 +47,12 @@ class WidgetDiagnostics implements vscode.CodeActionProvider, vscode.Disposable 
     for (const c of calloutProblems(lines)) {
       const d = new vscode.Diagnostic(doc.lineAt(c.line).range, c.message, c.code === 'C001' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Warning);
       d.code = c.code;
+      d.source = 'YAMD';
+      diagnostics.push(d);
+    }
+    for (const m of lintMarkers(lines)) {
+      const d = new vscode.Diagnostic(doc.lineAt(m.line).range, m.message, m.severity === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning);
+      d.code = m.code;
       d.source = 'YAMD';
       diagnostics.push(d);
     }

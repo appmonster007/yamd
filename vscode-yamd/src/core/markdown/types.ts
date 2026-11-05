@@ -45,10 +45,6 @@ export type InlineNode =
   | { type: 'crossRef'; id: string; range: Range }
   | { type: 'citation'; raw: string; range: Range }
   | { type: 'variable'; path: string; raw: string; range: Range }
-  | { type: 'review'; kind: 'insert' | 'delete'; children: InlineNode[]; range: Range }
-  | { type: 'reviewSubstitute'; from: InlineNode[]; to: InlineNode[]; range: Range }
-  | { type: 'reviewHighlight'; children: InlineNode[]; comment?: string; range: Range }
-  | { type: 'reviewComment'; value: string; range: Range }
   | { type: 'directive'; name: string; children: InlineNode[]; attrs?: Attrs; range: Range }
   /** Raw HTML (an inline tag or comment), sanitized when rendered. */
   | { type: 'html'; value: string; range: Range }

@@ -122,7 +122,6 @@ export function parseUncached(source: string, mode: ParseMode = 'auto'): YamdDoc
   if (!doc) {
     const tree = toMdast(prepared.text.join('\n'));
     const adapter = new Adapter(source, lines, prepared.attrs);
-    for (const n of prepared.comments) adapter.verbatim.add(n);
     const blocks = adapter.blocks(tree.children ?? []);
     doc = {
       source,
@@ -294,7 +293,7 @@ function parseChunked(source: string, pre: Prelude): YamdDocument | null {
   const diagnostics: Diagnostic[] = [];
   const footnotes = new Map<string, FootnoteDef>();
   const refs = new Map<string, RefDef>();
-  const verbatim = new Set<number>(prepared.comments);
+  const verbatim = new Set<number>();
 
   for (const job of jobs) {
     let local = chunkCached(job.key);

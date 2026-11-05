@@ -15,9 +15,7 @@ import { parseAttrs } from '../attrs';
 declare module 'micromark-util-types' {
   interface TokenTypeMap {
     yamdVariable: 'yamdVariable';
-    yamdCritic: 'yamdCritic';
     yamdAttributes: 'yamdAttributes';
-    yamdComment: 'yamdComment';
     yamdAttributesFlow: 'yamdAttributesFlow';
     yamdCitation: 'yamdCitation';
     yamdWikilink: 'yamdWikilink';
@@ -151,24 +149,12 @@ const variable: Construct = rawSpan('yamdVariable', '{{', '}}', {
   validate: (c) => /^\s*(@[A-Za-z_][\w.-]*(:[^{}]*)?|[A-Za-z_][\w.-]*)\s*$/.test(c),
 });
 
-/** Review markup. Content may span lines and contain formatting. */
-const critic: Construct[] = [
-  rawSpan('yamdCritic', '{++', '++}', { eol: true }),
-  rawSpan('yamdCritic', '{--', '--}', { eol: true }),
-  rawSpan('yamdCritic', '{~~', '~~}', { eol: true, validate: (c) => c.includes('~>') }),
-  rawSpan('yamdCritic', '{==', '==}', { eol: true }),
-  rawSpan('yamdCritic', '{>>', '<<}', { eol: true }),
-];
-
 /** `{#id .class key=value flag}` */
 const attributes: Construct = rawSpan('yamdAttributes', '{', '}', {
   forbid: '{',
   previous: notOpenBrace,
-  validate: (c) => !/^[+\-~=>]/.test(c) && parseAttrs(c) !== null,
+  validate: (c) => parseAttrs(c) !== null,
 });
-
-/** `%% comment %%`, inside a paragraph. */
-const comment: Construct = rawSpan('yamdComment', '%%', '%%', { eol: true });
 
 /** `[@key]`, `[@a; @b, p. 4]` */
 const citation: Construct = rawSpan('yamdCitation', '[@', ']', { forbid: '[', nonEmpty: true });
@@ -558,8 +544,7 @@ export function yamdSyntax(): Extension {
   return {
     flow: { [codes.leftCurlyBrace]: attributesFlow },
     text: {
-      [codes.leftCurlyBrace]: [variable, ...critic, attributes],
-      [codes.percentSign]: comment,
+      [codes.leftCurlyBrace]: [variable, attributes],
       [codes.leftSquareBracket]: [wikilink, citation],
       [codes.exclamationMark]: embed,
       [codes.caret]: [inlineFootnote, supBraces, supDigits, blockId],

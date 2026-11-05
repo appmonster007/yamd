@@ -3,9 +3,7 @@ import type { CompileContext, Extension, Token } from 'mdast-util-from-markdown'
 /** Token types captured as one raw node whose `value` is the token's source text. */
 const RAW = [
   'yamdVariable',
-  'yamdCritic',
   'yamdAttributes',
-  'yamdComment',
   'yamdAttributesFlow',
   'yamdCitation',
   'yamdWikilink',

@@ -78,10 +78,6 @@ export function walkInline(nodes: InlineNode[], visit: (n: InlineNode) => void) 
   for (const n of nodes) {
     visit(n);
     if ('children' in n && Array.isArray(n.children)) walkInline(n.children, visit);
-    if (n.type === 'reviewSubstitute') {
-      walkInline(n.from, visit);
-      walkInline(n.to, visit);
-    }
   }
 }
 

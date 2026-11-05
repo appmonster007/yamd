@@ -35,7 +35,7 @@ See [Theorem 1](#thm-short). Logical clocks are described in [\[1\]](#ref-lampor
 SELECT owner, count(*) AS bugs FROM bugs GROUP BY owner ORDER BY owner;
 ```
 
-<!-- pagebreak -->
+<!-- yamd:pagebreak -->
 
 ## Slides
 

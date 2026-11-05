@@ -31,16 +31,11 @@ export function plainText(nodes: InlineNode[], resolve?: (path: string) => strin
       case 'embed':
         out += n.target;
         break;
-      case 'reviewSubstitute':
-        out += recurse(n.to);
-        break;
       case 'emphasis':
       case 'link':
       case 'span':
-      case 'review':
-      case 'reviewHighlight':
       case 'directive':
-        if (!(n.type === 'review' && n.kind === 'delete')) out += recurse(n.children);
+        out += recurse(n.children);
         break;
       default:
         break;

@@ -40,10 +40,8 @@ export function toMdast(source: string): MNode {
 /** Tokens for YAMD syntax that GFM reads as text. Math is left out: GitHub renders `$` math too. */
 const YAMD_ONLY_TOKENS = new Set([
   'yamdVariable',
-  'yamdCritic',
   'yamdAttributes',
   'yamdAttributesFlow',
-  'yamdComment',
   'yamdCitation',
   'yamdWikilink',
   'yamdEmbed',
@@ -72,7 +70,6 @@ export function yamdSyntaxOffsets(source: string): number[] {
     lineStarts.push(at);
     at += line.length + 1;
   }
-  for (const n of prepared.commentOpeners) offsets.add((lineStarts[n] ?? 0) + (rawLines[n] ?? '').indexOf('%'));
   const events = postprocess(
     micromarkParse({ extensions: EXTENSIONS }).document().write(preprocess()(prepared.text.join('\n'), undefined, true)),
   );
@@ -85,43 +82,19 @@ export function yamdSyntaxOffsets(source: string): number[] {
 const DIRECTIVE_LINE = /^(\s*)(:{2,})([A-Za-z][\w-]*)(\[[^\]\n]*\])?([ \t]*)(\{[^{}\n]*\})?([ \t]*)$/;
 const FENCE_LINE = /^\s{0,3}(`{3,}|~{3,})/;
 
-const COMMENT_OPEN = /^ {0,3}%%/;
-
-/** True when a `%%` opening line also closes, with text after it (an inline comment instead). */
-function closesInline(line: string): boolean {
-  const rest = line.replace(COMMENT_OPEN, '');
-  const close = rest.indexOf('%%');
-  return close >= 0 && rest.slice(close + 2).trim() !== '';
-}
-
 /**
  * Rewrites lines before micromark sees them, keeping every offset:
  * - micromark's directive syntax doesn't allow a space before `{attrs}` and has its own attribute
  *   rules, so directive lines keep only `:::name` or `::name[label]` and their attributes are
  *   parsed with YAMD's rules instead.
- * - `%%` block comments (a line starting with `%%` to a line ending with `%%`) become blank lines.
  */
 export function prepareLines(lines: string[]): {
   text: string[];
   attrs: Map<number, Attrs | undefined>;
-  comments: Set<number>;
-  /** First line of each block comment. */
-  commentOpeners: number[];
 } {
   const attrs = new Map<number, Attrs | undefined>();
-  const comments = new Set<number>();
-  const commentOpeners: number[] = [];
   let fence: string | null = null;
-  let inComment = false;
-  const blank = (line: string, n: number) => {
-    comments.add(n);
-    return line.replace(/[^\r]/g, ' ');
-  };
   const text = lines.map((line, n) => {
-    if (inComment) {
-      if (/%%\s*\r?$/.test(line)) inComment = false;
-      return blank(line, n);
-    }
     const f = FENCE_LINE.exec(line);
     if (f) {
       const marker = f[1] ?? '';
@@ -130,19 +103,13 @@ export function prepareLines(lines: string[]): {
       return line;
     }
     if (fence !== null) return line;
-    if (COMMENT_OPEN.test(line) && !closesInline(line)) {
-      const rest = line.replace(COMMENT_OPEN, '');
-      inComment = !/%%\s*\r?$/.test(rest);
-      commentOpeners.push(n);
-      return blank(line, n);
-    }
     const m = DIRECTIVE_LINE.exec(line);
     if (!m || !m[6]) return line;
     attrs.set(n, parseAttrBlock(m[6]) ?? undefined);
     const keep = (m[1] ?? '') + (m[2] ?? '') + (m[3] ?? '') + (m[4] ?? '');
     return keep + ' '.repeat(line.length - keep.length);
   });
-  return { text, attrs, comments, commentOpeners };
+  return { text, attrs };
 }
 
 export class Adapter {
@@ -485,14 +452,10 @@ export class Adapter {
         const path = value.slice(2, -2).trim();
         return [{ type: 'variable', path, raw: value, range }];
       }
-      case 'yamdCritic':
-        return [this.critic(value, range)];
       case 'yamdAttributes': {
         const attrs = parseAttrs(value.slice(1, -1));
         return attrs ? [{ type: 'attrs', attrs, raw: value, range }] : [{ type: 'text', value, range }];
       }
-      case 'yamdComment':
-        return [];
       case 'yamdCitation': {
         const inner = value.slice(1, -1);
         const keys = [...inner.matchAll(/@([^\s;,\]]+)/g)].map((m) => m[1] ?? '');
@@ -523,31 +486,6 @@ export class Adapter {
         return [{ type: 'math', value: value.slice(1, -1), range }];
       default:
         return n.children ? kids() : value ? [{ type: 'text', value, range }] : [];
-    }
-  }
-
-  private critic(value: string, range: Range): InlineNode {
-    const tag = value.slice(0, 3);
-    const inner = value.slice(3, -3);
-    const base = range.start + 3;
-    switch (tag) {
-      case '{++':
-        return { type: 'review', kind: 'insert', children: this.fragment(inner, base), range };
-      case '{--':
-        return { type: 'review', kind: 'delete', children: this.fragment(inner, base), range };
-      case '{~~': {
-        const arrow = inner.indexOf('~>');
-        return {
-          type: 'reviewSubstitute',
-          from: this.fragment(inner.slice(0, arrow), base),
-          to: this.fragment(inner.slice(arrow + 2), base + arrow + 2),
-          range,
-        };
-      }
-      case '{==':
-        return { type: 'reviewHighlight', children: this.fragment(inner, base), range };
-      default:
-        return { type: 'reviewComment', value: inner.trim(), range };
     }
   }
 

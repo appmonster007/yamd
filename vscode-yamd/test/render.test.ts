@@ -296,24 +296,6 @@ describe('front matter and variables', () => {
   });
 });
 
-describe('comments and review markup', () => {
-  test('comments are removed entirely', () => {
-    assert.doesNotMatch(html('a %% secret note %% b'), /secret/);
-    assert.doesNotMatch(html('%% secret\nmultiline %%\n\nText'), /secret|multiline/);
-  });
-
-  test('substitution', () => {
-    assert.match(html('{~~old~>new~~}'), /<del class="review-del">old<\/del><ins class="review-ins">new<\/ins>/);
-  });
-
-  test('insert, delete and comments', () => {
-    const out = html('{++add++} {--cut--} {==this==}{>>why?<<}');
-    assert.match(out, /<ins class="review-ins">add<\/ins>/);
-    assert.match(out, /<del class="review-del">cut<\/del>/);
-    assert.match(out, /<mark class="review-mark">this<\/mark><span class="review-comment">why\?<\/span>/);
-  });
-});
-
 describe('footnotes and cross-references', () => {
   test('footnotes are numbered by first reference', () => {
     const out = html('B[^b] A[^a]\n\n[^a]: Note A\n[^b]: Note B');

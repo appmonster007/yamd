@@ -10,16 +10,16 @@ Two kinds of HTML comment shape the exported page. They are invisible in editors
 
 A comment above an element adds classes and `key=value` attributes to it when the note is exported:
 
-<!-- {.wide width=60%} -->
+<!-- yamd:attrs class=wide width=60% -->
 ![The system architecture](../assets/architecture.svg)
 
 Ids always use `^id` (see the references example); this comment is only for extra attributes.
 
 ## Page breaks
 
-`<!-- pagebreak -->` starts a new page when the exported HTML is printed.
+`<!-- yamd:pagebreak -->` starts a new page when the exported HTML is printed.
 
-<!-- pagebreak -->
+<!-- yamd:pagebreak -->
 
 ## A second page
 

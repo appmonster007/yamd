@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** complete (2026-11-05). Decisions D1–D61 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D65 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -73,7 +73,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D36 | A flashcard is a **card callout**: `> [!card] Question`, with the answer in the body. | Same syntax as every other callout. |
 | D37 | **No hover provider.** The extension adds **commands that jump to a reference's target** (citation to its bibliography entry, cross-reference to its target, image reference opens the image in its own tab). | We reuse VS Code's Markdown editor and add no editor behavior beyond commands. |
 | D38 | Query `view=` supports **table** (default), **board** and **chart**. `chart` is a view of a query, not a separate widget type. | User decision. |
-| D39 | Authoring extras kept: **page breaks** (`<!-- pagebreak -->`), **attribute effects** (`<!-- {#id .class} -->`) and **critic review markup**, all rendered only in exports and widget previews. | User decision. |
+| D39 | Authoring extras kept: **page breaks** (`<!-- yamd:pagebreak -->`), **attribute effects** (`<!-- yamd:attrs class=wide -->`) and **critic review markup**, all rendered only in exports and widget previews. | User decision. |
 | D40 | The flashcard **review schedule is stored in a workspace file** (e.g. `.yamd/srs.json`), versioned with Git. | User decision. |
 | D41 | `Run Query` writes a **Markdown table between markers, 50 rows maximum**, with a `last run` timestamp and a `+N more rows` line. The full result is viewed by running the same query in a companion SQL extension. | User decision. |
 | D42 | Citation styles: **APA (author-year, default), IEEE (numeric), Chicago/Harvard**, chosen per note with a `citation-style:` front matter key. | User decision. |
@@ -82,7 +82,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D45 | An alias command whose companion extension is missing **offers to install it**, then runs once installed. | User decision. |
 | D46 | Critic review uses **HTML**: `<ins>`, `<del>`, `<mark>` and HTML comments. | User decision; renders in any renderer. |
 | D47 | The linter gives **Problems-panel diagnostics with quick fixes** (e.g. "Name this block"). | User decision. |
-| D48 | Ids always use **`^id`**. A comment above an element, `<!-- {.wide width=50%} -->`, adds only extra attributes (classes, sizes) and applies to the next element; exports only. | One way to name things. |
+| D48 | Ids always use **`^id`**. A comment above an element, `<!-- yamd:attrs class=wide width=50% -->`, adds only extra attributes (classes, sizes) and applies to the next element; exports only. | One way to name things. |
 | D49 | **No special links to widgets.** Widgets open from the CodeLens above the fence or the `YAMD: Open Widget` picker. | No clash with Foam; nothing to maintain. |
 | D50 | When a data file changes, open **query widgets refresh automatically** (they are read-only). | Nothing to lose. |
 | D51 | **No default keybindings.** Everything is available through the Command Palette and CodeLens. | No clashes; users can bind their own. |
@@ -96,6 +96,10 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D59 | The comment above an element may set **any class and any `key=value` pair**; exports sanitize the result. | User decision. |
 | D60 | **Both CSV extensions ship in the pack**: Edit CSV (grid editor) and Rainbow CSV (highlighting, alignment, RBQL). Aliases open either. | User decision. |
 | D61 | `Run Query` is idempotent: when the result rows are unchanged, the earlier snapshot (and its `Last run` time) is kept. | Found while closing the open items. |
+| D62 | **One convention for comment markers.** Everything YAMD reads from an HTML comment sits on a line of its own in the `yamd:` namespace: regions `<!-- yamd:NAME attrs -->` … `<!-- /yamd:NAME -->` (`toc`, `bibliography`, `query:ID`) and one-line instructions `<!-- yamd:NAME attrs -->` (`pagebreak`, `attrs`). Other comments are the author's and are never touched. | User decision, after inventorying nine marker forms. |
+| D63 | Marker attributes use the `key=value` / `key="value"` grammar of widget fences; `yamd:attrs` takes `class=wide width=50%` (no `.class` shorthand, no ids). | User decision. |
+| D64 | The older forms `<!-- pagebreak -->` and `<!-- {.wide} -->` are **not read**. They are ordinary comments. | User decision. |
+| D65 | `%% comment %%` and CriticMarkup (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`) are **removed from the engine**: comments are HTML comments, review marks are `<ins>`/`<del>`. | User decision. |
 
 ## 5. File format
 
@@ -171,7 +175,7 @@ This line is outside it.
 | Template placeholders | `{{@title}}`, `{{@date}}`, `{{@course}}`, `{{@cursor}}` | Filled once when a note is created from a template; then removed. |
 | Cross-references | `[@fig-x]` then `[Figure 2](#fig-x)` | First Build converts to a link; every Build refreshes the label from the key in the link. Targets are marked with `^id` block ids (D34), e.g. `^fig-arch`, `^tbl-results`, `^eq-pyth`, or are headings. |
 | Citations | `[@smith2020]` | Kept as is. Bibliography built from the `.bib` file between markers. Style from front matter `citation-style:` (APA default, IEEE, Chicago/Harvard; D42). With `yamd.build.linkCitations` (default on) Build links each citation to its reference-list entry (D56). |
-| Attribute effects, page breaks | `<!-- {.class width=50%} -->`, `<!-- pagebreak -->` | Invisible in editors; applied in exports (D39, D48). Any class and `key=value` pair (D59). |
+| Attribute effects, page breaks | `<!-- yamd:attrs class=wide width=50% -->`, `<!-- yamd:pagebreak -->` | Invisible in editors; applied in exports (D39, D48). Any class and `key=value` pair (D59). |
 | Critic review markup | HTML `<ins>`, `<del>`, `<mark>` plus comments (D46) | Renders as HTML anywhere; shown in exports (D39). Accept/Reject commands at the cursor, in a selection and for the whole note (D57). |
 
 Inline tokens are **not rendered in the built-in editor**. They show as readable text. The extension adds no hover; instead `YAMD: Go to Reference Target` jumps from a reference to its target (D37).
@@ -189,6 +193,16 @@ Sections the extension writes, delimited by marker comments:
 - Generated: **TOC**, **bibliography**, cross-reference labels, **query result snapshots** (with a `last run` timestamp). Marker syntax is fixed by D29; The TOC marker takes `depth=N` (default 3).
 - Rules: the extension edits **only inside markers**; the operation is **idempotent** (a second run changes nothing); edits go through the editor so **undo works**; the user can always delete the markers.
 - Triggers: `YAMD: Build` command; opt-in `yamd.build.onSave` setting (default off).
+
+### Marker convention (D62–D65)
+
+| Kind | Form | Names |
+|---|---|---|
+| Region | `<!-- yamd:NAME attrs -->` … `<!-- /yamd:NAME -->` | `toc` (`depth=N`), `bibliography`, `query:ID` |
+| Instruction | `<!-- yamd:NAME attrs -->` | `pagebreak`; `attrs` (`class=wide width=50%`, applied to the next element in exports) |
+| The author's own | `<!-- anything else -->` | never read or changed |
+
+Markers inside fenced code are examples and are ignored. The linter reports an unknown `yamd:` name (M001), a region that is never closed or closed without opening (M002), and a `yamd:attrs` pair it cannot use, such as `id=` or a `.class` shorthand (M003). Outside comments, each remaining syntax has one job: fences for widgets, `-- id="…" source="…"` as the first line of a `sql` block (a SQL comment, since it sits inside the code), `> [!type] Title ^id` for callouts, `^id` on its own line for targets, and `{due=…}` for a task's attributes.
 
 ## 9. Commands (Command Palette)
 
@@ -244,7 +258,7 @@ No default keybindings (D51).
 
   **Chosen:** Foam, SQLite3 Editor, Edit CSV, Rainbow CSV and Markdown All in One (MIT).
 - **Alias commands** redirect to companion features (open in SQLite viewer, open CSV in the CSV editor, run SQL in the SQL client, Foam daily note, etc.). Missing companions: the command offers to install the extension and then runs (D45). Aliases: Open Query Source in SQL Client, Open in SQLite Editor, Open in CSV Editor, Query CSV with RBQL, Open Daily Note.
-- YAMD keeps a **small linter** for widget fences, query headers and callouts only (duplicate ids, unknown widget types, missing `source`, missing blank line after a callout), reported in the Problems panel with quick fixes (D47). Codes: W001–W007 (widgets), C001–C002 (callouts), Q001–Q004 (queries).
+- YAMD keeps a **small linter** for widget fences, query headers and callouts only (duplicate ids, unknown widget types, missing `source`, missing blank line after a callout), reported in the Problems panel with quick fixes (D47). Codes: W001–W007 (widgets), C001–C002 (callouts), Q001–Q004 (queries), M001–M003 (markers).
 
 ## 13. Study tooling
 
@@ -353,7 +367,7 @@ Removed from 0.1: the `.yamd` language, custom editor and preview, lock mode, li
 | Parser | Keep micromark, reduced to scanning fences, callouts and inline tokens. |
 | Companion extensions | Foam, SQLite3 Editor, Edit CSV, Rainbow CSV, Markdown All in One (D60). |
 | Alias commands | Open Query Source in SQL Client, Open in SQLite Editor, Open in CSV Editor, Query CSV with RBQL, Open Daily Note. |
-| Diagnostic codes | W001–W007 widgets, C001–C002 callouts, Q001–Q004 queries. |
+| Diagnostic codes | W001–W007 widgets, C001–C002 callouts, Q001–Q004 queries, M001–M003 markers. |
 | Command list | Open Widget, Name Block, Insert Widget, Run Query, Build, Go to Reference Target, Export HTML, Export Slides, New Study Note, Start Review, Open Dashboard, Study Timer, Open in … (aliases). |
 
 ## 23. Open questions

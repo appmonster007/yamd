@@ -393,17 +393,8 @@ code.math { font-style: italic; }
 .gallery-add { display: none !important; }
 }
 
-ins.review-ins { color: var(--vscode-gitDecoration-addedResourceForeground, #2ea043); text-decoration: underline; }
-del.review-del { color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149); }
-mark.review-mark { background: color-mix(in srgb, var(--yamd-warning) 25%, transparent); }
-.review-comment {
-  font-size: 0.85em;
-  border: 1px solid color-mix(in srgb, var(--yamd-warning) 60%, transparent);
-  border-radius: 10px;
-  padding: 0 8px;
-  margin-left: 4px;
-  color: var(--yamd-warning);
-}
+ins { color: var(--vscode-gitDecoration-addedResourceForeground, #2ea043); text-decoration: underline; }
+del { color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149); }
 
 .unsafe-link { text-decoration: line-through; color: var(--yamd-muted); }
 

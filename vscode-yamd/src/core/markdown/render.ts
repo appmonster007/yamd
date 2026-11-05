@@ -720,18 +720,6 @@ class Renderer {
         const value = lookupVariable(this.doc.frontMatter, n.path);
         return value === undefined ? `<span class="var-missing">${escapeHtml(n.raw)}</span>` : escapeHtml(value);
       }
-      case 'review':
-        return n.kind === 'insert'
-          ? `<ins class="review-ins">${this.inline(n.children)}</ins>`
-          : `<del class="review-del">${this.inline(n.children)}</del>`;
-      case 'reviewSubstitute':
-        return `<del class="review-del">${this.inline(n.from)}</del><ins class="review-ins">${this.inline(n.to)}</ins>`;
-      case 'reviewHighlight': {
-        const comment = n.comment ? `<span class="review-comment">${escapeHtml(n.comment)}</span>` : '';
-        return `<mark class="review-mark">${this.inline(n.children)}</mark>${comment}`;
-      }
-      case 'reviewComment':
-        return `<span class="review-comment">${escapeHtml(n.value)}</span>`;
       case 'directive': {
         const inner = this.inline(n.children);
         if (n.name === 'kbd') return `<kbd>${inner}</kbd>`;

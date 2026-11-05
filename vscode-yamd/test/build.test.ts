@@ -171,3 +171,49 @@ describe('review marks', () => {
     assert.equal(resolveReview('<ins>a</ins><ins>b</ins>', 'reject', (s) => s.inner === 'a'), '<ins>b</ins>');
   });
 });
+
+import { findRegions, lintMarkers, parseMarkerLine } from '../src/core/build/markers';
+import { finalizeHtml, prepareExport } from '../src/core/export/prepare';
+import { parse, render } from '../src/core/markdown';
+
+describe('marker convention', () => {
+  test('one parser reads regions and instructions in the yamd namespace', () => {
+    assert.deepEqual(parseMarkerLine('<!-- yamd:toc depth=2 -->'), { name: 'toc', attrs: 'depth=2', closing: false });
+    assert.deepEqual(parseMarkerLine('<!-- /yamd:toc -->'), { name: 'toc', attrs: '', closing: true });
+    assert.deepEqual(parseMarkerLine('<!-- yamd:attrs class=wide width=50% -->'), { name: 'attrs', attrs: 'class=wide width=50%', closing: false });
+    assert.equal(parseMarkerLine('<!-- an ordinary comment -->'), undefined);
+    assert.equal(parseMarkerLine('text <!-- yamd:pagebreak --> more'), undefined);
+  });
+
+  test('the older un-namespaced forms are not markers', () => {
+    assert.equal(parseMarkerLine('<!-- pagebreak -->'), undefined);
+    assert.equal(parseMarkerLine('<!-- {.wide} -->'), undefined);
+    const { source } = prepareExport(L('# T\n\n<!-- pagebreak -->\n\n<!-- {.wide} -->\n![x](a.png)\n'));
+    assert.doesNotMatch(source, /::pagebreak/);
+    assert.match(source, /!\[x\]\(a\.png\)\n/);
+  });
+
+  test('markers inside code blocks are examples, not regions', () => {
+    const lines = L('```markdown\n<!-- yamd:toc -->\n<!-- /yamd:toc -->\n```\n');
+    assert.deepEqual(findRegions(lines), []);
+    assert.deepEqual(lintMarkers(lines), []);
+    assert.deepEqual(buildNote(lines).lines, lines);
+  });
+
+  test('the linter reports unknown markers, unclosed and stray regions, and bad attrs', () => {
+    const codes = (s: string) => lintMarkers(L(s)).map((p) => p.code);
+    assert.deepEqual(codes('<!-- yamd:banana -->'), ['M001']);
+    assert.deepEqual(codes('<!-- yamd:toc -->\ntext'), ['M002']);
+    assert.deepEqual(codes('text\n<!-- /yamd:toc -->'), ['M002']);
+    assert.deepEqual(codes('<!-- yamd:toc -->\n<!-- /yamd:toc -->\n<!-- yamd:pagebreak -->\n<!-- yamd:attrs class=a -->'), []);
+    assert.deepEqual(codes('<!-- yamd:attrs id=x -->'), ['M003']);
+    assert.deepEqual(codes('<!-- yamd:attrs .wide -->'), ['M003']);
+  });
+
+  test('yamd:attrs becomes class and attribute pairs on the next element, and pagebreak a page break', () => {
+    const { source } = prepareExport(L('<!-- yamd:attrs class="wide big" width=50% -->\n![x](a.png)\n\n<!-- yamd:pagebreak -->\n'));
+    assert.match(source, /!\[x\]\(a\.png\) \{\.wide \.big width=50%\}/);
+    assert.match(source, /::pagebreak/);
+    assert.match(finalizeHtml(render(parse(source)), new Map()), /pagebreak/);
+  });
+});

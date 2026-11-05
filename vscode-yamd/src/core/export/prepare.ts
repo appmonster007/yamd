@@ -6,7 +6,8 @@
  */
 import { scanCallouts, STUDY_TYPES } from '../build/callouts';
 import { fencedLines } from '../build/callouts';
-import { scanWidgets } from '../widgets/fences';
+import { parseAttributes, scanWidgets } from '../widgets/fences';
+import { parseMarkerLine } from '../build/markers';
 
 const BOARDS = new Set(['kanban', 'calendar', 'timeline', 'gallery']);
 const PLAIN = new Set(['note', 'tip', 'warning', 'danger']);
@@ -17,6 +18,17 @@ interface Prepared {
   source: string;
   /** Start lines of the query blocks, whose placeholders are `YAMDQUERY<line>`. */
   queryBlocks: number[];
+}
+
+/** `class=wide width=50%` as the engine's `{.wide width=50%}`. */
+function attributeBlock(text: string): string | undefined {
+  const { attrs } = parseAttributes(text);
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') parts.push(...v.split(/\s+/).filter(Boolean).map((c) => `.${c}`));
+    else if (k !== 'id') parts.push(/^[\w%.-]+$/.test(v) ? `${k}=${v}` : `${k}="${v.replace(/"/g, "'")}"`);
+  }
+  return parts.length ? `{${parts.join(' ')}}` : undefined;
 }
 
 const stripQuote = (line: string) => line.replace(/^[ \t]*>[ \t]?/, '');
@@ -66,13 +78,13 @@ export function prepareExport(lines: string[]): Prepared {
       out.push(`YAMDANCHOR:${target[1]}`);
       continue;
     }
-    if (/^\s*<!--\s*pagebreak\s*-->\s*$/.test(line)) {
+    const marker = parseMarkerLine(line);
+    if (marker && !marker.closing && marker.name === 'pagebreak') {
       out.push('::pagebreak');
       continue;
     }
-    const attrs = /^\s*<!--\s*(\{[^}]*\})\s*-->\s*$/.exec(line);
-    if (attrs) {
-      pendingAttrs = attrs[1];
+    if (marker && !marker.closing && marker.name === 'attrs') {
+      pendingAttrs = attributeBlock(marker.attrs);
       out.push('');
       continue;
     }

@@ -56,7 +56,11 @@ Suggest changes with `<ins>added</ins>` and `<del>removed</del>`, which render i
 
 ## Export
 
-**YAMD: Export HTML / PDF / Slides** writes a standalone page next to the note, with callouts numbered, references and citations resolved and widgets rendered as static HTML. PDF opens the page in your browser to print. Slides start a new slide at a `---` rule or an H1/H2 heading. Page breaks (`<!-- pagebreak -->`) and attributes (`<!-- {.wide width=50%} -->` above an element) apply in exports.
+**YAMD: Export HTML / PDF / Slides** writes a standalone page next to the note, with callouts numbered, references and citations resolved and widgets rendered as static HTML. PDF opens the page in your browser to print. Slides start a new slide at a `---` rule or an H1/H2 heading. Page breaks (`<!-- yamd:pagebreak -->`) and attributes (`<!-- yamd:attrs class=wide width=50% -->` above an element) apply in exports.
+
+### Markers
+
+Every comment YAMD reads is on a line of its own and starts with `yamd:`: regions such as `<!-- yamd:toc depth=3 -->` … `<!-- /yamd:toc -->` (also `bibliography` and `query:ID`), and one-line instructions (`pagebreak`, `attrs`). Any other comment is yours and is never touched. See [examples/01-writing/markers.md](../examples/01-writing/markers.md).
 
 ## Study tools
 
