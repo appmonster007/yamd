@@ -4,12 +4,6 @@ export const KNOWN_CONTAINERS = new Set([
   'tip',
   'warning',
   'danger',
-  'details',
-  'columns',
-  'column',
-  'figure',
-  'table',
-  'html',
   'kanban',
   'calendar',
   'timeline',
@@ -26,4 +20,4 @@ export const KNOWN_CONTAINERS = new Set([
   'derivation',
   'card',
 ]);
-export const KNOWN_LEAVES = new Set(['toc', 'pagebreak', 'embed', 'bibliography']);
+export const KNOWN_LEAVES = new Set(['pagebreak']);

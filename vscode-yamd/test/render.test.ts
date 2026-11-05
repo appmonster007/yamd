@@ -46,9 +46,6 @@ describe('headings', () => {
     assert.match(out, /<h2 id="setup" data-line="4">Install<\/h2>/);
   });
 
-  test('headings with variables slug from the resolved value', () => {
-    assert.match(html('---\ntitle: Hello World\n---\n# {{ title }}'), /<h1 id="hello-world"/);
-  });
 });
 
 describe('lists', () => {
@@ -100,18 +97,6 @@ describe('lists', () => {
 });
 
 describe('inline formatting', () => {
-  test('emphasis family', () => {
-    assert.equal(
-      html('*i* _i_ **b** __b__ ++u++ ~~s~~ ~s~ ==h== H_{2}O x^{2} y^10'),
-      '<p data-line="0"><em>i</em> <em>i</em> <strong>b</strong> <strong>b</strong> <u>u</u> <del>s</del> <del>s</del> <mark>h</mark> H<sub>2</sub>O x<sup>2</sup> y<sup>10</sup></p>',
-    );
-  });
-
-  test('scripts need a preceding character', () => {
-    assert.equal(html('a _{x} ^{y}'), '<p data-line="0">a _{x} ^{y}</p>');
-    assert.match(html('e^-1'), /e<sup>-1<\/sup>/);
-  });
-
   test('bold italic', () => {
     assert.match(html('***both***'), /<em><strong>both<\/strong><\/em>/);
   });
@@ -149,13 +134,6 @@ describe('links and images', () => {
 
   test('reference links', () => {
     assert.match(html('[docs][d]\n\n[d]: https://x.dev "X"'), /<a href="https:\/\/x\.dev" title="X">docs<\/a>/);
-  });
-
-  test('image with attributes becomes a figure', () => {
-    const out = html('![Diagram](a.png){width=300 align=center caption="Overview" #fig:a}');
-    assert.match(out, /<figure id="fig:a" class="figure align-center"/);
-    assert.match(out, /<img src="a\.png" alt="Diagram" width="300">/);
-    assert.match(out, /<figcaption>Figure 1: Overview<\/figcaption>/);
   });
 
   test('spans with attributes', () => {
@@ -203,23 +181,10 @@ describe('tables', () => {
     assert.equal(count(html('| A |\n| - |\n| a \\| b |'), '<td'), 1);
   });
 
-  test('captions and alignment', () => {
-    const out = html('{caption="Pricing" #tbl:p}\n| A | B |\n| :- | -: |\n| 1 | 2 |');
-    assert.match(out, /<table id="tbl:p"/);
-    assert.match(out, /<caption>Table 1: Pricing<\/caption>/);
-    assert.match(out, /<td align="right">2<\/td>/);
-  });
-
   test('colspan', () => {
     assert.match(html('| A | B |\n| - | - |\n| wide {colspan=2} |'), /<td colspan="2">wide<\/td>/);
   });
 
-  test('list tables', () => {
-    const out = html(':::table {header=1}\n- - H1\n  - H2\n- - a\n  - - x\n    - y\n- - wide {colspan=2}\n:::');
-    assert.match(out, /<thead><tr data-line="1"><th>H1<\/th><th>H2<\/th><\/tr><\/thead>/);
-    assert.match(out, /<td colspan="2">wide<\/td>/);
-    assert.match(out, /<td><ul data-line="4">/);
-  });
 });
 
 describe('directives', () => {
@@ -231,21 +196,6 @@ describe('directives', () => {
 
   test('unknown containers render their content', () => {
     assert.match(html(':::x-acme-chart\nInside\n:::'), /<p data-line="1">Inside<\/p>/);
-  });
-
-  test('nested containers with more colons', () => {
-    const out = html('::::columns\n:::column\nA\n:::\n:::column\nB\n:::\n::::');
-    assert.equal(count(out, 'class="column"'), 2);
-  });
-
-  test('table of contents', () => {
-    const out = html('::toc{depth=2}\n\n# A\n\n## B\n\n### C');
-    assert.match(out, /<nav class="toc"/);
-    // A single H1 is the title, so the contents leave it out.
-    assert.doesNotMatch(out, /href="#a"/);
-    assert.match(out, /href="#b"/);
-    assert.doesNotMatch(out, /href="#c"/);
-    assert.match(html('::toc\n\n# A\n\n# B'), /href="#a"[\s\S]*href="#b"/);
   });
 
   test('highlight.js and KaTeX output is safe', () => {
@@ -268,23 +218,11 @@ describe('directives', () => {
     assert.match(out, /<span class="math-inline"><i>false:x\^2<\/i><\/span>/);
   });
 
-  test('inline directives', () => {
-    assert.match(html('Press :kbd[Ctrl+S]'), /<kbd>Ctrl\+S<\/kbd>/);
-    assert.match(html(':abbr[HTML]{title="HyperText"}'), /<abbr title="HyperText">HTML<\/abbr>/);
-  });
 });
 
 describe('front matter and variables', () => {
   test('front matter is not rendered', () => {
     assert.doesNotMatch(html('---\ntitle: T\n---\nBody'), /title: T/);
-  });
-
-  test('variables are substituted', () => {
-    assert.match(html('---\nvars: {support: {email: a@b.c}}\n---\n{{ support.email }}'), /a@b\.c/);
-  });
-
-  test('built-in variables', () => {
-    assert.match(html('---\nauthor: [Ada, Alan]\n---\nBy {{ author }}'), /By Ada, Alan/);
   });
 
   test('undefined variables render literally', () => {
@@ -304,61 +242,14 @@ describe('footnotes and cross-references', () => {
     assert.match(out, /<li id="fn-1"><p data-line="3">Note B/);
   });
 
-  test('inline footnotes share the numbering', () => {
-    assert.match(html('x[^a] y^[inline]\n\n[^a]: A'), /<li id="fn-2"><p>inline/);
-  });
-
-  test('cross-references show type and number', () => {
-    const out = html(
-      '![One](1.png){caption="First" #fig:one}\n\n![Two](2.png){caption="Second" #fig:arch}\n\nSee [@fig:arch].',
-    );
-    assert.match(out, /<a class="xref" href="#fig:arch">Figure 2<\/a>/);
-  });
 });
 
 describe('ref= references', () => {
-  test('a span with a ref attribute renders as a real link to its target', () => {
-    const out = html('[mitosis]{ref=def-mitosis}');
-    assert.match(out, /<a href="#def-mitosis">mitosis<\/a>/);
-  });
-
   test('a span without a ref attribute is unaffected', () => {
     const out = html('[small print]{.muted}');
     assert.match(out, /<span class="muted">small print<\/span>/);
   });
 
-  test('a ref attribute combines with other attributes on the same span', () => {
-    const out = html('[mitosis]{.key-term ref=def-mitosis}');
-    assert.match(out, /<a href="#def-mitosis" class="key-term">mitosis<\/a>/);
-  });
-
-  test('an element with a block ID keeps its id for use as a ref target', () => {
-    const out = html('Mitosis is nuclear division. ^def-mitosis');
-    assert.match(out, /<p id="\^def-mitosis"/);
-  });
-
-  test('ref can target a block ID, kept with its caret', () => {
-    const out = html('[mitosis]{ref=^def-mitosis}');
-    assert.match(out, /<a href="#\^def-mitosis">mitosis<\/a>/);
-  });
-
-  test('a resolved ref shows a colored file:line:col locator at both the source and the target', () => {
-    const out = render(parse('[mitosis]{ref=def-mitosis} is how a cell divides.\n\n[Mitosis is nuclear division]{#def-mitosis}.'), { sourcePath: 'notes/guide.yamd' });
-    assert.match(out, /<a href="#def-mitosis" style="color:hsl\(0 70% 42%\)">mitosis<\/a> <sup class="ref-locator" style="color:hsl\(0 70% 42%\)">guide\.yamd:3:1<\/sup>/);
-    assert.match(out, /<span id="def-mitosis">Mitosis is nuclear division<\/span> <sup class="ref-locator" style="color:hsl\(0 70% 42%\)">guide\.yamd:3:1<\/sup>/);
-  });
-
-  test('two distinct ref targets get two distinct hues', () => {
-    const out = render(parse('[a]{ref=t1} [b]{ref=t2}\n\n{#t1}\nOne.\n\n{#t2}\nTwo.'));
-    const hues = [...out.matchAll(/hsl\((\d+(?:\.\d+)?) 70% 42%\)/g)].map((m) => m[1]);
-    assert.ok(new Set(hues).size >= 2, `expected distinct hues, got ${hues.join(', ')}`);
-  });
-
-  test('an unresolved ref gets no color or locator', () => {
-    const out = html('[mitosis]{ref=no-such-id}');
-    assert.match(out, /^<p data-line="0"><a href="#no-such-id">mitosis<\/a><\/p>$/);
-    assert.doesNotMatch(out, /ref-locator|style=/);
-  });
 });
 
 describe('{#id}-labeled paragraphs', () => {
@@ -392,10 +283,6 @@ describe('fallbacks', () => {
 
   test('prices are not math', () => {
     assert.equal(html('$5 and $10'), '<p data-line="0">$5 and $10</p>');
-  });
-
-  test('citations', () => {
-    assert.match(html('[@lamport1978]'), /<span class="citation">\[lamport1978\]<\/span>/);
   });
 
   test('an unknown leaf directive (e.g. the retired ::include) degrades to its label as text', () => {

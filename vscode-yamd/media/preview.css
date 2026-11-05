@@ -85,8 +85,7 @@ h6,
 
 a { color: var(--yamd-accent); text-decoration: none; }
 a:hover { color: var(--vscode-textLink-activeForeground, var(--yamd-accent)); text-decoration: underline; }
-a.wikilink,
-a.embed-link { text-decoration: underline dotted; text-underline-offset: 3px; }
+a.wikilink { text-decoration: underline dotted; text-underline-offset: 3px; }
 :focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
 
 hr { border: 0; border-top: 1px solid var(--yamd-border); margin: 2em 0; }
@@ -123,8 +122,7 @@ kbd {
   background: var(--yamd-tint);
 }
 
-.code-block,
-.raw-html {
+.code-block {
   position: relative;
   background: var(--yamd-surface);
   border-radius: var(--yamd-radius);
@@ -331,37 +329,16 @@ details > summary:hover { background: var(--yamd-tint); }
 details[open] > summary { margin-bottom: 8px; border-bottom: 1px solid var(--yamd-border); border-radius: var(--yamd-radius) var(--yamd-radius) 0 0; }
 details > :last-child { margin-bottom: 0; }
 
-.columns { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 1em; }
-.column { flex: 1 1 240px; min-width: 0; }
-.column > :first-child { margin-top: 0; }
-
 /* Math: rendered with KaTeX when available, otherwise shown as source. */
 .math-block { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 1em 0; overflow-x: auto; }
 .math-display { flex: 1; min-width: 0; overflow-x: auto; }
 .math-display .katex-display { margin: 0.4em 0; }
 .katex { font-size: 1.1em; }
 code.math { font-style: italic; }
-.eq-number { color: var(--yamd-muted); flex: none; }
 
-/* Table of contents */
-.toc {
-  border: 1px solid var(--yamd-border);
-  border-radius: var(--yamd-radius);
-  padding: 10px 16px 12px;
-  margin: 0 0 1.5em;
-  font-size: 0.95em;
-}
-.toc-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--yamd-muted); margin-bottom: 6px; }
-.toc ul { list-style: none; margin: 0; padding-left: 0; }
-.toc ul ul { padding-left: 14px; margin: 2px 0 2px 2px; border-left: 1px solid var(--yamd-border); }
-.toc li { margin: 0; line-height: 1.7; }
-.toc li + li { margin-top: 0; }
-
-.footnotes,
-.bibliography { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
+.footnotes { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
 .footnote-ref a { font-size: 0.8em; }
 
-.citation,
 .xref-missing,
 .var-missing,
 .placeholder { color: var(--yamd-muted); }
@@ -370,20 +347,6 @@ code.math { font-style: italic; }
 /* A template placeholder outside insertion is an info-level note (Y802), not an error, so it gets
    a quieter dotted underline instead of var-missing's warning-colored wavy one. */
 .placeholder { text-decoration: dotted underline var(--yamd-muted); }
-.bibliography-note { color: var(--yamd-muted); font-size: 0.9em; }
-
-/* A ref= locator: shown at both the source span and its target, in the target's own assigned
-   hue (set inline per element, since it's one of possibly many distinct targets on the page). */
-.ref-locator { font-family: var(--yamd-mono); font-size: 0.75em; opacity: 0.85; }
-
-.embed-fallback {
-  border: 1px dashed var(--yamd-border);
-  border-radius: var(--yamd-radius);
-  padding: 8px 16px;
-  margin: 0 0 1em;
-  color: var(--yamd-muted);
-  font-size: 0.9em;
-}
 
 .pagebreak { border-top: 2px dashed var(--yamd-border); margin: 2em 0; }
 @media print {
@@ -409,44 +372,11 @@ del { color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149); }
   background: color-mix(in srgb, var(--yamd-accent) 14%, transparent);
   color: var(--yamd-accent);
 }
-
-/* ---- Embeds and block anchors ---- */
-
-.embed {
-  margin: 0 0 1em;
-  border: 1px solid var(--yamd-border);
-  border-left: 3px solid var(--yamd-accent);
-  border-radius: 0 var(--yamd-radius) var(--yamd-radius) 0;
-  padding: 0;
-}
-.embed-title {
-  display: block;
-  padding: 4px 14px;
-  font-size: 12px;
-  color: var(--yamd-muted);
-  background: var(--yamd-tint);
-  border-bottom: 1px solid var(--yamd-border);
-}
-.embed-title:hover { color: var(--yamd-accent); text-decoration: none; }
-.embed-title::after { content: " ↗"; }
-.embed-content { padding: 10px 14px; }
-.embed-content > :first-child { margin-top: 0; }
-.embed-content > :last-child { margin-bottom: 0; }
 /* Headings inside an embed belong to the other note: keep them small. */
-.embed-content :is(h1,
 h2,
 h3) { font-size: 1.15em; border: 0; padding: 0; margin: 0.6em 0 0.4em; }
-.embed-content > :is(h1,
 h2,
 h3):first-child { margin-top: 0; }
-.embed-missing {
-  margin: 0 0 1em;
-  padding: 8px 14px;
-  border: 1px dashed var(--yamd-border);
-  border-radius: var(--yamd-radius);
-  color: var(--yamd-muted);
-  font-size: 0.9em;
-}
 [id^="^"]:target { background: color-mix(in srgb, var(--yamd-warning) 15%, transparent); border-radius: 4px; }
 
 /* ---- Shared controls (kanban and databases) ---- */
@@ -669,13 +599,6 @@ h3):first-child { margin-top: 0; }
 .card-answer > :last-child { margin-bottom: 0; }
 .card-answer { margin-top: 0.5rem; border-top: 1px dashed var(--yamd-border); padding-top: 0.4rem; }
 .card-answer summary { cursor: pointer; color: var(--yamd-link); }
-.cloze { border-bottom: 1px dotted var(--yamd-muted); }
-.cloze-hidden { border-bottom: 0; cursor: pointer; border-radius: 3px; background: var(--yamd-fg); }
-.cloze-hidden .cloze-answer { visibility: hidden; }
-.cloze-hidden.revealed { background: color-mix(in srgb, var(--yamd-tip) 20%, transparent); }
-.cloze-hidden.revealed .cloze-answer { visibility: visible; }
-.cloze-hidden:focus-visible { outline: 2px solid var(--yamd-link); }
-.citation-missing { color: var(--yamd-warning); text-decoration: wavy underline; }
 .references { padding-left: 1.5rem; }
 ul.references { list-style: none; padding-left: 0; }
 ul.references li { padding-left: 2rem; text-indent: -2rem; margin: 0.4rem 0; }

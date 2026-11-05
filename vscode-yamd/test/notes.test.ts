@@ -30,16 +30,6 @@ describe('tags', () => {
 });
 
 describe('block IDs', () => {
-  test('are removed from the text and become the id', () => {
-    assert.equal(html('Price is $10. ^pricing'), '<p id="^pricing" data-line="0">Price is $10.</p>');
-  });
-
-  test('on list items', () => {
-    const doc = parse('- one ^first\n- two');
-    assert.match(render(doc), /<li id="\^first"/);
-    assert.deepEqual(summarize('a.yamd', '- one ^first\n- two').blocks, [{ id: 'first', line: 0 }]);
-  });
-
 });
 
 describe('embeds', () => {
@@ -51,19 +41,11 @@ describe('embeds', () => {
     assert.deepEqual(blocks?.map((b) => b.type), ['heading', 'paragraph', 'heading', 'paragraph']);
   });
 
-  test('select a block', () => {
-    assert.equal(selectEmbed(parse(GUIDE), undefined, 'run')?.[0]?.type, 'paragraph');
-    assert.equal(selectEmbed(parse(GUIDE), undefined, 'nope'), null);
-  });
 
 
 
 
 
-
-  test('image embeds', () => {
-    assert.match(html('![[diagram.png]]{width=300}'), /<img src="diagram.png" alt="diagram.png" width="300"/);
-  });
 });
 
 

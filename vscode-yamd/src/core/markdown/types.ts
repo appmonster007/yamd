@@ -41,24 +41,9 @@ export type InlineNode =
     }
   | { type: 'span'; children: InlineNode[]; attrs: Attrs; range: Range }
   | { type: 'footnoteRef'; id: string; range: Range }
-  | { type: 'inlineFootnote'; children: InlineNode[]; range: Range }
-  | { type: 'crossRef'; id: string; range: Range }
-  | { type: 'citation'; raw: string; range: Range }
-  | { type: 'variable'; path: string; raw: string; range: Range }
-  | { type: 'directive'; name: string; children: InlineNode[]; attrs?: Attrs; range: Range }
   /** Raw HTML (an inline tag or comment), sanitized when rendered. */
   | { type: 'html'; value: string; range: Range }
   | { type: 'tag'; name: string; range: Range }
-  | {
-      type: 'embed';
-      /** Target as written, e.g. `guide#Install`. */
-      target: string;
-      file: string;
-      heading?: string;
-      blockId?: string;
-      attrs?: Attrs;
-      range: Range;
-    }
   /** Attributes that couldn't be attached to anything; rendered as their source text. */
   | { type: 'attrs'; attrs: Attrs; raw: string; range: Range };
 

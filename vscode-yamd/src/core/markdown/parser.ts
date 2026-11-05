@@ -4,7 +4,7 @@
  */
 import { MIN_CHUNK_CHARS, planChunks } from './chunking';
 import type { Definition } from './chunking';
-import { extractFrontMatter, lookupVariable } from './frontmatter';
+import { extractFrontMatter } from './frontmatter';
 import { plainText } from './inline';
 import { SlugRegistry, slugify } from './slug';
 import type { Attrs, Block, Diagnostic, FootnoteDef, Range, RefDef, YamdDocument } from './types';
@@ -40,9 +40,8 @@ function assignHeadingIds(doc: YamdDocument): void {
   walkBlocks(doc.blocks, (b) => {
     if (b.attrs?.id) registry.reserve(b.attrs.id);
   });
-  const resolve = (path: string) => lookupVariable(doc.frontMatter, path);
   walkBlocks(doc.blocks, (b) => {
-    if (b.type === 'heading') b.id = b.attrs?.id ?? registry.unique(slugify(plainText(b.children, resolve)));
+    if (b.type === 'heading') b.id = b.attrs?.id ?? registry.unique(slugify(plainText(b.children)));
   });
 }
 

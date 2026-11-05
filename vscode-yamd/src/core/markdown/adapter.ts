@@ -13,7 +13,7 @@ import { gfm } from 'micromark-extension-gfm';
 import { math } from 'micromark-extension-math';
 import { parse as micromarkParse, postprocess, preprocess } from 'micromark';
 import { attrNumber, mergeAttrs, parseAttrBlock, parseAttrs } from './attrs';
-import { KNOWN_INLINE_DIRECTIVES, plainText } from './inline';
+import { plainText } from './inline';
 import { yamdFromMarkdown } from './micromark/mdast';
 import { yamdSyntax } from './micromark/syntax';
 import type { Dialect } from './micromark/syntax';
@@ -42,19 +42,10 @@ export function toMdast(source: string, dialect: Dialect = 'yamd'): MNode {
 
 /** Tokens for YAMD syntax that GFM reads as text. Math is left out: GitHub renders `$` math too. */
 const YAMD_ONLY_TOKENS = new Set([
-  'yamdVariable',
   'yamdAttributes',
   'yamdAttributesFlow',
-  'yamdCitation',
   'yamdWikilink',
-  'yamdEmbed',
   'yamdTag',
-  'yamdBlockId',
-  'yamdScript',
-  'yamdInlineFootnote',
-  'yamdTextDirective',
-  'yamdMark',
-  'yamdIns',
   'directiveContainer',
   'directiveLeaf',
 ]);
@@ -427,10 +418,6 @@ export class Adapter {
         return [{ type: 'emphasis', kind: 'bold', children: kids(), range }];
       case 'delete':
         return [{ type: 'emphasis', kind: 'strike', children: kids(), range }];
-      case 'yamdMark':
-        return [{ type: 'emphasis', kind: 'highlight', children: kids(), range }];
-      case 'yamdIns':
-        return [{ type: 'emphasis', kind: 'underline', children: kids(), range }];
       case 'inlineCode':
         return [{ type: 'code', value: value.replace(/\r?\n/g, ' '), range }];
       case 'break':
@@ -452,40 +439,14 @@ export class Adapter {
         return [{ type: 'image', src: '', label: String(n.identifier), alt: String(n.alt ?? ''), range }];
       case 'footnoteReference':
         return [{ type: 'footnoteRef', id: String(n.identifier), range }];
-      case 'yamdVariable': {
-        const path = value.slice(2, -2).trim();
-        return [{ type: 'variable', path, raw: value, range }];
-      }
       case 'yamdAttributes': {
         const attrs = parseAttrs(value.slice(1, -1));
         return attrs ? [{ type: 'attrs', attrs, raw: value, range }] : [{ type: 'text', value, range }];
       }
-      case 'yamdCitation': {
-        const inner = value.slice(1, -1);
-        const keys = [...inner.matchAll(/@([^\s;,\]]+)/g)].map((m) => m[1] ?? '');
-        const only = keys[0] ?? '';
-        if (keys.length === 1 && /^(fig|tbl|eq|sec|def|thm|lem|ex|q|rem):/.test(only) && inner.trim() === `@${only}`) {
-          return [{ type: 'crossRef', id: only, range }];
-        }
-        return keys.length ? [{ type: 'citation', raw: inner, range }] : [{ type: 'text', value, range }];
-      }
       case 'yamdWikilink':
         return [this.wikilink(value.slice(2, -2), range)];
-      case 'yamdEmbed':
-        return [this.embed(value.slice(3, -2), range)];
       case 'yamdTag':
         return [{ type: 'tag', name: value.slice(1), range }];
-      case 'yamdBlockId':
-        return [{ type: 'blockid', id: value.slice(1), range } as unknown as InlineNode];
-      case 'yamdScript': {
-        const sup = value.startsWith('^');
-        const inner = value.startsWith('^{') || value.startsWith('_{') ? value.slice(2, -1) : value.slice(1);
-        return [{ type: 'emphasis', kind: sup ? 'sup' : 'sub', children: [{ type: 'text', value: inner, range }], range }];
-      }
-      case 'yamdInlineFootnote':
-        return [{ type: 'inlineFootnote', children: this.fragment(value.slice(2, -1), range.start + 2), range }];
-      case 'yamdTextDirective':
-        return [this.textDirective(value, range)];
       case 'yamdMathText':
         return [{ type: 'math', value: value.slice(1, -1), range }];
       default:
@@ -508,54 +469,6 @@ export class Adapter {
     return { type: 'link', kind: 'wiki', href, children, range };
   }
 
-  private embed(inner: string, range: Range): InlineNode {
-    const target = inner.split('|')[0]?.trim() ?? '';
-    const hash = target.indexOf('#');
-    const file = hash === -1 ? target : target.slice(0, hash);
-    const anchor = hash === -1 ? undefined : target.slice(hash + 1);
-    return {
-      type: 'embed',
-      target,
-      file,
-      heading: anchor && !anchor.startsWith('^') ? anchor : undefined,
-      blockId: anchor?.startsWith('^') ? anchor.slice(1) : undefined,
-      range,
-    };
-  }
-
-  private textDirective(value: string, range: Range): InlineNode {
-    const m = /^:([A-Za-z][\w-]*)\[/.exec(value);
-    const name = m?.[1] ?? '';
-    const labelStart = (m?.[0].length ?? 0);
-    let depth = 0;
-    let labelEnd = labelStart;
-    for (; labelEnd < value.length; labelEnd++) {
-      const c = value[labelEnd];
-      if (c === '\\') labelEnd++;
-      else if (c === '[') depth++;
-      else if (c === ']') {
-        if (depth === 0) break;
-        depth--;
-      }
-    }
-    const attrsText = value.slice(labelEnd + 1);
-    const attrs = attrsText.startsWith('{') ? (parseAttrs(attrsText.slice(1, -1)) ?? undefined) : undefined;
-    if (!KNOWN_INLINE_DIRECTIVES.has(name)) {
-      this.diagnostics.push({
-        code: 'Y601',
-        severity: 'warning',
-        message: `Unknown directive ":${name}". Its content is shown as plain text.`,
-        range: { start: range.start, end: range.start + 1 + name.length },
-      });
-    }
-    return {
-      type: 'directive',
-      name,
-      children: this.fragment(value.slice(labelStart, labelEnd), range.start + labelStart),
-      attrs,
-      range,
-    };
-  }
 }
 
 /** Splits text on newlines into text and line break nodes: in YAMD, every newline is a line break. */
@@ -572,11 +485,6 @@ function attachAttributes(nodes: InlineNode[]): InlineNode[] {
     if (prev && prev.range.end === n.range.start && (prev.type === 'image' || prev.type === 'link')) {
       prev.attrs = mergeAttrs(prev.attrs, n.attrs);
       prev.range = { start: prev.range.start, end: n.range.end };
-      continue;
-    }
-    if (prev?.type === 'embed' && prev.range.end === n.range.start) {
-      // The embed's range stays on `![[...]]`, which link edits rely on.
-      prev.attrs = mergeAttrs(prev.attrs, n.attrs);
       continue;
     }
     if (prev?.type === 'text' && prev.value.endsWith(']')) {

@@ -10,14 +10,6 @@ import { Bibliography, parseBibtex, parseCitation } from '../src/core/citations/
 
 describe('study blocks', () => {
   const doc = parse(':::definition {#def:x title="Group"}\nA set with an operation.\n:::\n\n:::theorem\nT.\n:::\n\nSee [@def:x].\n\n:::proof\nTrivial.\n:::\n');
-  it('numbers and cross-references', () => {
-    const html = render(doc);
-    assert.match(html, /Definition 1/);
-    assert.match(html, /\(Group\)/);
-    assert.match(html, /Theorem 1/);
-    assert.match(html, /href="#def:x">Definition 1</);
-    assert.match(html, /proof-end/);
-  });
   it('lays out a derivation', () => {
     const tex = derivationTex('(a+b)^2 = a^2 + 2ab + b^2 // expand\n= a^2 + b^2 + 2ab // reorder');
     assert.match(tex, /\\begin\{aligned\}/);
@@ -87,12 +79,6 @@ describe('citations', () => {
     const apa = new Bibliography(bib, 'apa');
     apa.cite([{ key: 'k' }, { key: 'lamport1978' }]);
     assert.match(apa.references(), /Knuth, D\., &amp; Other, A\./);
-  });
-  it('renders citations and the reference list', () => {
-    const doc = parse('As shown [@lamport1978].\n\n::bibliography\n');
-    const html = render(doc, { bibliography: new Bibliography(bib, 'apa') });
-    assert.match(html, /\(Lamport, 1978\)/);
-    assert.match(html, /<i>CACM<\/i>/);
   });
 });
 

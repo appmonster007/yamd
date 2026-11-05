@@ -2,7 +2,6 @@
  * Standalone HTML output (§6.6): a printable document with a title page and contents, a read-only
  * copy for sharing, and a slide deck. All of them are single files with no external resources.
  */
-import { lookupVariable } from '../markdown/frontmatter';
 import { plainText } from '../markdown/inline';
 import { walkBlocks } from '../markdown/parser';
 import { escapeHtml, render } from '../markdown/render';
@@ -31,7 +30,7 @@ function meta(doc: YamdDocument) {
   const firstH1 = (() => {
     let t: string | undefined;
     walkBlocks(doc.blocks, (b) => {
-      if (t === undefined && b.type === 'heading' && b.level === 1) t = plainText(b.children, (p) => lookupVariable(doc.frontMatter, p));
+      if (t === undefined && b.type === 'heading' && b.level === 1) t = plainText(b.children);
     });
     return t;
   })();

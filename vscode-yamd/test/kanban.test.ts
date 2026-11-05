@@ -71,11 +71,6 @@ describe('board model', () => {
     assert.match(render(parse(BOARD)), /Body of A\./);
   });
 
-  test('board headings are not in the table of contents', () => {
-    const out = render(parse(`## Intro\n\n::toc\n\n${BOARD}`));
-    assert.doesNotMatch(out, /<a href="#todo"/);
-    assert.match(out, /<a href="#intro"/);
-  });
 });
 
 describe('rendering', () => {

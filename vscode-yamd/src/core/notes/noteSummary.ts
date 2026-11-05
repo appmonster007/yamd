@@ -99,21 +99,6 @@ function noteLinks(doc: YamdDocument): NoteLink[] {
       const parts = splitTarget(target);
       const start = n.range.start + 2 + lead;
       links.push({ kind: 'wiki', target, ...parts, range: n.range, fileRange: { start, end: start + parts.file.length }, line: lineOf(doc, n.range.start), snippet: '' });
-    } else if (n.type === 'embed') {
-      const inner = src.slice(n.range.start + 3, n.range.end - 2);
-      const lead = inner.length - inner.trimStart().length;
-      const start = n.range.start + 3 + lead;
-      links.push({
-        kind: 'embed',
-        target: n.target,
-        file: n.file,
-        heading: n.heading,
-        blockId: n.blockId,
-        range: n.range,
-        fileRange: { start, end: start + n.file.length },
-        line: lineOf(doc, n.range.start),
-        snippet: '',
-      });
     } else if ((n.type === 'link' && n.kind === 'inline') || (n.type === 'image' && n.label === undefined)) {
       const href = n.type === 'link' ? n.href : n.src;
       if (!href || SCHEME.test(href) || href.startsWith('#') || href.startsWith('//')) return;

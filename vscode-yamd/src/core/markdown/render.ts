@@ -4,33 +4,17 @@ import type { BoardContext } from './renderBoards';
 import { escapeHtml, sanitizeUrl, today } from './renderUtil';
 
 export { escapeHtml, isoWeek, sanitizeUrl } from './renderUtil';
-import { lookupVariable } from './frontmatter';
 import { plainText } from './inline';
 import { buildBoard, buildCalendarCards, buildGallery, buildTimeline, hashText } from '../widgets/kanban';
-import { blockInlines, walkInline } from '../notes/notes';
 import { walkBlocks } from './parser';
 import { normalizeUri } from 'micromark-util-sanitize-uri';
 import { sanitizeHtml } from './sanitize';
-import { Bibliography, parseCitation } from '../citations/bibtex';
 import { STUDY_BY_NAME } from '../study/blocks';
 import type { Attrs, Block, ContainerBlock, InlineNode, ListBlock, TableCell, YamdDocument } from './types';
-
-/** Content resolved for an embed. */
-interface ResolvedEmbed {
-  /** Path of the embedded note, used for `data-source` and the link back. */
-  path: string;
-  /** Link back to the source, e.g. `guide.yamd#install`. */
-  href: string;
-  title: string;
-  /** Rendered HTML of the embedded content. */
-  html: string;
-}
 
 export interface RenderOptions {
   /** Maps a safe image URL to the URL the output should use (e.g. a webview URI). */
   resolveImage?: (src: string) => string;
-  /** Resolves `![[note]]`. Without it, embeds render as links. */
-  resolveEmbed?: (target: { file: string; heading?: string; blockId?: string }) => ResolvedEmbed | 'missing' | 'cycle' | null;
   /** `trust` renders raw HTML unchanged (only for tests and trusted mode). Default: sanitize. */
   rawHtml?: 'sanitize' | 'trust';
   /** `newline` renders soft breaks as Markdown does (only for conformance tests). Default: `break`. */
@@ -45,10 +29,6 @@ export interface RenderOptions {
   highlight?: (code: string, lang: string) => string | undefined;
   /** Renders TeX: returns HTML, or undefined to show the source. Output must be safe. */
   renderMath?: (tex: string, display: boolean) => string | undefined;
-  /** Resolves `[@key]` citations and fills `::bibliography`. Without it, the cited keys are listed. */
-  bibliography?: Bibliography;
-  /** Hides `:cloze[…]` answers until clicked. */
-  quiz?: boolean;
 }
 
 const CALLOUT_TITLES: Record<string, string> = {
@@ -60,34 +40,10 @@ const CALLOUT_TITLES: Record<string, string> = {
 
 const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
 
-/** True if a figure is an image alone in its paragraph with a caption. */
-function figureImage(b: Block): Extract<InlineNode, { type: 'image' }> | null {
-  if (b.type !== 'paragraph') return null;
-  const nodes = b.children.filter((n) => !(n.type === 'text' && n.value.trim() === ''));
-  const only = nodes[0];
-  if (nodes.length !== 1 || only?.type !== 'image' || attrString(only.attrs, 'caption') === undefined) return null;
-  return only;
-}
-
-/** An embed alone in its paragraph renders as a block. */
-function blockEmbed(b: Block): Extract<InlineNode, { type: 'embed' }> | null {
-  if (b.type !== 'paragraph') return null;
-  const nodes = b.children.filter((n) => !(n.type === 'text' && n.value.trim() === ''));
-  const only = nodes[0];
-  return nodes.length === 1 && only?.type === 'embed' ? only : null;
-}
-
 class Renderer {
-  private readonly numbers = new Map<string, { kind: string; n: number }>();
   private readonly footnoteOrder: string[] = [];
   private readonly footnoteRefCount = new Map<string, number>();
-  private readonly inlineFootnotes: InlineNode[][] = [];
-  private readonly citations: string[] = [];
   private readonly studyNumbers = new WeakMap<ContainerBlock, number>();
-  private figureCount = 0;
-  private tableCount = 0;
-  private equationCount = 0;
-  private refTargets: Map<string, { hue: number; line: number; column: number }> | undefined;
 
   constructor(
     private readonly doc: YamdDocument,
@@ -96,9 +52,8 @@ class Renderer {
     this.number();
   }
 
-  /** Numbers figures, tables, equations and sections in document order. */
+  /** Numbers study blocks (definitions, theorems, …) per kind, in document order. */
   private number(): void {
-    let sections = 0;
     const studyCounts = new Map<string, number>();
     walkBlocks(this.doc.blocks, (b) => {
       const study = b.type === 'container' ? STUDY_BY_NAME.get(b.name) : undefined;
@@ -106,104 +61,8 @@ class Renderer {
         const n = (studyCounts.get(study.name) ?? 0) + 1;
         studyCounts.set(study.name, n);
         this.studyNumbers.set(b, n);
-        if (b.attrs?.id) this.numbers.set(b.attrs.id, { kind: study.label, n });
-      }
-      const img = figureImage(b);
-      if (img) {
-        const n = ++this.figureCount;
-        if (img.attrs?.id) this.numbers.set(img.attrs.id, { kind: 'Figure', n });
-      } else if (b.type === 'container' && b.name === 'figure' && attrString(b.attrs, 'caption') !== undefined) {
-        const n = ++this.figureCount;
-        if (b.attrs?.id) this.numbers.set(b.attrs.id, { kind: 'Figure', n });
-      } else if (
-        (b.type === 'table' || (b.type === 'container' && b.name === 'table')) &&
-        attrString(b.attrs, 'caption') !== undefined
-      ) {
-        const n = ++this.tableCount;
-        if (b.attrs?.id) this.numbers.set(b.attrs.id, { kind: 'Table', n });
-      } else if (b.type === 'math' && b.attrs?.id) {
-        this.numbers.set(b.attrs.id, { kind: 'Equation', n: ++this.equationCount });
-      } else if (b.type === 'heading' && !b.inBoard) {
-        sections++;
-        if (b.id.startsWith('sec:')) this.numbers.set(b.id, { kind: 'Section', n: sections });
       }
     });
-    this.figureCount = 0;
-    this.tableCount = 0;
-    this.equationCount = 0;
-  }
-
-  /** The 1-based line and column of a character offset into the source. */
-  private offsetToLineCol(offset: number): { line: number; column: number } {
-    const starts = this.doc.lineStarts;
-    let lo = 0;
-    let hi = starts.length - 1;
-    let line = 0;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      if ((starts[mid] ?? 0) <= offset) {
-        line = mid;
-        lo = mid + 1;
-      } else {
-        hi = mid - 1;
-      }
-    }
-    return { line: line + 1, column: offset - (starts[line] ?? 0) + 1 };
-  }
-
-  /** Where an `{#id}`/`^id` target actually is in the source, for a `ref=` locator (§4.5). */
-  private locate(id: string): { line: number; column: number } | undefined {
-    const blockId = id.startsWith('^') ? id.slice(1) : undefined;
-    let found: { line: number; column: number } | undefined;
-    walkBlocks(this.doc.blocks, (b) => {
-      if (found) return;
-      if (blockId === undefined && b.type === 'heading' && b.id === id) found = { line: b.line + 1, column: 1 };
-      else if (blockId === undefined && b.attrs?.id === id) found = { line: b.line + 1, column: 1 };
-      else if (blockId !== undefined && b.type === 'paragraph' && b.blockId === blockId) {
-        const col = (this.doc.lines[b.endLine] ?? '').indexOf(`^${blockId}`);
-        found = { line: b.endLine + 1, column: (col === -1 ? 0 : col) + 1 };
-      }
-      if (found) return;
-      for (const nodes of blockInlines(b)) {
-        walkInline(nodes, (n) => {
-          if (found || blockId !== undefined) return;
-          if ((n.type === 'span' || n.type === 'image' || n.type === 'link') && n.attrs?.id === id) found = this.offsetToLineCol(n.range.start);
-        });
-      }
-    });
-    return found;
-  }
-
-  /**
-   * Every distinct `ref=` target in the document, in order of first use, each assigned its own hue
-   * (a golden-angle step, so no two repeat) and the line/column its target actually sits at — the
-   * same information shown at both ends of the reference, source and target (§4.5).
-   */
-  private computeRefTargets(): Map<string, { hue: number; line: number; column: number }> {
-    if (this.refTargets) return this.refTargets;
-    const map = new Map<string, { hue: number; line: number; column: number }>();
-    walkBlocks(this.doc.blocks, (b) => {
-      for (const nodes of blockInlines(b)) {
-        walkInline(nodes, (n) => {
-          if (n.type !== 'span') return;
-          const ref = attrString(n.attrs, 'ref');
-          if (!ref || map.has(ref)) return;
-          const pos = this.locate(ref);
-          if (pos) map.set(ref, { hue: (map.size * 137.508) % 360, ...pos });
-        });
-      }
-    });
-    this.refTargets = map;
-    return map;
-  }
-
-  /** The `file:line:col` badge shown next to both a `ref=` source and its target. */
-  private locatorBadge(id: string): string {
-    const info = this.computeRefTargets().get(id);
-    if (!info) return '';
-    const file = this.options.sourcePath?.split('/').pop();
-    const text = `${file ? `${file}:` : ''}${info.line}:${info.column}`;
-    return ` <sup class="ref-locator" style="color:hsl(${info.hue} 70% 42%)">${escapeHtml(text)}</sup>`;
   }
 
   render(): string {
@@ -236,15 +95,10 @@ class Renderer {
   private block(b: Block): string {
     switch (b.type) {
       case 'paragraph': {
-        const img = figureImage(b);
-        if (img) return this.figure(img, b.line);
-        const embed = blockEmbed(b);
-        if (embed) return this.embedBlock(embed, b.line);
-        const id = b.attrs?.id ?? (b.blockId ? `^${b.blockId}` : undefined);
-        return `<p${this.attrs(b.attrs, b.line, [], id)}>${this.inline(b.children)}${id ? this.locatorBadge(id) : ''}</p>`;
+        return `<p${this.attrs(b.attrs, b.line)}>${this.inline(b.children)}</p>`;
       }
       case 'heading':
-        return `<h${b.level}${this.attrs(b.attrs, b.line, [], b.id)}>${this.inline(b.children)}${this.locatorBadge(b.id)}</h${b.level}>`;
+        return `<h${b.level}${this.attrs(b.attrs, b.line, [], b.id)}>${this.inline(b.children)}</h${b.level}>`;
       case 'thematicBreak':
         return `<hr${this.attrs(b.attrs, b.line)}>`;
       case 'blockquote':
@@ -254,11 +108,9 @@ class Renderer {
       case 'code':
         return this.code(b);
       case 'math': {
-        const id = b.attrs?.id;
-        const num = id ? `<span class="eq-number">(${++this.equationCount})</span>` : '';
         const math = this.options.renderMath?.(b.value, true);
         const body = math !== undefined ? `<div class="math-display">${math}</div>` : `<code class="math">${escapeHtml(b.value)}</code>`;
-        return `<div${this.attrs(b.attrs, b.line, ['math-block'])}>${body}${num}</div>`;
+        return `<div${this.attrs(b.attrs, b.line, ['math-block'])}>${body}</div>`;
       }
       case 'html':
         return this.html(b.value);
@@ -286,7 +138,7 @@ class Renderer {
     const items = b.items
       .map((it) => {
         // Tight lists render paragraphs without <p>, as in CommonMark.
-        const parts = it.children.map((c) => (!b.spread && c.type === 'paragraph' && !figureImage(c) && !blockEmbed(c) ? this.inline(c.children) : this.block(c)));
+        const parts = it.children.map((c) => (!b.spread && c.type === 'paragraph' ? this.inline(c.children) : this.block(c)));
         let body = parts.join('\n');
         const first = it.children[0];
         const id = !b.spread && first?.type === 'paragraph' && first.blockId ? `^${first.blockId}` : undefined;
@@ -326,15 +178,8 @@ class Renderer {
     return `<div${this.attrs(b.attrs, b.line, ['code-block'])}>${this.codeHeader(title, b.lang)}<pre><code${lang}>${this.codeBody(b.value, b.lang)}</code></pre></div>`;
   }
 
-  private figure(img: Extract<InlineNode, { type: 'image' }>, line: number): string {
-    const n = ++this.figureCount;
-    const caption = attrString(img.attrs, 'caption') ?? '';
-    return `<figure${this.attrs(img.attrs, line, ['figure'])}>${this.image(img, true)}<figcaption>Figure ${n}: ${escapeHtml(caption)}</figcaption></figure>`;
-  }
-
   private table(header: TableCell[], rowsIn: TableCell[][], align: (string | null)[], attrs: Attrs | undefined, line: number): string {
-    const caption = attrString(attrs, 'caption');
-    const cap = caption !== undefined ? `<caption>Table ${++this.tableCount}: ${escapeHtml(caption)}</caption>` : '';
+    const cap = '';
     const cell = (c: TableCell, tag: 'th' | 'td', col: number) => {
       const a = align[col];
       const al = a ? ` align="${a}"` : '';
@@ -375,30 +220,6 @@ class Renderer {
     return `<table${this.attrs(attrs, line)}>${cap}\n${head}${body}\n</table>`;
   }
 
-  private listTable(b: ContainerBlock): string {
-    const list = b.children.find((c): c is ListBlock => c.type === 'list');
-    const headerRows = attrNumber(b.attrs, 'header') ?? 0;
-    const caption = attrString(b.attrs, 'caption');
-    const cap = caption !== undefined ? `<caption>Table ${++this.tableCount}: ${escapeHtml(caption)}</caption>` : '';
-    const rows = (list?.items ?? []).map((row, r) => {
-      const cellsList = row.children.find((c): c is ListBlock => c.type === 'list');
-      const tag = r < headerRows ? 'th' : 'td';
-      const cells = (cellsList?.items ?? []).map((cell) => {
-        const span = attrNumber(cell.attrs, 'colspan');
-        const rowspan = attrNumber(cell.attrs, 'rowspan');
-        const spans = (span ? ` colspan="${span}"` : '') + (rowspan ? ` rowspan="${rowspan}"` : '');
-        const only = cell.children[0];
-        const tight = cell.children.length === 1 && only?.type === 'paragraph';
-        const body = tight && only?.type === 'paragraph' ? this.inline(only.children) : this.blocks(cell.children);
-        return `<${tag}${spans}>${body}</${tag}>`;
-      });
-      return { header: r < headerRows, html: `<tr data-line="${row.line}">${cells.join('')}</tr>` };
-    });
-    const head = rows.filter((r) => r.header).map((r) => r.html).join('');
-    const body = rows.filter((r) => !r.header).map((r) => r.html).join('');
-    return `<table${this.attrs(b.attrs, b.line, ['list-table'])}>${cap}${head ? `<thead>${head}</thead>` : ''}<tbody>${body}</tbody></table>`;
-  }
-
   private container(b: ContainerBlock): string {
     const title = attrString(b.attrs, 'title');
     switch (b.name) {
@@ -422,21 +243,6 @@ class Renderer {
         return this.derivation(b);
       case 'card':
         return this.cardBlock(b);
-      case 'details': {
-        const summary = escapeHtml(attrString(b.attrs, 'summary') ?? 'Details');
-        return `<details${this.attrs(b.attrs, b.line)}><summary>${summary}</summary>\n${this.blocks(b.children)}\n</details>`;
-      }
-      case 'columns':
-        return `<div${this.attrs(b.attrs, b.line, ['columns'])}>\n${this.blocks(b.children)}\n</div>`;
-      case 'column':
-        return `<div${this.attrs(b.attrs, b.line, ['column'])}>\n${this.blocks(b.children)}\n</div>`;
-      case 'figure': {
-        const caption = attrString(b.attrs, 'caption');
-        const cap = caption !== undefined ? `<figcaption>Figure ${++this.figureCount}: ${escapeHtml(caption)}</figcaption>` : '';
-        return `<figure${this.attrs(b.attrs, b.line, ['figure'])}>\n${this.blocks(b.children)}\n${cap}</figure>`;
-      }
-      case 'table':
-        return this.listTable(b);
       case 'kanban':
         return renderBoard(this.boardContext(), buildBoard(b));
       case 'calendar':
@@ -491,39 +297,10 @@ class Renderer {
   }
 
 
-  private embedBlock(embed: Extract<InlineNode, { type: 'embed' }>, line: number): string {
-    if (IMAGE_FILE.test(embed.file)) return `<p data-line="${line}">${this.embedInline(embed)}</p>`;
-    const resolved = this.options.resolveEmbed?.({ file: embed.file, heading: embed.heading, blockId: embed.blockId });
-    if (resolved === 'missing') return `<div class="embed-missing" data-line="${line}">Note not found: <code>${escapeHtml(embed.target)}</code></div>`;
-    if (resolved === 'cycle') return `<div class="embed-missing" data-line="${line}">Circular embed: <code>${escapeHtml(embed.target)}</code></div>`;
-    if (resolved) {
-      return `<div class="embed" data-line="${line}" data-source="${escapeHtml(resolved.path)}"><a class="embed-title" href="${escapeHtml(resolved.href)}">${escapeHtml(resolved.title)}</a><div class="embed-content">${resolved.html}</div></div>`;
-    }
-    return `<p data-line="${line}">${this.embedInline(embed)}</p>`;
-  }
-
-  private embedInline(embed: Extract<InlineNode, { type: 'embed' }>): string {
-    if (IMAGE_FILE.test(embed.file)) {
-      return this.image({ type: 'image', src: embed.file, alt: embed.file.replace(/^.*\//, ''), attrs: embed.attrs, range: embed.range });
-    }
-    const anchor = embed.blockId ? `#^${embed.blockId}` : embed.heading ? `#${escapeHtml(embed.heading)}` : '';
-    const file = /\.[A-Za-z0-9]+$/.test(embed.file) || embed.file === '' ? embed.file : `${embed.file}.yamd`;
-    return `<a class="embed-link wikilink" href="${escapeHtml(file)}${anchor}">${escapeHtml(embed.target)}</a>`;
-  }
-
   private leaf(b: Extract<Block, { type: 'leaf' }>): string {
     switch (b.name) {
-      case 'toc':
-        return this.toc(attrNumber(b.attrs, 'depth') ?? 3, b.line);
       case 'pagebreak':
         return `<div class="pagebreak" data-line="${b.line}" aria-hidden="true"></div>`;
-      case 'embed': {
-        const url = sanitizeUrl(b.rawLabel);
-        const link = url ? `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>` : escapeHtml(b.rawLabel);
-        return `<div class="embed-fallback" data-line="${b.line}">Embedded content: ${link}</div>`;
-      }
-      case 'bibliography':
-        return `<section class="bibliography" data-line="${b.line}" data-bibliography></section>`;
       default:
         return `<p data-line="${b.line}">${this.inline(b.label)}</p>`;
     }
@@ -545,7 +322,7 @@ class Renderer {
     const h1s = this.outline.filter((b) => b.level === 1).length;
     for (const b of this.outline) {
       if (b.level <= depth && !(b.level === 1 && h1s === 1)) {
-        const text = plainText(b.children, (path) => lookupVariable(this.doc.frontMatter, path));
+        const text = plainText(b.children);
         headings.push({ level: b.level, id: b.id, html: escapeHtml(text) });
       }
     }
@@ -667,22 +444,10 @@ class Renderer {
       }
       case 'image':
         return this.image(n);
-      case 'span': {
-        const ref = attrString(n.attrs, 'ref');
-        if (ref) {
-          // A real link to #target-id, the same as a cross-reference — no connector drawing, just
-          // a colored anchor link plus a file:line:col locator, matching the one shown at the target.
-          const info = this.computeRefTargets().get(ref);
-          const style = info ? ` style="color:hsl(${info.hue} 70% 42%)"` : '';
-          return `<a href="#${escapeHtml(ref)}"${this.attrs(n.attrs, undefined)}${style}>${this.inline(n.children)}</a>${this.locatorBadge(ref)}`;
-        }
-        const id = n.attrs?.id;
-        return `<span${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</span>${id ? this.locatorBadge(id) : ''}`;
-      }
+      case 'span':
+        return `<span${this.attrs(n.attrs, undefined)}>${this.inline(n.children)}</span>`;
       case 'tag':
         return `<span class="tag" data-tag="${escapeHtml(n.name)}">#${escapeHtml(n.name)}</span>`;
-      case 'embed':
-        return this.embedInline(n);
       case 'attrs':
         return escapeHtml(n.raw);
       case 'footnoteRef': {
@@ -690,59 +455,7 @@ class Renderer {
         const { n: num, refId } = this.footnoteNumber(n.id);
         return `<sup class="footnote-ref"><a href="#fn-${num}" id="${refId}">${num}</a></sup>`;
       }
-      case 'inlineFootnote': {
-        this.inlineFootnotes.push(n.children);
-        const { n: num, refId } = this.footnoteNumber(`\u0000inline-${this.inlineFootnotes.length - 1}`);
-        return `<sup class="footnote-ref"><a href="#fn-${num}" id="${refId}">${num}</a></sup>`;
-      }
-      case 'crossRef': {
-        const target = this.numbers.get(n.id);
-        if (!target) return `<span class="xref-missing">[@${escapeHtml(n.id)}]</span>`;
-        return `<a class="xref" href="#${escapeHtml(n.id)}">${target.kind} ${target.n}</a>`;
-      }
-      case 'citation': {
-        for (const m of n.raw.matchAll(/@([^\s;,\]]+)/g)) {
-          const key = m[1] ?? '';
-          if (!this.citations.includes(key)) this.citations.push(key);
-        }
-        const bib = this.options.bibliography;
-        if (bib) {
-          const cited = parseCitation(n.raw);
-          const text = bib.cite(cited);
-          const missing = cited.some((c) => !bib.has(c.key));
-          const target = cited.length === 1 && bib.has(cited[0]?.key ?? '') ? ` href="#ref-${escapeHtml(cited[0]?.key ?? '')}"` : '';
-          return `<a class="citation${missing ? ' citation-missing' : ''}"${target}>${escapeHtml(text)}</a>`;
-        }
-        return `<span class="citation">[${escapeHtml(n.raw.replace(/@/g, ''))}]</span>`;
-      }
-      case 'variable': {
-        if (n.path.startsWith('@')) return `<span class="placeholder">${escapeHtml(n.raw)}</span>`;
-        const value = lookupVariable(this.doc.frontMatter, n.path);
-        return value === undefined ? `<span class="var-missing">${escapeHtml(n.raw)}</span>` : escapeHtml(value);
-      }
-      case 'directive': {
-        const inner = this.inline(n.children);
-        if (n.name === 'kbd') return `<kbd>${inner}</kbd>`;
-        if (n.name === 'abbr') {
-          const title = attrString(n.attrs, 'title');
-          return `<abbr${title ? ` title="${escapeHtml(title)}"` : ''}>${inner}</abbr>`;
-        }
-        if (n.name === 'cloze') {
-          return this.options.quiz
-            ? `<span class="cloze cloze-hidden" tabindex="0" role="button" aria-label="Hidden answer. Press to reveal."><span class="cloze-answer">${inner}</span></span>`
-            : `<span class="cloze">${inner}</span>`;
-        }
-        return inner;
-      }
     }
-  }
-
-  /** The cited keys, since citations aren't resolved against a bibliography file. */
-  bibliography(): string {
-    if (this.citations.length === 0) return '';
-    if (this.options.bibliography) return this.options.bibliography.references();
-    const items = this.citations.map((c) => `<li>${escapeHtml(c)}</li>`).join('');
-    return `<p class="bibliography-note">Citations aren't resolved in the preview. Cited keys:</p><ul>${items}</ul>`;
   }
 
   private footnoteSection(): string {
@@ -752,11 +465,7 @@ class Renderer {
     for (let i = 0; i < this.footnoteOrder.length; i++) {
       const key = this.footnoteOrder[i] as string;
       let body: string;
-      if (key.startsWith('\u0000inline-')) {
-        body = `<p>${this.inline(this.inlineFootnotes[Number(key.slice(8))] ?? [])}</p>`;
-      } else {
-        body = this.blocks(this.doc.footnotes.get(key)?.children ?? []);
-      }
+      body = this.blocks(this.doc.footnotes.get(key)?.children ?? []);
       const back = ` <a href="#fnref-${i + 1}" class="footnote-back" aria-label="Back to reference">↩</a>`;
       body = body.replace(/<\/p>(?![\s\S]*<\/p>)/, `${back}</p>`);
       rendered.push(`<li id="fn-${i + 1}">${body}</li>`);
@@ -784,15 +493,5 @@ export function derivationTex(raw: string): string {
 }
 
 export function render(doc: YamdDocument, options: RenderOptions = {}): string {
-  const r = new Renderer(doc, options);
-  let html = r.render();
-  const bib = r.bibliography();
-  if (bib) {
-    if (html.includes('data-bibliography></section>')) {
-      html = html.replace('data-bibliography></section>', `data-bibliography>${bib}</section>`);
-    } else {
-      html += `\n<section class="bibliography">${bib}</section>`;
-    }
-  }
-  return html;
+  return new Renderer(doc, options).render();
 }

@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** complete (2026-11-05). Decisions D1–D68 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D69 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -103,6 +103,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D66 | **Exports read prose as plain Markdown (GFM).** YAMD-only syntax (`#tag`, `==mark==`, `++under++`, `x^2`, `H_{2}O`, `{{ var }}`, `^[note]`, `{.class}` and `:::name` typed by hand) is ordinary text there. The full syntax (tags, `{key=value}` attributes) applies **inside widget blocks only**, which are rendered on their own and placed in the page. | User decision. Found because the 0.1 engine rendered a plain note differently from VS Code and GitHub. |
 | D67 | In exports (and in flashcard text) **a newline inside a paragraph is a space**, as in Markdown; end a line with two spaces or a backslash for a hard break. | User decision. |
 | D68 | `[[page]]` and `[[page\|text]]` in an export link to the note's file next to it (`page.md`, with `#anchor` for `[[page#Heading]]`). `![[page]]` embeds are not supported. | User decision. |
+| D69 | The engine is trimmed to what widget blocks and exports use: GFM, `#tags`, `{key=value}` attributes, wikilinks, math, footnotes and the board, study and callout containers. Removed from 0.1: variables, embeds, `::toc`/`::embed`/`::bibliography`, citations and cross-references in the engine (Build does both), inline footnotes, sup/sub, `==mark==`/`++ins++`, block ids on paragraphs, text directives and cloze, ref spans and figure/table/equation numbering, and the details/columns/figure/table/html containers. | Nothing in the 1.2 spec uses them. |
 
 ## 5. File format
 
