@@ -4,7 +4,9 @@
  */
 import { extractFrontMatter } from '../markdown/frontmatter';
 import type { BibEntry } from '../citations/bibtex';
-import { bibliographyLines, citationStyle, citedKeys } from './bibliography';
+import { Bibliography } from '../citations/bibtex';
+import { bibliographyLines, citationStyle } from './bibliography';
+import { citedKeys, linkCitations } from './citations';
 import { findRegions, writeRegion } from './markers';
 import { collectTargets, resolveReferences } from './refs';
 import { tocLines } from './toc';
@@ -12,6 +14,8 @@ import { tocLines } from './toc';
 interface BuildContext {
   /** Parsed `.bib` entries, when the note names a bibliography file that could be read. */
   entries?: BibEntry[];
+  /** Turn `[@key]` into links to the bibliography (default true). */
+  linkCitations?: boolean;
 }
 
 interface BuildResult {
@@ -29,6 +33,12 @@ export function bibSettings(lines: string[]): { file?: string; style: ReturnType
 export function buildNote(input: string[], ctx: BuildContext = {}): BuildResult {
   const warnings: string[] = [];
   let lines = resolveReferences(input, collectTargets(input));
+
+  if (ctx.entries && ctx.linkCitations !== false) {
+    const targets = new Set(collectTargets(lines).map((t) => t.id));
+    const bib = new Bibliography(ctx.entries, bibSettings(lines).style);
+    lines = linkCitations(lines, bib, citedKeys(lines, (id) => targets.has(id)), (id) => targets.has(id));
+  }
 
   for (const region of findRegions(lines)) {
     if (region.name === 'toc') lines = writeRegion(lines, 'toc', tocLines(lines, region.attrs));

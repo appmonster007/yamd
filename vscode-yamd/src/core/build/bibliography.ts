@@ -1,20 +1,5 @@
-import { mapOutsideCode } from './refs';
-import { Bibliography, citationStyle, formatEntry, parseCitation } from '../citations/bibtex';
+import { Bibliography, citationStyle, formatEntry } from '../citations/bibtex';
 import type { BibEntry, CitationStyle } from '../citations/bibtex';
-
-/** Citation keys in the order they are first cited, skipping cross-reference ids. */
-export function citedKeys(lines: string[], isTarget: (id: string) => boolean): string[] {
-  const keys: string[] = [];
-  mapOutsideCode(lines, (text) => {
-    for (const m of text.matchAll(/\[(@[^\]\n]+)\](?!\()/g)) {
-      for (const c of parseCitation((m[1] as string).replace(/^@/, '@'))) {
-        if (!isTarget(c.key) && !keys.includes(c.key)) keys.push(c.key);
-      }
-    }
-    return text;
-  });
-  return keys;
-}
 
 interface BibliographyResult {
   lines: string[];

@@ -57,7 +57,7 @@ function readEntries(doc: vscode.TextDocument, lines: string[]): { entries?: Bib
 function planBuild(doc: vscode.TextDocument): { edit?: vscode.TextEdit; warnings: string[] } {
   const lines = linesOf(doc);
   const { entries } = readEntries(doc, lines);
-  const result = buildNote(lines, entries ? { entries } : {});
+  const result = buildNote(lines, { ...(entries ? { entries } : {}), linkCitations: vscode.workspace.getConfiguration('yamd.build').get<boolean>('linkCitations', true) });
   const diff = diffLines(lines, result.lines);
   return { ...(diff ? { edit: lineDiffEdit(doc, diff) } : {}), warnings: result.warnings };
 }

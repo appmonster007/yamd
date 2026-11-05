@@ -126,7 +126,7 @@ function shortNames(e: BibEntry, style: CitationStyle): string {
 
 // ---- In-text citations ----
 
-interface CitedKey {
+export interface CitedKey {
   key: string;
   /** `p. 4` and the like. */
   locator?: string;

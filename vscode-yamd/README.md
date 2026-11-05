@@ -2,7 +2,7 @@
 
 Rich widgets for plain Markdown notes in VS Code. Notes stay ordinary `.md` files; YAMD adds boards, calendars, timelines, galleries and SQL query views as fenced blocks, callouts for study notes, citations, a generated table of contents and bibliography, HTML/slide export and study tools. Without the extension, every note still reads sensibly (a widget is just a code block).
 
-Requires **VS Code 1.145** or later. Installing YAMD also installs [Foam](https://marketplace.visualstudio.com/items?itemName=foam.foam-vscode) (wikilinks, backlinks, graph, daily notes), a SQLite editor, a CSV editor and Markdown tooling.
+Requires **VS Code 1.145** or later. Installing YAMD also installs [Foam](https://marketplace.visualstudio.com/items?itemName=foam.foam-vscode) (wikilinks, backlinks, graph, daily notes), the SQLite3 Editor, two CSV extensions (Edit CSV for a grid, Rainbow CSV for highlighting and RBQL queries) and Markdown All in One. Commands such as **YAMD: Open in CSV Editor** hand work to them and offer to install any that are missing.
 
 ## Widgets
 
@@ -46,7 +46,13 @@ Types: `definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark
 
 Mark a figure, table or equation target with `^id` on its own line (`^fig-arch`, `^tbl-results`, `^eq-pyth`), and refer to it as `[@fig-arch]`. **YAMD: Build** turns the reference into `[Figure 1](#fig-arch)` and keeps the label current. It also fills sections between markers (`<!-- yamd:toc depth=3 -->`, `<!-- yamd:bibliography -->`) from the note's headings and the `.bib` file named in its front matter (`bibliography:`, `citation-style:` apa, ieee, chicago, harvard or mla). Build changes only reference labels and marker content, and a second run changes nothing. Turn on `yamd.build.onSave` to build on save.
 
+Citations link to their reference-list entry by default (`[(Smith, 2020)](#ref-smith2020 "cite")`); turn that off with `yamd.build.linkCitations`.
+
 **YAMD: Go to Reference Target** jumps from a reference, citation or image link to its target.
+
+### Review marks
+
+Suggest changes with `<ins>added</ins>` and `<del>removed</del>`, which render in any Markdown viewer. **YAMD: Accept Change at Cursor** and **Reject Change at Cursor** resolve one (or all in a selection); **Accept All Changes** and **Reject All Changes** resolve the whole note.
 
 ## Export
 
@@ -58,7 +64,7 @@ Flashcards are card callouts (`> [!card] Question`, answer in the body) reviewed
 
 ## Settings
 
-`yamd.build.onSave`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
+`yamd.build.onSave`, `yamd.build.linkCitations`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
 
 ## What changed from 0.1
 

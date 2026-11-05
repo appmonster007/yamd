@@ -59,6 +59,22 @@ describe('query engine', () => {
     assert.equal(readOnlyProblem(db, '')?.code, 'Q002');
   });
 
+  test('sorting, grouping, joins, subqueries and CTEs are reads, not writes', () => {
+    const db = loadCsv(SQL, 'bugs.csv', CSV);
+    for (const sql of [
+      'SELECT * FROM bugs ORDER BY title DESC',
+      'SELECT owner, count(*) AS n FROM bugs GROUP BY owner ORDER BY n',
+      'SELECT DISTINCT owner FROM bugs',
+      'SELECT * FROM bugs WHERE id IN (SELECT id FROM bugs WHERE status = \'open\')',
+      'WITH open AS (SELECT * FROM bugs WHERE status = \'open\') SELECT count(*) FROM open',
+      'SELECT a.title FROM bugs a JOIN bugs b ON a.owner = b.owner AND a.id < b.id',
+      'SELECT owner FROM bugs UNION SELECT title FROM bugs',
+    ]) {
+      assert.equal(readOnlyProblem(db, sql), null, sql);
+      assert.ok(runQuery(db, sql).rows.length > 0, sql);
+    }
+  });
+
   test('detects the source kind from the file name', () => {
     assert.deepEqual(['a.csv', 'a.JSON', 'a.sqlite', 'a.db', 'a.txt'].map(sourceKind), ['csv', 'json', 'sqlite', 'sqlite', undefined]);
   });
@@ -132,6 +148,15 @@ describe('markers and snapshots', () => {
     assert.equal(second.filter((l) => l === openMarker('query:q')).length, 1);
     assert.ok(second.includes('| 2 |'));
     assert.equal(second[second.length - 1], 'After.');
+  });
+
+  test('running again with the same rows changes nothing, even at a later time', () => {
+    const note = ['```sql', '-- id="q" source="a.csv"', 'SELECT 1;', '```'];
+    const r = { columns: ['a'], rows: [[1]], total: 1 };
+    const first = writeSnapshot(note, 'q', 3, r, new Date(2026, 0, 1, 1, 1));
+    assert.equal(writeSnapshot(first, 'q', 3, r, new Date(2026, 5, 1, 9, 9)), first);
+    const changed = writeSnapshot(first, 'q', 3, { columns: ['a'], rows: [[2]], total: 1 }, new Date(2026, 5, 1, 9, 9));
+    assert.ok(changed.includes('*Last run: 2026-06-01 09:09*'));
   });
 
   test('pipes and newlines in cells do not break the table', () => {

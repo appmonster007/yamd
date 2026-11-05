@@ -36,7 +36,7 @@ async function exportNote(context: vscode.ExtensionContext, kind: Kind): Promise
       /* the build warns about a missing bibliography */
     }
   }
-  const built = buildNote(lines, entries ? { entries } : {}).lines;
+  const built = buildNote(lines, { ...(entries ? { entries } : {}), linkCitations: vscode.workspace.getConfiguration('yamd.build').get<boolean>('linkCitations', true) }).lines;
   const prepared = prepareExport(built);
 
   // Query blocks are run now and shown as static tables, boards or charts.

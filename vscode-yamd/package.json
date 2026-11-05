@@ -160,6 +160,26 @@
         "command": "yamd.queryCsvWithRbql",
         "title": "Query CSV with RBQL (Rainbow CSV)",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.acceptChange",
+        "title": "Accept Change at Cursor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.rejectChange",
+        "title": "Reject Change at Cursor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.acceptAllChanges",
+        "title": "Accept All Changes",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.rejectAllChanges",
+        "title": "Reject All Changes",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -216,6 +236,22 @@
         {
           "command": "yamd.openAt",
           "when": "false"
+        },
+        {
+          "command": "yamd.acceptChange",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.rejectChange",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.acceptAllChanges",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.rejectAllChanges",
+          "when": "editorLangId == markdown"
         }
       ],
       "explorer/context": [
@@ -251,6 +287,11 @@
           "type": "boolean",
           "default": false,
           "description": "Run YAMD: Build whenever a Markdown note is saved. Build only changes reference labels and the content between <!-- yamd:… --> markers."
+        },
+        "yamd.build.linkCitations": {
+          "type": "boolean",
+          "default": true,
+          "description": "When Build runs, turn citations like [@smith2020] into links to their entry in the bibliography (and keep their labels current)."
         }
       }
     },

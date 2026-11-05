@@ -31,7 +31,9 @@ function stripSql(sql: string): string {
 }
 
 const BLOCKED = /\b(ATTACH|DETACH|PRAGMA|VACUUM|LOAD_EXTENSION|INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|REINDEX|ANALYZE|BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)\b/i;
-const WRITE_OPCODES = new Set(['OpenWrite', 'Insert', 'Delete', 'Destroy', 'Clear', 'CreateBtree', 'ParseSchema', 'DropTable', 'DropIndex', 'DropTrigger', 'IdxInsert', 'IdxDelete', 'SorterInsert']);
+// Only writes to the database file itself need these. Temporary tables, sorters and indexes (ORDER BY,
+// GROUP BY, DISTINCT, subqueries) use other opcodes, so reading must not be refused for using them.
+const WRITE_OPCODES = new Set(['OpenWrite', 'ParseSchema', 'Destroy', 'CreateBtree', 'DropTable', 'DropIndex', 'DropTrigger']);
 
 /** Why `sql` can't run as a note query, or null when it is a single read-only statement. */
 export function readOnlyProblem(db: Database, sql: string): QueryProblem | null {

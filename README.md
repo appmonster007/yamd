@@ -1,35 +1,30 @@
-# YAMD — Yet Another Markdown
+# YAMD — Markdown with widgets
 
-YAMD is a plain-text markup format that keeps Markdown's simplicity and fixes its pain points — ambiguous line breaks, no standard front matter, no tracked changes, no built-in citations, lossy conversion to Word or HTML, and more. It's a strict superset of GitHub Flavored Markdown: existing Markdown renders exactly as it does on GitHub, except that a newline is always a line break and YAMD's own syntax is recognized.
+YAMD adds boards, calendars, timelines, galleries and SQL query views to plain Markdown notes, plus callouts for study notes, cross-references and citations, a generated table of contents and bibliography, HTML and slide export, and study tools. Notes stay ordinary `.md` files; without the extension a widget is just a code block, so nothing breaks on GitHub or in another editor.
 
-This repository holds the format's specification and a full-featured VS Code extension.
+````markdown
+```kanban sprint-12
+## Todo
+- [ ] Write the release notes {due=2026-12-14}
 
-```yamd
----
-title: Why YAMD?
-tags: [format, markdown]
-lang: en
----
-
-# Why YAMD?
-
-Markdown is great until you need {++tracked changes++}, a `due: 2026-11-01`
-in the front matter, or $E = mc^2$ without a plugin. YAMD adds exactly
-the things people keep bolting onto Markdown — and nothing else.
-
-::toc{depth=2}
+## Done
+- [x] Kick-off meeting
 ```
+````
+
+In VS Code, a link above the block opens it as a draggable board beside the note, and every edit rewrites the block in the note.
 
 ## What's in the box
 
-- **[yamd-spec.md](yamd-spec.md)** — the format specification: block and inline syntax, directives, attributes, review markup, security and accessibility rules, and the full list of differences from GFM.
-- **[vscode-yamd/](vscode-yamd/)** — the VS Code extension: syntax highlighting, a live preview with KaTeX math and syntax-highlighted code, diagnostics, linked notes (wikilinks, backlinks, a graph view), databases (`.ydb` and SQLite) with table/list/gallery/calendar/board views, kanban boards, and a full set of tools for students and academic writing (flashcards with spaced repetition, course deadlines, citations, export to HTML/PDF/Word/Slides, and more). See [vscode-yamd/README.md](vscode-yamd/README.md) for the complete feature list.
-- **[examples/](examples/)** — a worked example for every feature, organized by topic. Start with [examples/getting-started.yamd](examples/getting-started.yamd).
-- **[openspec/](openspec/)** — the spec-driven change proposals the format and extension were built from, each with a proposal, a task list and the resulting spec deltas.
+- **[vscode-yamd/](vscode-yamd/)** — the VS Code extension (1.145 or later). See [vscode-yamd/README.md](vscode-yamd/README.md) for the features and settings.
+- **[yamd-1.2.0-spec.md](yamd-1.2.0-spec.md)** — the 1.2 specification and its decision log, with the [implementation plan](yamd-1.2.0-plan.md).
+- **[examples/](examples/)** — a working note for every feature, with the data files they use. Start with [examples/getting-started.md](examples/getting-started.md).
+- **[docs/0.1/](docs/0.1/)** — the archived 0.1 specification (the former `.yamd` language) and the Markdown pain-point notes behind it.
+- **[openspec/](openspec/)** — the spec-driven change proposals from the 0.1 design.
 
 ## Installing the extension
 
-YAMD isn't on the VS Code Marketplace yet, so install it by building the `.vsix` from source. You'll need [Node.js](https://nodejs.org) 20+, [VS Code](https://code.visualstudio.com) with its `code` command on PATH, and `make` (preinstalled on macOS and Linux).
+YAMD isn't on the VS Code Marketplace yet, so build the `.vsix` from source. You'll need [Node.js](https://nodejs.org) 20+, [VS Code](https://code.visualstudio.com) with its `code` command on PATH, and `make`.
 
 ```bash
 git clone https://github.com/appmonster007/yamd.git
@@ -37,40 +32,30 @@ cd yamd
 make install
 ```
 
-`make install` builds the extension, runs the test suite, packages a `.vsix` and installs it into VS Code in one step. Reload or restart VS Code afterwards to activate it.
-
-If `code` isn't on PATH, run **Shell Command: Install 'code' command in PATH** from VS Code's Command Palette and try again — or build the `.vsix` with `make package` and install it by hand from the Extensions view (`...` menu → **Install from VSIX...** → `vscode-yamd/vscode-yamd-<version>.vsix`).
-
-If the test suite fails on a wall-clock performance benchmark under system load (not a real regression), use `make install-fast` instead — it typechecks and builds but skips tests.
-
-Run `make help` for every available target (`build`, `typecheck`, `test`, `package`, `package-fast`, `install`, `install-fast`, `uninstall`, `dev`, `clean`).
+`make install` builds the extension, runs the tests, packages a `.vsix` and installs it. Installing also brings in the companion extensions (Foam, a SQLite editor, two CSV extensions and Markdown tooling). Reload VS Code afterwards. `make help` lists every target.
 
 ### Try it out
 
-1. Open any file in `examples/` in VS Code — start with [examples/getting-started.yamd](examples/getting-started.yamd).
-2. Run **YAMD: Open Preview to the Side** (Cmd+K V / Ctrl+K V) to see it rendered.
-3. Browse `examples/` by topic — basics, documents, linked notes, databases, kanban, moving from Markdown, and study features — or read `yamd-spec.md` for the full reference.
+Open [examples/README.md](examples/README.md) and follow "Try it": open a kanban board, run a query, run **YAMD: Build** on the references note, and export a page.
 
-### Working on the extension itself
+### Working on the extension
 
-To iterate on the extension's source without reinstalling each time, open `vscode-yamd/` in VS Code and press F5 — this launches an Extension Development Host window with your changes loaded and the repository root as its workspace.
+Open `vscode-yamd/` in VS Code and press F5 to start an Extension Development Host. The code layout is described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
 make deps       # npm install
-make build      # compile into vscode-yamd/dist/
+make build      # bundle into vscode-yamd/dist/
 make typecheck
 make test
 ```
 
-(Each target also works as a plain `npm` script inside `vscode-yamd/` — see [vscode-yamd/README.md](vscode-yamd/README.md#development).)
+## What changed from 0.1
 
-## Status
-
-YAMD is under active development. The format and the extension both already implement the features described in `yamd-spec.md` and `vscode-yamd/README.md`; some advanced interactions (PDF math/image fidelity, runnable code blocks, mobile capture) are tracked as open proposals in `openspec/changes/`.
+YAMD is no longer a separate language: there are no `.yamd` files, custom preview or editor, `.ydb` databases, document variables or DOCX export. Use Foam for wikilinks and the graph, and the companion SQLite and CSV extensions for editing data.
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for how the project is organized, how changes are proposed and reviewed, and how to run the tests. Please also read the [Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

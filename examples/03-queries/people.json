@@ -1,0 +1,8 @@
+[
+  { "name": "Ada", "team": "Platform", "level": 4, "city": "London" },
+  { "name": "Grace", "team": "Design", "level": 5, "city": "New York" },
+  { "name": "Alan", "team": "Platform", "level": 3, "city": "London" },
+  { "name": "Katherine", "team": "Research", "level": 5, "city": "Houston" },
+  { "name": "Margaret", "team": "Research", "level": 4, "city": "Boston" },
+  { "name": "Edsger", "team": "Platform", "level": 4, "city": "Austin" }
+]

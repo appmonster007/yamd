@@ -68,6 +68,40 @@ describe('toc', () => {
   });
 });
 
+describe('citation links', () => {
+  const note0 = `---\nbibliography: refs.bib\ncitation-style: apa\n---\n# P\n\nSee [@smith2020] and [@doe2018, p. 4]; also [@smith2020; @ghost] and \`[@doe2018]\`.\n\n<!-- yamd:bibliography -->\n<!-- /yamd:bibliography -->\n`;
+  const entries = parseBibtex(BIB);
+
+  test('citations become links to their entries, keeping key and locator', () => {
+    const out = buildNote(L(note0), { entries }).lines.join('\n');
+    assert.match(out, /\[\(Smith & Lee, 2020\)\]\(#ref-smith2020 "cite"\)/);
+    assert.match(out, /\[\(Doe, 2018, p\. 4\)\]\(#ref-doe2018 "cite: p\. 4"\)/);
+    // A group with an unknown key is left alone, and code is untouched.
+    assert.match(out, /\[@smith2020; @ghost\]/);
+    assert.match(out, /`\[@doe2018\]`/);
+  });
+
+  test('a second build changes nothing, and the bibliography still lists what the links cite', () => {
+    const once = buildNote(L(note0), { entries }).lines;
+    const twice = buildNote(once, { entries }).lines;
+    assert.deepEqual(twice, once);
+    assert.match(once.join('\n'), /<a id="ref-doe2018"><\/a>/);
+    assert.match(once.join('\n'), /<a id="ref-smith2020"><\/a>/);
+  });
+
+  test('changing the style refreshes the labels', () => {
+    const once = buildNote(L(note0), { entries }).lines.join('\n');
+    const ieee = buildNote(L(once.replace('citation-style: apa', 'citation-style: ieee')), { entries }).lines.join('\n');
+    assert.match(ieee, /\[\\\[1\\\]\]\(#ref-smith2020 "cite"\)/);
+    assert.match(ieee, /\[\\\[2, p\. 4\\\]\]\(#ref-doe2018 "cite: p\. 4"\)/);
+  });
+
+  test('can be turned off', () => {
+    const out = buildNote(L(note0), { entries, linkCitations: false }).lines.join('\n');
+    assert.match(out, /See \[@smith2020\] and/);
+  });
+});
+
 describe('build', () => {
   const note = `---\nbibliography: refs.bib\ncitation-style: apa\n---\n# Paper\n\n<!-- yamd:toc depth=2 -->\n<!-- /yamd:toc -->\n\n## Intro\n\nSee [@smith2020] and [@doe2018, p. 4], and [@ghost].\n\n![Diagram](a.png)\n\n^fig-arch\n\nAs in [@fig-arch].\n\n## References\n\n<!-- yamd:bibliography -->\n<!-- /yamd:bibliography -->\n`;
   const entries = parseBibtex(BIB);
@@ -111,5 +145,29 @@ describe('build', () => {
   test('diffLines finds the changed span', () => {
     assert.deepEqual(diffLines(['a', 'b', 'c'], ['a', 'x', 'y', 'c']), { start: 1, removeCount: 1, lines: ['x', 'y'] });
     assert.equal(diffLines(['a'], ['a']), null);
+  });
+});
+
+import { countReview, findReviewSpans, resolveReview, spanAt } from '../src/core/build/review';
+
+describe('review marks', () => {
+  const text = 'Keep <ins>added</ins> and <del>removed</del> text, `<ins>code</ins>` stays.\n\n```html\n<del>in a fence</del>\n```\n\nMore <ins>multi\nline</ins>.';
+
+  test('accept keeps insertions and drops deletions; reject does the opposite', () => {
+    assert.equal(resolveReview(text, 'accept').split('\n')[0], 'Keep added and  text, `<ins>code</ins>` stays.');
+    assert.equal(resolveReview(text, 'reject').split('\n')[0], 'Keep  and removed text, `<ins>code</ins>` stays.');
+    assert.match(resolveReview(text, 'accept'), /<del>in a fence<\/del>/);
+    assert.match(resolveReview(text, 'accept'), /More multi\nline\./);
+  });
+
+  test('finds a span at the cursor and counts changes', () => {
+    assert.equal(spanAt(text, text.indexOf('added') + 2)?.kind, 'ins');
+    assert.equal(spanAt(text, text.indexOf('Keep')), undefined);
+    assert.deepEqual(countReview(text), { ins: 2, del: 1 });
+    assert.equal(findReviewSpans('<ins cite="x">a</ins>')[0]?.inner, 'a');
+  });
+
+  test('can resolve only some spans', () => {
+    assert.equal(resolveReview('<ins>a</ins><ins>b</ins>', 'reject', (s) => s.inner === 'a'), '<ins>b</ins>');
   });
 });

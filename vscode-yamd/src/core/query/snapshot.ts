@@ -1,4 +1,4 @@
-import { closeMarker, openMarker, writeRegion } from '../build/markers';
+import { closeMarker, findRegions, openMarker, writeRegion } from '../build/markers';
 import type { QueryResult } from './engine';
 
 const SNAPSHOT_ROWS = 50;
@@ -20,9 +20,24 @@ export function snapshotLines(result: QueryResult, now: Date, maxRows = SNAPSHOT
   return out;
 }
 
-/** Writes the snapshot under the block that ends on `afterLine`, replacing an earlier snapshot of the same query. */
+const LAST_RUN = /^\*Last run: .*\*$/;
+const withoutStamp = (lines: string[]) => lines.filter((l) => !LAST_RUN.test(l));
+
+/**
+ * Writes the snapshot under the block that ends on `afterLine`, replacing an earlier snapshot of the
+ * same query. When the rows haven't changed, the earlier snapshot (and its `Last run` time) stays, so
+ * running a query twice changes nothing.
+ */
 export function writeSnapshot(lines: string[], id: string, afterLine: number, result: QueryResult, now: Date): string[] {
-  return writeRegion(lines, `query:${id}`, snapshotLines(result, now), { insertAfter: afterLine });
+  const next = snapshotLines(result, now);
+  const region = findRegions(lines).find((r) => r.name === `query:${id}`);
+  if (region) {
+    const current = lines.slice(region.open + 1, region.close);
+    const a = withoutStamp(current);
+    const b = withoutStamp(next);
+    if (a.length === b.length && a.every((l, i) => l === b[i])) return lines;
+  }
+  return writeRegion(lines, `query:${id}`, next, { insertAfter: afterLine });
 }
 
 export { openMarker, closeMarker };

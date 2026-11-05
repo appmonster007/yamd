@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseUncached as parse } from '../src/core/markdown/parser';
 
-test('parses getting-started.yamd 100 times in under a second', () => {
-  const src = readFileSync(new URL('../../examples/getting-started.yamd', import.meta.url), 'utf8');
+test('parses getting-started.md 100 times in under a second', () => {
+  const src = readFileSync(new URL('../../examples/getting-started.md', import.meta.url), 'utf8');
   parse(src); // Warm up.
   // Other test files run in parallel, so time several batches of 10 and use the fastest one.
   let best = Infinity;

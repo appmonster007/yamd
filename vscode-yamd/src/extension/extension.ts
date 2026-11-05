@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { registerAliases } from './companions/aliases';
 import { registerBuildCommands } from './build/buildCommands';
+import { registerReviewCommands } from './build/reviewCommands';
 import { registerExportCommands } from './build/exportCommands';
 import { registerQueryCommands } from './query/queryCommands';
 import { registerWidgetDiagnostics } from './widgets/widgetDiagnostics';
@@ -22,6 +23,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerWidgetPanels(context);
   registerQueryCommands(context);
   registerBuildCommands(context);
+  registerReviewCommands(context);
   registerExportCommands(context);
   registerAliases(context);
   registerStudy(context, studyIndex, reviewPanel, dashboard, timer);

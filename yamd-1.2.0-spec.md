@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** final for planning (2026-11-05). Decisions D1–D55 and the defaults in §22 are accepted. Items marked **[OPEN]** are implementation details to settle when the work reaches them. Items marked **[UNVERIFIED]** depend on an assumption that must be tested first. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D61 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -90,6 +90,12 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D53 | Widgets appear in HTML, PDF and slide exports as **static rendered HTML** (boards as columns, queries as tables, charts as SVG). | User decision. |
 | D54 | In an **untrusted workspace**, widgets are **read-only**: they can view, but no writes and no queries on files outside the workspace. | User decision. |
 | D55 | A flashcard is identified by a **hash of its question text**. Editing the question resets that card's schedule. | User decision; no marker in the note. |
+| D56 | Build turns citations into links when `yamd.build.linkCitations` is on (**the default**): `[@smith2020]` becomes `[(Smith & Lee, 2020)](#ref-smith2020 "cite")`, with a locator kept in the title (`"cite: p. 4"`). The key stays in the link target, so later Builds refresh the label (and IEEE numbers). A citation naming an unknown key is left as written. | User decision. |
+| D57 | Review marks are HTML `<ins>` and `<del>`. Commands accept or reject the change at the cursor, in a selection, or in the whole note. No review panel. | User decision. |
+| D58 | **No cloze deletions or reversible cards in 1.2.0.** Cards are question-and-answer callouts only. | User decision. |
+| D59 | The comment above an element may set **any class and any `key=value` pair**; exports sanitize the result. | User decision. |
+| D60 | **Both CSV extensions ship in the pack**: Edit CSV (grid editor) and Rainbow CSV (highlighting, alignment, RBQL). Aliases open either. | User decision. |
+| D61 | `Run Query` is idempotent: when the result rows are unchanged, the earlier snapshot (and its `Last run` time) is kept. | Found while closing the open items. |
 
 ## 5. File format
 
@@ -112,8 +118,8 @@ A widget is a fenced code block whose info string starts with the widget type, f
 ````
 
 Rules:
-- The first word of the info string is the widget type (`kanban`, `calendar`, `timeline`, `gallery`, plus the ` ```sql ` query block). **[OPEN: any other types]**
-- `id` is unique within the note. Duplicates produce a diagnostic. **[OPEN: allowed characters, case rules]**
+- The first word of the info string is the widget type (`kanban`, `calendar`, `timeline`, `gallery`, plus the ` ```sql ` query block). (D4)
+- `id` is unique within the note. Duplicates produce a diagnostic. Ids are lowercase letters, digits and `-`, starting with a letter or digit; the linter reports anything else (W003).
 - Info-string syntax: attributes are `key=value` (`key="value with spaces"`). **If the fence has exactly one option and it is a bare word, that word is the `id`**: ` ```kanban sprint-12 ` means ` ```kanban id=sprint-12 `. With two or more options, all must be `key=value`.
 - Blocks without an `id` get a positional label (`kanban #2`). A command (`YAMD: Name Block`) writes an id.
 - There are no special links to a widget (D49): open it from the CodeLens or the `YAMD: Open Widget` picker.
@@ -134,10 +140,10 @@ SELECT id, title, status FROM bugs WHERE status != 'closed';
 ````
 
   - `source` names the data file (CSV, JSON or SQLite). CSV and JSON are loaded into an in-memory table named after the file; SQLite is queried directly, opened **read-only**.
-  - `view` (optional) is `table` (default), `board` or `chart` (D38). **[OPEN: how `board` names its grouping column and how `chart` picks axes, e.g. `group="status"`, `x=`, `y=`, `type=bar|line`]**
+  - `view` (optional) is `table` (default), `board` or `chart` (D38). `board` takes `group="column"`. `chart` takes `type="bar"` or `"line"`, `x="column"` and `y="column"` (numeric). A missing or wrong column shows a message in the widget (Q003) and a diagnostic (W007).
   - Query widgets are **read-only** (D24, D31). Only `SELECT` runs (§11).
 
-**[OPEN: view options; chart options; gallery body format; first-line attribute grammar (quoting, ordering).]**
+Attribute grammar: `key=value` or `key="value with spaces"`, space-separated, in any order.
 
 ## 6. Callouts and study blocks
 
@@ -155,7 +161,7 @@ This line is outside it.
 - **End of block:** where the `>` prefix stops. A **blank line after the block is required**, otherwise a following line is absorbed by Markdown's lazy continuation. The linter flags a missing blank line.
 - Two adjacent callouts need a blank line between them. Nesting uses `>>`. Fenced code inside a callout needs `>` on each line.
 - `^id` after the title gives a reference id (used for `[@thm:…]`-style cross-references).
-- Types (draft): `note`, `tip`, `warning`, `danger`, `definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark`, `summary`, `derivation`, `card`. **[OPEN: final list]** Study types (`definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark`, `summary`, `derivation`) are **all numbered**, per type within a note (D33). `note`, `tip`, `warning`, `danger` and `card` are not.
+- Types (draft): `note`, `tip`, `warning`, `danger`, `definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark`, `summary`, `derivation`, `card`. Study types (`definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark`, `summary`, `derivation`) are **all numbered**, per type within a note (D33). `note`, `tip`, `warning`, `danger` and `card` are not.
 - In viewers without the extension, an unknown type shows as an ordinary quote; GitHub renders its known types (NOTE, TIP, IMPORTANT, WARNING, CAUTION).
 
 ## 7. Inline tokens
@@ -164,9 +170,9 @@ This line is outside it.
 |---|---|---|
 | Template placeholders | `{{@title}}`, `{{@date}}`, `{{@course}}`, `{{@cursor}}` | Filled once when a note is created from a template; then removed. |
 | Cross-references | `[@fig-x]` then `[Figure 2](#fig-x)` | First Build converts to a link; every Build refreshes the label from the key in the link. Targets are marked with `^id` block ids (D34), e.g. `^fig-arch`, `^tbl-results`, `^eq-pyth`, or are headings. |
-| Citations | `[@smith2020]` | Kept as is. Bibliography built from the `.bib` file between markers. Style from front matter `citation-style:` (APA default, IEEE, Chicago/Harvard; D42). **[OPEN: whether Build link-ifies citations to bibliography entries]** |
-| Attribute effects, page breaks | `<!-- {.class width=50%} -->`, `<!-- pagebreak -->` | Invisible in editors; applied in exports (D39, D48). **[OPEN: the list of supported attributes]** |
-| Critic review markup | HTML `<ins>`, `<del>`, `<mark>` plus comments (D46) | Renders as HTML anywhere; shown in exports (D39). **[OPEN: accept/reject commands and review view]** |
+| Citations | `[@smith2020]` | Kept as is. Bibliography built from the `.bib` file between markers. Style from front matter `citation-style:` (APA default, IEEE, Chicago/Harvard; D42). With `yamd.build.linkCitations` (default on) Build links each citation to its reference-list entry (D56). |
+| Attribute effects, page breaks | `<!-- {.class width=50%} -->`, `<!-- pagebreak -->` | Invisible in editors; applied in exports (D39, D48). Any class and `key=value` pair (D59). |
+| Critic review markup | HTML `<ins>`, `<del>`, `<mark>` plus comments (D46) | Renders as HTML anywhere; shown in exports (D39). Accept/Reject commands at the cursor, in a selection and for the whole note (D57). |
 
 Inline tokens are **not rendered in the built-in editor**. They show as readable text. The extension adds no hover; instead `YAMD: Go to Reference Target` jumps from a reference to its target (D37).
 
@@ -180,23 +186,28 @@ Sections the extension writes, delimited by marker comments:
 <!-- /yamd:toc -->
 ````
 
-- Generated: **TOC**, **bibliography**, cross-reference labels, **query result snapshots** (with a `last run` timestamp). Marker syntax is fixed by D29; **[OPEN: marker attributes, e.g. depth for the TOC]**
+- Generated: **TOC**, **bibliography**, cross-reference labels, **query result snapshots** (with a `last run` timestamp). Marker syntax is fixed by D29; The TOC marker takes `depth=N` (default 3).
 - Rules: the extension edits **only inside markers**; the operation is **idempotent** (a second run changes nothing); edits go through the editor so **undo works**; the user can always delete the markers.
 - Triggers: `YAMD: Build` command; opt-in `yamd.build.onSave` setting (default off).
 
 ## 9. Commands (Command Palette)
 
+No default keybindings (D51).
+
 | Command | Purpose |
 |---|---|
-| `YAMD: Open Widget` | Pick a widget block in the active note and open its preview (also via CodeLens). |
-| `YAMD: Name Block` | Write an `id` into an unnamed widget fence. |
-| `YAMD: Insert Widget` | Insert a template for a widget type. |
-| `YAMD: Run Query` | Run a `query` block and write the result snapshot. |
-| `YAMD: Build` | Refresh all generated regions, cross-reference labels and bibliography. |
-| `YAMD: Go to Reference Target` | From a cross-reference, citation or image link at the cursor, jump to the target (figure/table/equation/block, bibliography entry) or open the image separately. |
-| `YAMD: Export…` | HTML (and others, see §14). |
-
-No default keybindings (D51). **[OPEN: complete command list and names]**
+| `YAMD: Open Widget` | Pick a widget block in the note and open its preview (also the CodeLens above each block). |
+| `YAMD: Name Block` | Write an `id` into a widget block. |
+| `YAMD: Insert Widget` | Insert a template for a widget type with a free id. |
+| `YAMD: Run Query (Write Snapshot)` | Run a `sql` block and write its result under it between markers. |
+| `YAMD: Build (Refresh Generated Sections)` | Refresh reference links, citation links, the TOC and the bibliography. |
+| `YAMD: Insert Table of Contents` / `Insert Bibliography` | Insert the marker pair at the cursor. |
+| `YAMD: Go to Reference Target` | From a cross-reference, citation or image link, jump to the target or open the image. |
+| `YAMD: Accept / Reject Change at Cursor` | Resolve the `<ins>`/`<del>` under the cursor, or all in a selection. |
+| `YAMD: Accept / Reject All Changes` | Resolve every change in the note. |
+| `YAMD: Export HTML` / `Export PDF` / `Export Slides` | Standalone page, a page to print, a slide deck. |
+| `YAMD: New Study Note`, `Review Cards`, `Open Study Dashboard`, `Start / Pause / Stop Study Timer`, `Prune Card Schedules` | Study tools. |
+| `YAMD: Open Query Source in SQL Client`, `Open in SQLite Editor`, `Open in CSV Editor`, `Query CSV with RBQL`, `Open Daily Note` | Aliases that hand work to companion extensions. |
 
 ## 10. Editor integration (VS Code 1.145+)
 
@@ -231,9 +242,9 @@ No default keybindings (D51). **[OPEN: complete command list and names]**
 | SQL client for writes | `mtxr.sqltools` | MIT | Needs a separate SQLite driver extension; the SQLite3 Editor above can also run arbitrary SQL. |
 | Markdown tooling | `yzhang.markdown-all-in-one` | MIT | 14.9M installs, last update 2025-03. |
 
-  **[OPEN: final choice among the candidates; licence of Markdown All in One]**
-- **Alias commands** redirect to companion features (open in SQLite viewer, open CSV in the CSV editor, run SQL in the SQL client, Foam daily note, etc.). Missing companions: the command offers to install the extension and then runs (D45). **[OPEN: alias list]**
-- YAMD keeps a **small linter** for widget fences, query headers and callouts only (duplicate ids, unknown widget types, missing `source`, missing blank line after a callout), reported in the Problems panel with quick fixes (D47). **[OPEN: diagnostic codes]**
+  **Chosen:** Foam, SQLite3 Editor, Edit CSV, Rainbow CSV and Markdown All in One (MIT).
+- **Alias commands** redirect to companion features (open in SQLite viewer, open CSV in the CSV editor, run SQL in the SQL client, Foam daily note, etc.). Missing companions: the command offers to install the extension and then runs (D45). Aliases: Open Query Source in SQL Client, Open in SQLite Editor, Open in CSV Editor, Query CSV with RBQL, Open Daily Note.
+- YAMD keeps a **small linter** for widget fences, query headers and callouts only (duplicate ids, unknown widget types, missing `source`, missing blank line after a callout), reported in the Problems panel with quick fixes (D47). Codes: W001–W007 (widgets), C001–C002 (callouts), Q001–Q004 (queries).
 
 ## 13. Study tooling
 
@@ -246,8 +257,8 @@ Built as widgets and plain-note patterns inside the one extension, behind settin
 > $O(\log n)$ — each comparison halves the search space.
 ````
 
-  **[OPEN: cloze deletions, reversible cards]**
-- **Review session:** a widget panel (spaced repetition, SM-2 as today). Schedule stored in a workspace file, e.g. `.yamd/srs.json` (D40). The card key is a hash of the question text (D55). **[OPEN: file format]**
+  Cloze deletions and reversible cards are not in 1.2.0 (D58).
+- **Review session:** a widget panel (spaced repetition, SM-2 as today). Schedule stored in a workspace file, e.g. `.yamd/srs.json` (D40). The card key is a hash of the question text (D55). The file is `.yamd/srs.json`, keyed by card id.
 - **Study note templates:** the only templates YAMD itself provides (lecture notes, lab report, exam prep, reading note) (D26). Filled once at creation (D13).
 - **Dashboard** (panel), **deadlines** (sidebar list), **study timer** (status bar and menu): kept (D28).
 - **Bibliography:** `.bib` plus Build (see §7).
@@ -305,27 +316,24 @@ None. `.yamd` is dropped (D35). Existing notes are rewritten by hand to this spe
 - VS Code older than 1.145.
 - Document variables, a YAMD table editor, markdown-it rendering in the built-in preview, DOCX export, the `.ydb` format and database formulas (dropped). Daily notes and general templates (provided by Foam). Writing SQL from YAMD (use a SQL companion extension).
 
-## 20. Reuse map (existing code)
+## 20. As built
 
-| Existing | Becomes |
+| Area | Where |
 |---|---|
-| `core/kanban*.ts`, `calendarEdit.ts`, `timelineEdit.ts`, `galleryEdit.ts`, `boardEdit.ts` | Widget edit logic (pure TypeScript) |
-| `core/renderBoards.ts`, `media/preview.css`, `src/preview/*` (kanban, calendar, timeline, gallery, db) | Widget preview UI |
-| `core/db/*` (sql.js engine only) | Query and table-editor engine; `.ydb`-specific code removed |
-| `core/templates.ts` | Study note templates and placeholder expansion |
-| `study/*`, `core/study/*` | Separate study widgets |
-| `core/parser.ts`, `adapter.ts`, `micromark/*` | Possibly reduced to a fence/callout/inline-token scanner **[OPEN: keep micromark or use remark]** |
-| `extension/preview.ts`, `previewLinks.ts`, `livePreview.ts`, custom `yamd.editor` | Removed |
-| `workspace/*` | Replaced by Foam (daily notes, graph, backlinks, templates) |
+| Markdown engine (parser, micromark syntax, renderer, sanitizer) | `src/core/markdown/` (kept from 0.1; used behind widget panels and exports through `compat.ts` and `export/prepare.ts`) |
+| Widgets: fence scanner, linter, board edit logic | `src/core/widgets/` |
+| Queries | `src/core/query/` (sql.js, read-only) |
+| Callouts, references, Build, review marks, citations | `src/core/build/`, `src/core/citations/` |
+| Export | `src/core/export/` and `src/extension/build/exportCommands.ts` |
+| Study tools | `src/core/study/`, `src/study/` (a slim `StudyIndex` replaced the workspace index) |
+| VS Code layer | `src/extension/{widgets,query,build,companions,shared}/` |
+| Widget panel scripts | `src/webview/` |
 
-## 21. Build order (draft)
+Removed from 0.1: the `.yamd` language, custom editor and preview, lock mode, live preview, the workspace index and graph, `.ydb` and database views, DOCX and importers, document variables.
 
-1. Fence scanner with ids and duplicate-id diagnostics.
-2. CodeLens plus widget panel, starting with kanban.
-3. `Run Query` and `Build` (TOC, bibliography, cross-reference labels).
-4. Calendar, timeline, gallery, query/table widgets.
-5. Callout parsing and rendering; study widgets.
-7. Optional: inline block editor, hover preview, markdown-it plugin.
+## 21. Build order (done)
+
+1. Fence scanner, ids, linter. 2. CodeLens and widget panel (kanban). 3. Calendar, timeline, gallery. 4. Queries and snapshots. 5. Callouts, references, Build. 6. Study tools. 7. Export. 8. Companions and aliases. 9. Removal of the 0.1 code. 10. QA (manual checks in VS Code still to do).
 
 ## 22. Defaults adopted for remaining details (change on request)
 
@@ -337,17 +345,17 @@ None. `.yamd` is dropped (D35). Existing notes are rewritten by hand to this spe
 | Board view | `view="board" group="status"`. |
 | Chart view | `view="chart" type="bar\|line" x="month" y="total"`. |
 | Generated-region options | TOC accepts `depth=2` in the opening marker. |
-| Citation links | Build leaves `[@key]` as text. A setting turns on links to bibliography entries. |
-| Supported attribute effects | `.class`, `width=`, `height=`, `align=` on the next element, exports only. |
-| Critic review | Accept/Reject commands for the `<ins>`/`<del>` at the cursor; no separate review view. |
+| Citation links | On by default; `yamd.build.linkCitations` turns them off (D56). |
+| Supported attribute effects | Any class and `key=value` pair, applied in exports only (D59). |
+| Critic review | Accept/Reject commands for `<ins>`/`<del>` at the cursor, in a selection and for the whole note; no review panel (D57). |
 | Review file | `.yamd/srs.json`, keyed by card-question hash. |
-| Cloze, reversible cards | Not in 1.2.0. |
+| Cloze, reversible cards | Not in 1.2.0 (D58). |
 | Parser | Keep micromark, reduced to scanning fences, callouts and inline tokens. |
-| Companion extensions | Foam, a SQLite viewer, a CSV editor, Markdown tooling. Specific marketplace ids are chosen and verified at implementation start. |
-| Alias commands | `Open in SQLite Viewer`, `Open in CSV Editor`, `Open in SQL Client`, `Open Daily Note` (Foam). |
-| Diagnostic codes | New short list in the form `Wxxx` for widgets, `Qxxx` for queries, `Cxxx` for callouts. |
+| Companion extensions | Foam, SQLite3 Editor, Edit CSV, Rainbow CSV, Markdown All in One (D60). |
+| Alias commands | Open Query Source in SQL Client, Open in SQLite Editor, Open in CSV Editor, Query CSV with RBQL, Open Daily Note. |
+| Diagnostic codes | W001–W007 widgets, C001–C002 callouts, Q001–Q004 queries. |
 | Command list | Open Widget, Name Block, Insert Widget, Run Query, Build, Go to Reference Target, Export HTML, Export Slides, New Study Note, Start Review, Open Dashboard, Study Timer, Open in … (aliases). |
 
 ## 23. Open questions
 
-Remaining **[OPEN]** items above are either implementation details or must be verified when work starts (companion extensions, `[UNVERIFIED]` items in §17).
+None. Items that still need checking are **[UNVERIFIED]** assumptions in §17 (the inline block-editor API, which YAMD does not use) and a manual pass in VS Code (plan, Phase 10).
