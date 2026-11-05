@@ -33,6 +33,7 @@ export const MENU: MenuGroup[] = [
       { label: '$(calendar) Add event', description: 'to a calendar', command: 'yamd.addEvent' },
       { label: '$(table) Insert query…', description: 'pick a file, columns and a view', command: 'yamd.insertQuery' },
       { label: '$(play) Run query', command: 'yamd.runQuery' },
+      { label: '$(edit) Edit the query\'s data file', description: 'CSV, SQLite or JSON in its editor', command: 'yamd.openSource' },
       { label: '$(play-circle) Run all queries in this note', command: 'yamd.runAllQueries' },
       { label: '$(arrow-swap) Turn selection into a widget', command: 'yamd.selectionToWidget' },
     ],

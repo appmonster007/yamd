@@ -49,3 +49,10 @@ test('rendering: edit buttons only when interactive; overdue and filter data', (
   assert.match(tl, /db-timeline-bar overdue/);
   assert.match(tl, /db-timeline-item overdue/);
 });
+
+test('the image picker is on the gallery add form only', () => {
+  const gallery = render(parse(':::gallery\n- ![a](a.png)\n:::'), { interactive: true });
+  const calendar = render(parse(':::calendar\n- [ ] E {due=2026-01-01}\n:::'), { interactive: true });
+  assert.match(gallery, /gallery-pick/);
+  assert.doesNotMatch(calendar, /gallery-pick/);
+});

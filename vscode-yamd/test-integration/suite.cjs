@@ -67,7 +67,7 @@ exports.run = async function run() {
     const titles = lenses.map((l) => l.command?.title ?? '');
     assert(titles.some((t) => t.includes('Open sql: open-bugs')), titles.join(' | '));
     const opens = titles.filter((t) => t.includes('Open sql:')).length;
-    assert(opens === 7 && titles.length === 14, `expected 7 Open lenses and 7 Run lenses, got ${opens} of ${titles.length}: ${titles.join(' | ')}`);
+    assert(opens === 7 && titles.length === 21 && titles.filter((t) => /Edit CSV|Open data|SQLite editor/.test(t)).length === 7, `expected 7 Open, 7 Run and 7 data-file lenses, got ${opens} of ${titles.length}: ${titles.join(' | ')}`);
   });
 
   test('diagnostics: duplicate ids, a missing blank line and unknown markers are reported', async () => {

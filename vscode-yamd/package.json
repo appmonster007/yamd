@@ -330,6 +330,11 @@
         "command": "yamd.openSettings",
         "title": "Open YAMD Settings",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openSource",
+        "title": "Open Query Data File in Its Editor",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -493,6 +498,10 @@
         },
         {
           "command": "yamd.openSettings"
+        },
+        {
+          "command": "yamd.openSource",
+          "when": "editorLangId == markdown"
         }
       ],
       "explorer/context": [

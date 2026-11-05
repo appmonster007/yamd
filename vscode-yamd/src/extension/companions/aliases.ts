@@ -63,6 +63,19 @@ async function openData(uri: vscode.Uri, sql?: string): Promise<void> {
 /** Alias commands: YAMD hands data editing, SQL writes and daily notes to the companion extensions. */
 export function registerAliases(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
+    // The data file of a query block, in the companion that suits it (also a CodeLens above the block).
+    vscode.commands.registerCommand('yamd.openSource', async (uri?: vscode.Uri, line?: number) => {
+      const doc = uri ? await vscode.workspace.openTextDocument(uri) : vscode.window.activeTextEditor?.document;
+      if (!doc || doc.languageId !== 'markdown') return;
+      const at = line ?? vscode.window.activeTextEditor?.selection.active.line ?? 0;
+      const block = widgetsOf(doc).find((w) => w.type === 'sql' && (w.startLine === line || (line === undefined && w.startLine <= at && at <= w.endLine)));
+      const source = block && querySource(doc, block);
+      if (!source) {
+        void vscode.window.showInformationMessage('YAMD: Put the cursor in a query block that has source="file".');
+        return;
+      }
+      await openData(source);
+    }),
     vscode.commands.registerCommand('yamd.openInSqlClient', async () => {
       const picked = await pickDataFile();
       if (picked) await openData(picked.uri, picked.sql);

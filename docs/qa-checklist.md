@@ -79,3 +79,4 @@ Use a copy of `examples/` as the workspace.
 - [ ] `Study This Note` creates the `cards` region and starts a review; running it twice changes nothing.
 - [ ] The daily reminder appears once per day with cards due or a deadline today.
 - [ ] `Check This Note` lists a missing image and a dangling `[@fig-x]`, and "Fix safe problems" adds a missing blank line.
+- [ ] The Edit CSV / SQLite editor lens above a query block opens the file in the companion (accept the install offer if it is missing).

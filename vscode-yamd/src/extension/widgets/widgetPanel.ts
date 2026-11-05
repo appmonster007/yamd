@@ -197,6 +197,11 @@ class WidgetLensProvider implements vscode.CodeLensProvider {
       const lenses = [new vscode.CodeLens(range, { title: `$(layout) Open ${w.type}: ${w.label}`, command: 'yamd.openWidget', arguments: [doc.uri, w.startLine] })];
       const more = extra[w.type];
       if (more) lenses.push(new vscode.CodeLens(range, { title: more.title, command: more.command, arguments: [doc.uri, w.startLine] }));
+      const source = w.type === 'sql' ? w.attrs['source'] : undefined;
+      if (source) {
+        const kind = /\.csv$/i.test(source) ? '$(table) Edit CSV' : /\.json$/i.test(source) ? '$(json) Open data' : '$(database) Open in SQLite editor';
+        lenses.push(new vscode.CodeLens(range, { title: kind, command: 'yamd.openSource', arguments: [doc.uri, w.startLine] }));
+      }
       return lenses;
     });
   }

@@ -157,7 +157,7 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     const count = monthEvents.length;
     const heading = `Events in ${titleText}<span class="db-agenda-count">${count} ${count === 1 ? 'event' : 'events'}</span>`;
     const addEvent = interactive
-      ? `<form class="kanban-add db-agenda-add" data-date="${month}-01"><input type="date" class="db-add-date" value="${month === now.slice(0, 7) ? now : `${month}-01`}" aria-label="Date of the new event"><input type="text" class="kanban-add-input" placeholder="Add an event" aria-label="Add an event"><button type="button" class="gallery-pick">Choose images\u2026</button><button type="submit">Add</button></form>`
+      ? `<form class="kanban-add db-agenda-add" data-date="${month}-01"><input type="date" class="db-add-date" value="${month === now.slice(0, 7) ? now : `${month}-01`}" aria-label="Date of the new event"><input type="text" class="kanban-add-input" placeholder="Add an event" aria-label="Add an event"><button type="submit">Add</button></form>`
       : '';
     const agenda = `<div class="db-agenda"><div class="db-agenda-header"><span class="db-agenda-title">${heading}</span><button type="button" class="db-agenda-close" aria-label="Show all events of the month" hidden>Show all</button></div><div class="db-agenda-list">${overview.join('') || '<p class="db-empty">No events this month.</p>'}</div>${addEvent}</div>`;
     return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span>${buttons}</div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div>`;
@@ -289,7 +289,7 @@ export function renderGallery(ctx: BoardContext, board: GalleryBoard): string {
     })
     .join('\n');
   const add = interactive
-    ? `<form class="gallery-add"><input type="text" class="gallery-add-image" placeholder="Image path" aria-label="New image path"><input type="text" class="gallery-add-caption" placeholder="Caption" aria-label="New image caption"><button type="submit">Add</button></form>`
+    ? `<form class="gallery-add"><input type="text" class="gallery-add-image" placeholder="Image path" aria-label="New image path"><input type="text" class="gallery-add-caption" placeholder="Caption" aria-label="New image caption"><button type="button" class="gallery-pick">Choose images\u2026</button><button type="submit">Add</button></form>`
     : '';
   return `<div class="kanban-gallery" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-gallery">${cards}</div>${add}</div>`;
 }

@@ -9,7 +9,7 @@ A query is a `sql` block whose **first line is a comment** naming the block and 
 - `id` names the block so you can open it; `source` is a CSV, JSON or SQLite file, relative to the note.
 - `view` is `table` (the default), `board` or `chart`.
 - CSV and JSON load into a table named after the file (`bugs.csv` becomes `bugs`). SQLite files are read as they are.
-- Queries are read-only. To change data, use **YAMD: Open Query Source in SQL Client**, or edit the file in a CSV or SQLite editor.
+- Queries are read-only. To change data, click the **Edit CSV** or **Open in SQLite editor** link above a query block (**YAMD: Open Query Data File in Its Editor**), or use **YAMD: Open Query Source in SQL Client**. JSON files open as text.
 
 Open a block from the link above it. The widget refreshes when the data file changes. **YAMD: Run Query** writes a Markdown snapshot (at most 50 rows) under the block, between `yamd:query` markers.
 
