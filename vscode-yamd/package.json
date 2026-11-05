@@ -39,12 +39,14 @@
       {
         "command": "yamd.reviewCards",
         "title": "Review Flashcards",
-        "category": "YAMD"
+        "category": "YAMD",
+        "icon": "$(play)"
       },
       {
         "command": "yamd.openDashboard",
         "title": "Open Study Dashboard",
-        "category": "YAMD"
+        "category": "YAMD",
+        "icon": "$(graph)"
       },
       {
         "command": "yamd.startStudyTimer",
@@ -99,7 +101,8 @@
       {
         "command": "yamd.insertWidget",
         "title": "Insert Widget",
-        "category": "YAMD"
+        "category": "YAMD",
+        "icon": "$(add)"
       },
       {
         "command": "yamd.runQuery",
@@ -205,6 +208,21 @@
         "command": "yamd.openQuery",
         "title": "Open Query",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.showGraph",
+        "title": "Show Note Graph (Foam)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.showBacklinks",
+        "title": "Show Backlinks (Foam)",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.showTags",
+        "title": "Show Tags (Foam)",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -305,6 +323,23 @@
           "group": "yamd@1",
           "when": "explorerResourceIsFolder || explorerResourceIsRoot"
         }
+      ],
+      "view/title": [
+        {
+          "command": "yamd.reviewCards",
+          "when": "view == yamd.cards",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.insertWidget",
+          "when": "view == yamd.widgets",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.openDashboard",
+          "when": "view == yamd.study",
+          "group": "navigation"
+        }
       ]
     },
     "configuration": {
@@ -352,11 +387,45 @@
     "views": {
       "yamd": [
         {
+          "id": "yamd.widgets",
+          "name": "Widgets in This Note"
+        },
+        {
+          "id": "yamd.outline",
+          "name": "Callouts and References"
+        },
+        {
+          "id": "yamd.cards",
+          "name": "Flashcards"
+        },
+        {
           "id": "yamd.deadlines",
           "name": "Deadlines"
+        },
+        {
+          "id": "yamd.study",
+          "name": "Study and Data Files"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "yamd.widgets",
+        "contents": "This note has no widget blocks, or no Markdown note is open.\n[Insert Widget](command:yamd.insertWidget)"
+      },
+      {
+        "view": "yamd.outline",
+        "contents": "No callouts or figure, table and equation targets in this note.\nWrite a callout as `> [!theorem] Title`."
+      },
+      {
+        "view": "yamd.cards",
+        "contents": "No flashcards yet. Write one as `> [!card] Question` with the answer on the next lines.\n[New Study Note](command:yamd.newStudyNote)"
+      },
+      {
+        "view": "yamd.deadlines",
+        "contents": "No deadlines. Add `{due=YYYY-MM-DD}` to a task."
+      }
+    ]
   },
   "scripts": {
     "build": "node esbuild.mjs",

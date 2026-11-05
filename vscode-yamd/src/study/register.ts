@@ -120,7 +120,7 @@ export function registerStudy(context: vscode.ExtensionContext, index: StudyInde
     deadlines,
     vscode.window.registerTreeDataProvider('yamd.deadlines', deadlines),
     vscode.commands.registerCommand('yamd.openAt', (file: string, line: number) => openAt(file, line)),
-    vscode.commands.registerCommand('yamd.reviewCards', () => review.show()),
+    vscode.commands.registerCommand('yamd.reviewCards', (course?: unknown) => review.show(typeof course === 'string' && course ? course : undefined)),
     vscode.commands.registerCommand('yamd.openDashboard', () => dashboard.show()),
     vscode.commands.registerCommand('yamd.startStudyTimer', async () => {
       const list = courses(index);

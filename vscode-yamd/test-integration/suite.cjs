@@ -233,6 +233,14 @@ exports.run = async function run() {
     assert(/class="slide/.test(fs.readFileSync(file, 'utf8')), 'no slides in file');
   });
 
+  test('the sidebar views exist and open', async () => {
+    for (const view of ['widgets', 'outline', 'cards', 'deadlines', 'study']) {
+      await vscode.commands.executeCommand(`yamd.${view}.focus`);
+    }
+    const all = await vscode.commands.getCommands(true);
+    for (const c of ['yamd.showGraph', 'yamd.showBacklinks', 'yamd.showTags']) assert(all.includes(c), `${c} is not registered`);
+  });
+
   test('alias commands are registered and the companions are installed', async () => {
     for (const id of ['foam.foam-vscode', 'yy0931.vscode-sqlite3-editor', 'janisdd.vscode-edit-csv', 'mechatroner.rainbow-csv', 'yzhang.markdown-all-in-one']) {
       assert(vscode.extensions.getExtension(id), `${id} is not installed`);

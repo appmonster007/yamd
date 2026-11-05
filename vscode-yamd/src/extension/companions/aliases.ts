@@ -85,6 +85,18 @@ export function registerAliases(context: vscode.ExtensionContext): void {
       await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(picked.uri));
       await vscode.commands.executeCommand('rainbow-csv.RBQL');
     }),
+    // Foam owns wikilinks, backlinks, tags and the note graph; these open its views.
+    vscode.commands.registerCommand('yamd.showGraph', async () => {
+      if (await ensureCompanion(COMPANIONS.foam)) await vscode.commands.executeCommand('foam-vscode.show-graph');
+    }),
+    vscode.commands.registerCommand('yamd.showBacklinks', async () => {
+      if (!(await ensureCompanion(COMPANIONS.foam))) return;
+      await vscode.commands.executeCommand('foam-vscode.views.connections.show:backlinks');
+      await vscode.commands.executeCommand('foam-vscode.connections.focus');
+    }),
+    vscode.commands.registerCommand('yamd.showTags', async () => {
+      if (await ensureCompanion(COMPANIONS.foam)) await vscode.commands.executeCommand('foam-vscode.tags-explorer.focus');
+    }),
     vscode.commands.registerCommand('yamd.openDailyNote', async () => {
       if (await ensureCompanion(COMPANIONS.foam)) await vscode.commands.executeCommand('foam-vscode.open-daily-note');
     }),

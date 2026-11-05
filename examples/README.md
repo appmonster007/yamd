@@ -10,6 +10,7 @@ Plain Markdown notes that show every YAMD feature. Open them in VS Code with the
 | [03-queries](03-queries/) | Read-only SQL over CSV, JSON and SQLite as a table, board or chart |
 | [04-study](04-study/) | Lecture notes, flashcards and deadlines |
 | [05-export](05-export/) | HTML, print-to-PDF and slides |
+| [06-linked-notes](06-linked-notes/) | Wikilinks, backlinks, tags and the note graph (through Foam) |
 
 ## Try it
 

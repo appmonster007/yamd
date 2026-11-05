@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** complete (2026-11-05). Decisions D1–D72 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D73 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -107,6 +107,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D70 | Every CodeLens action is also a Command Palette command: `Open Kanban`, `Open Calendar`, `Open Timeline`, `Open Gallery`, `Open Query` (and `Open Widget` for any type). Each opens the block under the cursor; otherwise the only block of that type; otherwise a picker. | User decision. |
 | D71 | **Widget views.** A calendar panel opens on the next month that has an event (not an empty current month) and has previous/next/today buttons; an exported page lists every month with events. A timeline has a month scale and a mark for today, and its bars stay inside their lane. A gallery is a list of `- ![caption](image)` items (the alt text is the caption); an image paragraph with its own caption paragraph also works, and `source="folder/"` lists a folder in panels and exports. | Found when the views rendered empty or unstyled. |
 | D72 | **The space under a widget shows the details the widget is too small for.** A calendar lists every event of the month beneath the grid with its date, full title, owner, tags and notes (clicking a day or week narrows the list, "Show all" returns it; clicking an event marks its entry); a timeline lists its dated cards in order beneath the lanes (clicking a bar marks its entry). Kanban columns share the panel's width and wrap onto further rows instead of scrolling sideways. A timeline's month scale is exactly as wide as its lanes, so a bar sits under its own months. | User decision. |
+| D73 | **The YAMD sidebar** has five views: Widgets in This Note, Callouts and References, Flashcards, Deadlines, and Study and Data Files (courses, stale notes, study time, and the data files queries use). Foam's backlinks, graph and tags open through aliases (`Show Backlinks`, `Show Note Graph`, `Show Tags`), and `examples/06-linked-notes` shows them working. | User decision. |
 
 ## 5. File format
 
@@ -228,7 +229,7 @@ No default keybindings (D51).
 | `YAMD: Accept / Reject All Changes` | Resolve every change in the note. |
 | `YAMD: Export HTML` / `Export PDF` / `Export Slides` | Standalone page, a page to print, a slide deck. |
 | `YAMD: New Study Note`, `Review Cards`, `Open Study Dashboard`, `Start / Pause / Stop Study Timer`, `Prune Card Schedules` | Study tools. |
-| `YAMD: Open Query Source in SQL Client`, `Open in SQLite Editor`, `Open in CSV Editor`, `Query CSV with RBQL`, `Open Daily Note` | Aliases that hand work to companion extensions. |
+| `YAMD: Open Query Source in SQL Client`, `Open in SQLite Editor`, `Open in CSV Editor`, `Query CSV with RBQL`, `Open Daily Note`, `Show Note Graph`, `Show Backlinks`, `Show Tags` | Aliases that hand work to companion extensions. |
 
 ## 10. Editor integration (VS Code 1.145+)
 

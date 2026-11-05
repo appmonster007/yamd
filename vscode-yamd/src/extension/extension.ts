@@ -4,6 +4,7 @@ import { registerBuildCommands } from './build/buildCommands';
 import { registerReviewCommands } from './build/reviewCommands';
 import { registerExportCommands } from './build/exportCommands';
 import { registerQueryCommands } from './query/queryCommands';
+import { registerSidebarViews } from './sidebar/views';
 import { registerWidgetDiagnostics } from './widgets/widgetDiagnostics';
 import { registerWidgetPanels } from './widgets/widgetPanel';
 import { DashboardPanel } from '../study/dashboard';
@@ -27,6 +28,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerExportCommands(context);
   registerAliases(context);
   registerStudy(context, studyIndex, reviewPanel, dashboard, timer);
+  registerSidebarViews(context, studyIndex);
 }
 
 export function deactivate(): void {}
