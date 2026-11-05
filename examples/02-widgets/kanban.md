@@ -8,13 +8,13 @@ A `kanban` block is a board: headings are columns, task items are cards, and ind
 
 ```kanban sprint-12
 ## Backlog
-- [ ] Dark mode for the widgets
 - [ ] Export a board as CSV
+- [ ] Fix login on Safari {due=2026-12-10 owner=ada}
+  Users get logged out after the redirect.
 - [ ] Keyboard shortcut cheat sheet
 
 ## Todo
-- [ ] Fix login on Safari {due=2026-12-10 owner=ada}
-  Users get logged out after the redirect.
+- [ ] Dark mode for the widgets
 - [ ] Write the release notes {due=2026-12-14 owner=grace}
 
 ## Doing

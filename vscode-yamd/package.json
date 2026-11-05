@@ -180,6 +180,31 @@
         "command": "yamd.rejectAllChanges",
         "title": "Reject All Changes",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openKanban",
+        "title": "Open Kanban",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openCalendar",
+        "title": "Open Calendar",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openTimeline",
+        "title": "Open Timeline",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openGallery",
+        "title": "Open Gallery",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openQuery",
+        "title": "Open Query",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -251,6 +276,26 @@
         },
         {
           "command": "yamd.rejectAllChanges",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openKanban",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openCalendar",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openTimeline",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openGallery",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openQuery",
           "when": "editorLangId == markdown"
         }
       ],

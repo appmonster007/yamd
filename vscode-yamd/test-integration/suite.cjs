@@ -135,6 +135,25 @@ exports.run = async function run() {
     assert(count === 1, `opened ${count} panels`);
   });
 
+  test('the palette commands open the block under the cursor, like the CodeLens', async () => {
+    const { doc, editor } = await open(root, '02-widgets/calendar.md');
+    const start = doc.getText().split('\n').findIndex((l) => l.startsWith('```calendar'));
+    editor.selection = new vscode.Selection(start + 1, 0, start + 1, 0);
+    await vscode.commands.executeCommand('yamd.openCalendar');
+    assert(await until(() => vscode.window.tabGroups.all.flatMap((g) => g.tabs).find((t) => t.label === 'december')), 'Open Calendar did not open the block');
+    // The only timeline in its note opens without asking, from anywhere in the note.
+    const t = await open(root, '02-widgets/timeline.md');
+    t.editor.selection = new vscode.Selection(0, 0, 0, 0);
+    await vscode.commands.executeCommand('yamd.openTimeline');
+    assert(await until(() => vscode.window.tabGroups.all.flatMap((g) => g.tabs).find((x) => x.label === 'q1-roadmap')), 'Open Timeline did not open the only timeline');
+    // The generic command opens the block at the cursor too.
+    const g = await open(root, '02-widgets/kanban.md');
+    const line = g.doc.getText().split('\n').findIndex((l) => l.startsWith('```kanban personal-reading'));
+    g.editor.selection = new vscode.Selection(line + 1, 0, line + 1, 0);
+    await vscode.commands.executeCommand('yamd.openWidget');
+    assert(await until(() => vscode.window.tabGroups.all.flatMap((x) => x.tabs).find((x) => x.label === 'personal-reading')), 'Open Widget did not open the block at the cursor');
+  });
+
   test('a query widget opens too', async () => {
     const { uri, doc } = await open(root, '03-queries/queries.md');
     const line = doc.getText().split('\n').findIndex((l) => l.startsWith('```sql')) ;

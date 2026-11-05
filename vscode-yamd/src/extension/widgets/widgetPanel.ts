@@ -220,6 +220,40 @@ class WidgetLensProvider implements vscode.CodeLensProvider {
   }
 }
 
+/** The palette commands that mirror the CodeLens above each kind of block. */
+const OPEN_COMMANDS: { command: string; type: string }[] = [
+  { command: 'yamd.openKanban', type: 'kanban' },
+  { command: 'yamd.openCalendar', type: 'calendar' },
+  { command: 'yamd.openTimeline', type: 'timeline' },
+  { command: 'yamd.openGallery', type: 'gallery' },
+  { command: 'yamd.openQuery', type: 'sql' },
+];
+
+/**
+ * Opens a widget from the Command Palette: the block under the cursor if there is one, else the only
+ * block of that type, else a picker. With no `type`, every widget in the note is a choice.
+ */
+async function openFromPalette(panels: WidgetPanels, type?: string): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  const doc = editor?.document;
+  if (!editor || !doc || doc.languageId !== 'markdown') {
+    void vscode.window.showInformationMessage('YAMD: Open a Markdown note first.');
+    return;
+  }
+  const all = widgetsOf(doc);
+  const here = all.find((w) => w.startLine <= editor.selection.active.line && editor.selection.active.line <= w.endLine && (!type || w.type === type));
+  if (here) return panels.open(doc.uri, here.startLine);
+  const widgets = type ? all.filter((w) => w.type === type) : all;
+  const name = type === 'sql' ? 'query' : (type ?? 'widget');
+  if (!widgets.length) {
+    void vscode.window.showInformationMessage(`YAMD: This note has no ${name} blocks. Use "YAMD: Insert Widget" to add one.`);
+    return;
+  }
+  if (widgets.length === 1 && type) return panels.open(doc.uri, (widgets[0] as { startLine: number }).startLine);
+  const pick = await vscode.window.showQuickPick(widgets.map((w) => ({ label: w.label, description: w.type, detail: `line ${w.startLine + 1}`, w })), { placeHolder: `Open which ${name}?` });
+  if (pick) await panels.open(doc.uri, pick.w.startLine);
+}
+
 export function registerWidgetPanels(context: vscode.ExtensionContext): void {
   const panels = new WidgetPanels(context.extensionUri);
   const lens = new WidgetLensProvider();
@@ -231,18 +265,9 @@ export function registerWidgetPanels(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('yamd.openWidget', async (uri?: vscode.Uri, startLine?: number) => {
       if (uri && startLine !== undefined) return panels.open(uri, startLine);
-      const doc = vscode.window.activeTextEditor?.document;
-      if (!doc || doc.languageId !== 'markdown') {
-        void vscode.window.showInformationMessage('YAMD: Open a Markdown note first.');
-        return;
-      }
-      const widgets = widgetsOf(doc);
-      if (!widgets.length) {
-        void vscode.window.showInformationMessage('YAMD: This note has no widget blocks. Use "YAMD: Insert Widget" to add one.');
-        return;
-      }
-      const pick = await vscode.window.showQuickPick(widgets.map((w) => ({ label: w.label, description: w.type, detail: `line ${w.startLine + 1}`, w })), { placeHolder: 'Open which widget?' });
-      if (pick) await panels.open(doc.uri, pick.w.startLine);
+      await openFromPalette(panels);
     }),
+    // One command per CodeLens action, so each is also in the Command Palette: Open Kanban, Open Query, …
+    ...OPEN_COMMANDS.map(({ command, type }) => vscode.commands.registerCommand(command, () => openFromPalette(panels, type))),
   );
 }
