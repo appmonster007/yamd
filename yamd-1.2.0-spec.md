@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** complete (2026-11-05). Decisions D1–D73 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D74 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -108,6 +108,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D71 | **Widget views.** A calendar panel opens on the next month that has an event (not an empty current month) and has previous/next/today buttons; an exported page lists every month with events. A timeline has a month scale and a mark for today, and its bars stay inside their lane. A gallery is a list of `- ![caption](image)` items (the alt text is the caption); an image paragraph with its own caption paragraph also works, and `source="folder/"` lists a folder in panels and exports. | Found when the views rendered empty or unstyled. |
 | D72 | **The space under a widget shows the details the widget is too small for.** A calendar lists every event of the month beneath the grid with its date, full title, owner, tags and notes (clicking a day or week narrows the list, "Show all" returns it; clicking an event marks its entry); a timeline lists its dated cards in order beneath the lanes (clicking a bar marks its entry). Kanban columns share the panel's width and wrap onto further rows instead of scrolling sideways. A timeline's month scale is exactly as wide as its lanes, so a bar sits under its own months. | User decision. |
 | D73 | **The YAMD sidebar** has five views: Widgets in This Note, Callouts and References, Flashcards, Deadlines, and Study and Data Files (courses, stale notes, study time, and the data files queries use). Foam's backlinks, graph and tags open through aliases (`Show Backlinks`, `Show Note Graph`, `Show Tags`), and `examples/06-linked-notes` shows them working. | User decision. |
+| D74 | **Audio notes.** `YAMD: Record Audio and Add Link` records in a recorder panel (and in the browser, through a one-shot local server, if VS Code blocks the microphone in the panel), saves the file as recorded (`.webm`) in `yamd.audio.folder` (default `audio`) next to the note, and writes a Markdown link `[Recording 5 Nov, 14:30](audio/note-….webm)` on its own line at the cursor where the command started. The position is tracked while recording; a cursor inside a code block puts the link after it. | User decision. |
 
 ## 5. File format
 
@@ -228,6 +229,7 @@ No default keybindings (D51).
 | `YAMD: Accept / Reject Change at Cursor` | Resolve the `<ins>`/`<del>` under the cursor, or all in a selection. |
 | `YAMD: Accept / Reject All Changes` | Resolve every change in the note. |
 | `YAMD: Export HTML` / `Export PDF` / `Export Slides` | Standalone page, a page to print, a slide deck. |
+| `YAMD: Record Audio and Add Link` | Record from the microphone, save the file next to the note and link it at the cursor (D74). |
 | `YAMD: New Study Note`, `Review Cards`, `Open Study Dashboard`, `Start / Pause / Stop Study Timer`, `Prune Card Schedules` | Study tools. |
 | `YAMD: Open Query Source in SQL Client`, `Open in SQLite Editor`, `Open in CSV Editor`, `Query CSV with RBQL`, `Open Daily Note`, `Show Note Graph`, `Show Backlinks`, `Show Tags` | Aliases that hand work to companion extensions. |
 

@@ -223,6 +223,12 @@
         "command": "yamd.showTags",
         "title": "Show Tags (Foam)",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.recordAudio",
+        "title": "Record Audio and Add Link",
+        "category": "YAMD",
+        "icon": "$(mic)"
       }
     ],
     "menus": {
@@ -315,6 +321,10 @@
         {
           "command": "yamd.openQuery",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.recordAudio",
+          "when": "editorLangId == markdown"
         }
       ],
       "explorer/context": [
@@ -339,6 +349,13 @@
           "command": "yamd.openDashboard",
           "when": "view == yamd.study",
           "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "yamd.recordAudio",
+          "when": "editorLangId == markdown",
+          "group": "yamd@1"
         }
       ]
     },
@@ -372,6 +389,11 @@
           "type": "boolean",
           "default": true,
           "description": "When Build runs, turn citations like [@smith2020] into links to their entry in the bibliography (and keep their labels current)."
+        },
+        "yamd.audio.folder": {
+          "type": "string",
+          "default": "audio",
+          "description": "Folder, relative to the note, where YAMD: Record Audio and Add Link saves recordings. It must be inside the note's folder."
         }
       }
     },

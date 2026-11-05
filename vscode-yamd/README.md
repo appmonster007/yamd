@@ -66,6 +66,10 @@ Every comment YAMD reads is on a line of its own and starts with `yamd:`: region
 
 Flashcards are card callouts (`> [!card] Question`, answer in the body) reviewed with SM-2 spaced repetition (`.yamd/srs.json`). The YAMD sidebar lists deadlines (tasks with `{due=YYYY-MM-DD}`); the dashboard, study timer and **YAMD: New Study Note** (lecture, lab report, exam prep, reading note) are in the Command Palette.
 
+## Audio notes
+
+**YAMD: Record Audio and Add Link** records from your microphone in a panel beside the note, saves the file in an `audio` folder next to the note (`yamd.audio.folder`), and writes a link to it on its own line where your cursor was. If VS Code doesn't allow the microphone in the panel, the same recorder opens in your browser instead. See [examples/01-writing/audio.md](../examples/01-writing/audio.md).
+
 ## The YAMD sidebar
 
 The YAMD icon in the activity bar has five views: **Widgets in This Note** (click to open one), **Callouts and References** (numbered theorems, definitions, figure, table and equation targets; click to jump), **Flashcards** (due, new and per-course counts, with a Start Review button), **Deadlines**, and **Study and Data Files** (course progress, notes you haven't touched, study time and the data files your queries use).
@@ -74,7 +78,7 @@ Backlinks, the note graph and tags come from Foam: **YAMD: Show Backlinks (Foam)
 
 ## Settings
 
-`yamd.build.onSave`, `yamd.build.linkCitations`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
+`yamd.audio.folder`, `yamd.build.onSave`, `yamd.build.linkCitations`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
 
 ## What changed from 0.1
 

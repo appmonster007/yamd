@@ -5,7 +5,7 @@ Plain Markdown notes that show every YAMD feature. Open them in VS Code with the
 | Folder | What it shows |
 |---|---|
 | [getting-started.md](getting-started.md) | A tour: one of everything |
-| [01-writing](01-writing/) | Callouts and study blocks, figures and citations, Build and the table of contents, review marks, attributes and page breaks, and a one-page guide to every marker |
+| [01-writing](01-writing/) | Callouts and study blocks, figures and citations, Build and the table of contents, review marks, attributes and page breaks, audio recording, and a one-page guide to every marker |
 | [02-widgets](02-widgets/) | Kanban, calendar, timeline and gallery blocks |
 | [03-queries](03-queries/) | Read-only SQL over CSV, JSON and SQLite as a table, board or chart |
 | [04-study](04-study/) | Lecture notes, flashcards and deadlines |

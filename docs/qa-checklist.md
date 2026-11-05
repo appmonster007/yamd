@@ -31,6 +31,14 @@ Use a copy of `examples/` as the workspace.
 - [ ] Callouts: remove the blank line after one; a warning appears with a quick fix.
 - [ ] `YAMD: Go to Reference Target` on an image link opens the image beside the note.
 
+## Audio
+
+- [ ] **YAMD: Record Audio and Add Link** opens a recorder beside the note. Press Record: macOS asks to let VS Code use the microphone, or the panel says it is blocked and offers "Record in browser instead".
+- [ ] Record a few seconds, pause and resume, stop, play it back, name it and save: a file appears in `audio/` next to the note and a link on its own line where the cursor was.
+- [ ] Type above the cursor's line while recording; the link still lands where recording started.
+- [ ] Try it with the cursor inside a code block (link goes after the block) and in a note that was never saved (it asks to save first).
+- [ ] In the browser fallback, allow the microphone in the browser, save there, and the link appears in the note.
+
 ## Export
 
 - [ ] Open the exported HTML in a browser: callouts are numbered, `[Figure 1]` links jump to the figure, widgets are static, the query is a table, a hard-wrapped paragraph is one paragraph.

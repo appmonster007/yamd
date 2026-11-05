@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { registerAudio } from './audio/recorder';
 import { registerAliases } from './companions/aliases';
 import { registerBuildCommands } from './build/buildCommands';
 import { registerReviewCommands } from './build/reviewCommands';
@@ -29,6 +30,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerAliases(context);
   registerStudy(context, studyIndex, reviewPanel, dashboard, timer);
   registerSidebarViews(context, studyIndex);
+  registerAudio(context);
 }
 
 export function deactivate(): void {}

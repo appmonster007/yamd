@@ -241,6 +241,16 @@ exports.run = async function run() {
     for (const c of ['yamd.showGraph', 'yamd.showBacklinks', 'yamd.showTags']) assert(all.includes(c), `${c} is not registered`);
   });
 
+  test('Record Audio opens one recorder panel, and refuses a note that is not markdown', async () => {
+    await open(root, '01-writing/audio.md');
+    await vscode.commands.executeCommand('yamd.recordAudio');
+    assert(await until(() => vscode.window.tabGroups.all.flatMap((g) => g.tabs).find((t) => t.label === 'Record audio')), 'no recorder panel');
+    await vscode.commands.executeCommand('yamd.recordAudio');
+    const panels = vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => t.label === 'Record audio').length;
+    assert(panels === 1, `opened ${panels} recorder panels`);
+    assert(ext.packageJSON.contributes.configuration.properties['yamd.audio.folder'], 'the folder setting is missing');
+  });
+
   test('alias commands are registered and the companions are installed', async () => {
     for (const id of ['foam.foam-vscode', 'yy0931.vscode-sqlite3-editor', 'janisdd.vscode-edit-csv', 'mechatroner.rainbow-csv', 'yzhang.markdown-all-in-one']) {
       assert(vscode.extensions.getExtension(id), `${id} is not installed`);
