@@ -10,7 +10,7 @@ Plain Markdown notes that show every YAMD feature. Open them in VS Code with the
 | [03-queries](03-queries/) | Read-only SQL over CSV, JSON and SQLite as a table, board or chart |
 | [04-study](04-study/) | Lecture notes, flashcards and deadlines |
 | [05-export](05-export/) | HTML, print-to-PDF and slides |
-| [06-linked-notes](06-linked-notes/) | Wikilinks, backlinks, tags and the note graph (through Foam) |
+| [06-linked-notes](06-linked-notes/) | Wikilinks, backlinks, tags, the note graph (through Foam), and unlinked mentions |
 | [07-whats-new](07-whats-new/) | Menu and templates, snippets and completion, card details and filters, gallery picker, query builder and exports, transcription, study this note and check this note, mermaid diagrams, the outline and unlinked mentions |
 
 ## Try it
@@ -19,5 +19,7 @@ Plain Markdown notes that show every YAMD feature. Open them in VS Code with the
 2. Open [03-queries/queries.md](03-queries/queries.md) and open a query. Change `bugs.csv` and the view refreshes. **YAMD: Run Query** writes a Markdown snapshot of the result under the block.
 3. Open [01-writing/references.md](01-writing/references.md) and run **YAMD: Build**. References become links, citations link to the bibliography, and the table of contents fills in. Run it again and nothing changes.
 4. Run **YAMD: Export HTML** on any note.
+5. Open [07-whats-new/card-details.md](07-whats-new/card-details.md), open a board and click the pencil on a card; open [07-whats-new/diagrams-and-outline.md](07-whats-new/diagrams-and-outline.md) with **Markdown: Open Preview to the Side** to see the diagrams.
+6. Open [06-linked-notes/people/ada.md](06-linked-notes/people/ada.md) and look at the **Unlinked Mentions** view.
 
 The data and images these notes use are in `03-queries/` and `assets/`.

@@ -15,3 +15,5 @@ Back to [[home]].
 ## Parked
 
 - A timeline for the year, once the roadmap exists
+
+Ask Ada Lovelace to review the billing proposal. (This is plain text, not a link, so the **Unlinked Mentions** view lists it when `people/ada.md` is open.)

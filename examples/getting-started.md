@@ -13,8 +13,10 @@ This note uses each part of YAMD once. Everything here is ordinary Markdown: wit
   - [A board](#a-board)
   - [A query](#a-query)
   - [A callout](#a-callout)
+  - [A diagram](#a-diagram)
   - [A citation](#a-citation)
   - [References](#references)
+  - [Where next](#where-next)
 <!-- /yamd:toc -->
 
 ## A board
@@ -46,6 +48,15 @@ SELECT id, title, owner FROM bugs WHERE status = 'open' ORDER BY id;
 
 Callouts end at the first line that doesn't start with `>`, so leave a blank line after them. Study callouts are numbered; refer to [Theorem 1](#thm-pyth) and Build turns it into a link.
 
+## A diagram
+
+A `mermaid` block is drawn in VS Code's Markdown preview and in exports; elsewhere it stays readable text.
+
+```mermaid
+flowchart LR
+  Write --> Build --> Export
+```
+
 ## A citation
 
 Distributed systems rely on logical clocks [(Lamport, 1978)](#ref-lamport1978 "cite"). Build links the citation to the reference list below.
@@ -55,3 +66,7 @@ Distributed systems rely on logical clocks [(Lamport, 1978)](#ref-lamport1978 "c
 <!-- yamd:bibliography -->
 - <a id="ref-lamport1978"></a>Lamport, L. (1978). Time, Clocks, and the Ordering of Events in a Distributed System. <i>Communications of the ACM</i>, <i>21</i>(7), 558–565.
 <!-- /yamd:bibliography -->
+
+## Where next
+
+Run **YAMD: Menu** (or click YAMD in the status bar) to see every action, and **YAMD: Open Walkthrough** for a 15-step tour. The other folders show one area each; [07-whats-new](07-whats-new/getting-started-tools.md) covers menus and templates, card details and filters, the query builder, exports, transcription, study and checks.
