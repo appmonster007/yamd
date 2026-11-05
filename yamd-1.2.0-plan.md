@@ -42,8 +42,8 @@ media/               widget.css, print.css
 - [ ] Create branch `yamd-1.2`; commit the two spec files.
 - [ ] Verification spike (half a day), results recorded in spec §17:
   - [ ] CodeLens above a fenced block in a plain `.md` file, with a click opening a webview panel beside the note.
-  - [ ] Confirm CodeLens and the panel behave with VS Code's built-in Markdown editor and with Foam installed.
-  - [ ] Choose and verify companion extensions by marketplace id (SQLite viewer, CSV editor, Markdown tooling, SQL client): installed-count, last update, licence, command ids we can invoke.
+  - [ ] Confirm CodeLens and the panel behave with VS Code's built-in Markdown editor and with Foam installed. *(Code written: `core/fences.ts`, `extension/widgetLens.ts`, `examples/spike/widgets.md`; fence scanner unit-tested. Needs a manual check in VS Code.)*
+  - [x] Verify companion extensions by marketplace id: done, see spec §12 (Foam, SQLite3 Editor, Edit CSV, SQLTools; SQLite Viewer is freemium).
   - [ ] Check that `extensionPack` + `extensionDependencies` can require Foam.
 - [ ] Decide extension id/name for 1.2.0 (keep `appmonster007.vscode-yamd-ext` for upgrade continuity unless told otherwise).
 - **Exit:** CodeLens plus panel proven; companion list fixed.

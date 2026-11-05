@@ -219,7 +219,18 @@ No default keybindings (D51). **[OPEN: complete command list and names]**
 ## 12. Workspace layer and companions
 
 - **Foam is a hard dependency** (included in the extension pack, D18). It provides wikilinks, backlinks, graph, tags, daily notes and general templates on plain `.md` (D26).
-- The extension pack also includes a **SQLite viewer/editor**, a **CSV editor/viewer** and **Markdown tooling**. **[OPEN: exact extensions, by marketplace id; must be verified for availability and licence]**
+- The extension pack also includes a **SQLite viewer/editor**, a **CSV editor/viewer** and **Markdown tooling**. Candidates checked on the marketplace on 2026-11-05:
+
+| Role | Candidate (id) | Licence | Notes |
+|---|---|---|---|
+| Wikilinks, graph, daily notes, templates | `foam.foam-vscode` 0.47.1 | MIT | Updated 2026-11-04; requires VS Code ^1.110; commands include `foam-vscode.open-daily-note`, `create-note`, `show-graph`. |
+| SQLite viewer/editor (recommended) | `yy0931.vscode-sqlite3-editor` | GPL-3.0 | Editing and SQL execution (`sqlite3-editor.openPanel`, `execute`, `executescript`); open a file with `vscode.openWith(uri, 'sqlite3-editor.editor')`. |
+| SQLite viewer (alternative) | `qwtel.sqlite-viewer` | Freemium (PRO licence keys) | 3.7M installs, but some features sit behind a paid tier; not suitable as a required pack member. |
+| CSV editor (recommended) | `janisdd.vscode-edit-csv` | MIT | Grid editor; command `edit-csv.edit`. Rainbow CSV (`mechatroner.rainbow-csv`, 25M installs) adds highlighting and is already installed on the author's machine. |
+| SQL client for writes | `mtxr.sqltools` | MIT | Needs a separate SQLite driver extension; the SQLite3 Editor above can also run arbitrary SQL. |
+| Markdown tooling | `yzhang.markdown-all-in-one` | (not checked) | 14.9M installs, last update 2025-03. |
+
+  **[OPEN: final choice among the candidates; licence of Markdown All in One]**
 - **Alias commands** redirect to companion features (open in SQLite viewer, open CSV in the CSV editor, run SQL in the SQL client, Foam daily note, etc.). Missing companions: the command offers to install the extension and then runs (D45). **[OPEN: alias list]**
 - YAMD keeps a **small linter** for widget fences, query headers and callouts only (duplicate ids, unknown widget types, missing `source`, missing blank line after a callout), reported in the Problems panel with quick fixes (D47). **[OPEN: diagnostic codes]**
 

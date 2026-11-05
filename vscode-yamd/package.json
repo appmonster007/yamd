@@ -30,7 +30,8 @@
     "workspaceContains:**/*.yamd",
     "workspaceContains:**/*.ymd",
     "onLanguage:ydb",
-    "onCustomEditor:yamd.editor"
+    "onCustomEditor:yamd.editor",
+    "onLanguage:markdown"
   ],
   "contributes": {
     "languages": [
@@ -664,6 +665,11 @@
         "command": "yamd.toggleLivePreview",
         "title": "Toggle Live Preview (Hide Markup Away from Cursor)",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openWidget",
+        "title": "Open Widget",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -798,6 +804,10 @@
         {
           "command": "yamd.toggleLivePreview",
           "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.openWidget",
+          "when": "false"
         }
       ],
       "file/newFile": [
