@@ -9,7 +9,7 @@ import type { WidgetBlock } from '../core/fences';
 import { scanWidgets } from '../core/fences';
 import { bodyEdit } from '../core/widgetBody';
 import { highlight, renderMath } from './richLoader';
-import { renderQueryWidget } from './queryWidget';
+import { querySource, renderQueryWidget } from './queryWidget';
 import { nonce } from './webviewShell';
 import { fileResolver, linesOf, MARKDOWN, widgetsOf } from './widgets';
 
@@ -46,6 +46,7 @@ interface Entry {
   ordinal: number;
   ready: boolean;
   timer?: ReturnType<typeof setTimeout>;
+  watcher?: vscode.FileSystemWatcher;
 }
 
 /** One widget preview per (note, block): shows a block with the fixed widget design and edits the note through it. */
@@ -80,8 +81,19 @@ export class WidgetPanels implements vscode.Disposable {
     const panel = vscode.window.createWebviewPanel('yamd.widget', block.label, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: roots });
     const entry: Entry = { panel, uri, type: block.type, id: block.id, ordinal: block.ordinal, ready: false };
     this.entries.set(key, entry);
+    // A query widget follows its data file: it refreshes whenever the file changes (nothing in it is editable).
+    const source = block.type === 'sql' ? querySource(doc, block) : undefined;
+    if (source) {
+      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(path.dirname(source.fsPath)), path.basename(source.fsPath)));
+      const again = () => this.schedule(entry);
+      watcher.onDidChange(again);
+      watcher.onDidCreate(again);
+      watcher.onDidDelete(again);
+      entry.watcher = watcher;
+    }
     panel.onDidDispose(() => {
       clearTimeout(entry.timer);
+      entry.watcher?.dispose();
       this.entries.delete(key);
     });
     panel.webview.onDidReceiveMessage((m: { type: string }) => void this.onMessage(entry, m));
@@ -93,7 +105,7 @@ export class WidgetPanels implements vscode.Disposable {
     return (entry.id !== undefined ? all.find((w) => w.id === entry.id) : undefined) ?? all.find((w) => w.type === entry.type && w.ordinal === entry.ordinal);
   }
 
-  private schedule(entry: Entry, doc: vscode.TextDocument) {
+  private schedule(entry: Entry, doc?: vscode.TextDocument) {
     clearTimeout(entry.timer);
     entry.timer = setTimeout(() => void this.refresh(entry, false, doc), 150);
   }
@@ -185,6 +197,7 @@ export class WidgetPanels implements vscode.Disposable {
   dispose() {
     for (const e of [...this.entries.values()]) {
       clearTimeout(e.timer);
+      e.watcher?.dispose();
       e.panel.dispose();
     }
     for (const d of this.disposables) d.dispose();

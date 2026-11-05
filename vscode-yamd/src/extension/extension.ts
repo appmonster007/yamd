@@ -6,6 +6,7 @@ import { registerDatabaseFeatures } from './dbFeatures';
 import { registerDatabaseWizard } from './databaseWizard';
 import { DiagnosticsProvider } from './diagnostics';
 import { registerInsertCommands } from './insertCommands';
+import { registerQueryCommands } from './queryCommands';
 import { registerWidgetDiagnostics } from './widgetDiagnostics';
 import { registerWidgetPanels } from './widgetPanel';
 import { registerMigration } from './migration';
@@ -86,6 +87,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerMigration(context);
   registerWidgetDiagnostics(context);
   registerWidgetPanels(context);
+  registerQueryCommands(context);
 }
 
 export function deactivate(): void {}

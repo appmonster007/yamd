@@ -680,6 +680,11 @@
         "command": "yamd.insertWidget",
         "title": "Insert Widget",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.runQuery",
+        "title": "Run Query (Write Snapshot)",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -825,6 +830,10 @@
         },
         {
           "command": "yamd.insertWidget",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.runQuery",
           "when": "editorLangId == markdown"
         }
       ],

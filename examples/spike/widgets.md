@@ -30,3 +30,13 @@ SELECT 1;
 -- id="open-bugs" source="bugs.csv" view="table"
 SELECT id, title, status FROM bugs WHERE status != 'closed';
 ```
+
+```sql
+-- id="by-owner" source="bugs.csv" view="chart" type="bar" x="owner" y="n"
+SELECT owner, count(*) AS n FROM bugs GROUP BY owner;
+```
+
+```sql
+-- id="board" source="bugs.csv" view="board" group="status"
+SELECT title, owner, status FROM bugs;
+```
