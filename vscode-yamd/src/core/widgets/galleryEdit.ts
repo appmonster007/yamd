@@ -47,14 +47,15 @@ export function moveGalleryCard(source: string, boardLine: number, ref: CardRef,
   } else {
     insertAt = rel(shift((remaining[remaining.length - 1] as (typeof remaining)[number]).endLine)) + 1;
   }
-  const prefixBlank = insertAt > 0 && (body[insertAt - 1] ?? '').trim() !== '';
+  // Paragraph cards are separated by blank lines; list items must stay together or the list turns loose.
+  const prefixBlank = card.form === 'paragraph' && insertAt > 0 && (body[insertAt - 1] ?? '').trim() !== '';
   const insertion = prefixBlank ? ['', ...moved] : moved;
   body.splice(insertAt, 0, ...insertion);
 
   return { startLine: bodyStart, endLine: lastBodyLine, text: body.join('\n') };
 }
 
-/** Appends an `![alt](path)` plus caption paragraph to the gallery. */
+/** Appends `- ![caption](path)` to the gallery (or an image and caption paragraph, if that is how it is written). */
 export function addGalleryCard(source: string, boardLine: number, imagePath: string, caption: string): LineEdit | null {
   const path = imagePath.trim();
   if (!path) return null;
@@ -63,8 +64,13 @@ export function addGalleryCard(source: string, boardLine: number, imagePath: str
   if (!board) return null;
   const cap = caption.replace(/\s+/g, ' ').trim();
   const alt = cap || 'Image';
-  const block = cap ? `![${alt}](${path})\n${cap}` : `![${alt}](${path})`;
   const last = board.cards[board.cards.length - 1];
-  if (last) return { startLine: last.endLine, endLine: last.endLine, text: `${doc.lines[last.endLine] ?? ''}\n\n${block}` };
-  return { startLine: board.line, endLine: board.line, text: `${doc.lines[board.line] ?? ''}\n\n${block}` };
+  // A gallery written as a paragraph per image keeps that form; anything else (including a new gallery) is a list.
+  if (last?.form === 'paragraph') {
+    const block = cap ? `![${alt}](${path})\n${cap}` : `![${alt}](${path})`;
+    return { startLine: last.endLine, endLine: last.endLine, text: `${doc.lines[last.endLine] ?? ''}\n\n${block}` };
+  }
+  const item = `- ![${alt}](${path})`;
+  if (last) return { startLine: last.endLine, endLine: last.endLine, text: `${doc.lines[last.endLine] ?? ''}\n${item}` };
+  return { startLine: board.line, endLine: board.line, text: `${doc.lines[board.line] ?? ''}\n${item}` };
 }

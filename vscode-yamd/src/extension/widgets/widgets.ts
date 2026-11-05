@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import * as vscode from 'vscode';
 import { scanWidgets } from '../../core/widgets/fences';
 import type { WidgetBlock } from '../../core/widgets/fences';
@@ -25,4 +25,20 @@ export function fileResolver(doc: vscode.TextDocument): ((p: string) => string |
     const candidates = p.startsWith('/') ? [root ? path.join(root, p) : p] : [path.resolve(dir, p), ...(root ? [path.resolve(root, p)] : [])];
     return candidates.find((c) => existsSync(c));
   };
+}
+
+const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
+
+/** Markdown image lines for the images in a folder next to the note. */
+export function folderImages(doc: vscode.TextDocument, source: string): string[] {
+  if (doc.uri.scheme !== 'file') return [];
+  const dir = path.resolve(path.dirname(doc.uri.fsPath), source);
+  try {
+    return readdirSync(dir)
+      .filter((f) => IMAGE_FILE.test(f))
+      .sort()
+      .map((f) => `- ![${f.replace(/\.[^.]+$/, '')}](${path.posix.join(source.replace(/\\/g, '/'), f)})`);
+  } catch {
+    return [];
+  }
 }

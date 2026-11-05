@@ -196,6 +196,8 @@ interface GalleryCard {
   body: Block[];
   tags: string[];
   attrs?: Attrs;
+  /** `list` for `- ![caption](image)`, `paragraph` for an image on its own line followed by its caption. */
+  form: 'list' | 'paragraph';
   line: number;
   endLine: number;
 }
@@ -229,8 +231,19 @@ export function buildGallery(container: ContainerBlock): GalleryBoard {
       const br = b.children.findIndex((n) => n.type === 'break');
       const captionInline = br === -1 ? [] : b.children.slice(br + 1);
       const { nodes, tags } = extractTags(captionInline);
-      current = { image, bodyInline: nodes, body: [], tags, attrs: image.attrs, line: b.line, endLine: b.endLine };
+      current = { image, bodyInline: nodes, body: [], tags, attrs: image.attrs, form: 'paragraph', line: b.line, endLine: b.endLine };
       cards.push(current);
+    } else if (b.type === 'list') {
+      // `- ![caption](image)`: each item is a card, and the alt text is its caption.
+      for (const item of b.items) {
+        const first = item.children[0];
+        const img = first && leadingImage(first);
+        if (!first || first.type !== 'paragraph' || !img) continue;
+        const br = first.children.findIndex((n) => n.type === 'break');
+        const { nodes, tags } = extractTags(br === -1 ? [] : first.children.slice(br + 1));
+        current = { image: img, bodyInline: nodes, body: item.children.slice(1), tags, attrs: img.attrs, form: 'list', line: item.line, endLine: item.endLine };
+        cards.push(current);
+      }
     } else if (current) {
       if (b.type === 'paragraph') {
         const { nodes, tags } = extractTags(b.children);

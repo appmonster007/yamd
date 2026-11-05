@@ -1,6 +1,6 @@
 # YAMD 1.2.0 Specification
 
-**Status:** complete (2026-11-05). Decisions D1–D70 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
+**Status:** complete (2026-11-05). Decisions D1–D71 and the defaults in §22 are accepted. Items marked **[UNVERIFIED]** depend on an assumption that has not been tested. Implementation plan: [yamd-1.2.0-plan.md](yamd-1.2.0-plan.md).
 **Supersedes direction of:** `yamd-spec.md` (0.1, a separate `.yamd` language) and `yamd-studio-spec.md`.
 
 ---
@@ -105,6 +105,7 @@ YAMD 1.2.0 changes the model from **"YAMD is Markdown plus extra features" (its 
 | D68 | `[[page]]` and `[[page\|text]]` in an export link to the note's file next to it (`page.md`, with `#anchor` for `[[page#Heading]]`). `![[page]]` embeds are not supported. | User decision. |
 | D69 | The engine is trimmed to what widget blocks and exports use: GFM, `#tags`, `{key=value}` attributes, wikilinks, math, footnotes and the board, study and callout containers. Removed from 0.1: variables, embeds, `::toc`/`::embed`/`::bibliography`, citations and cross-references in the engine (Build does both), inline footnotes, sup/sub, `==mark==`/`++ins++`, block ids on paragraphs, text directives and cloze, ref spans and figure/table/equation numbering, and the details/columns/figure/table/html containers. | Nothing in the 1.2 spec uses them. |
 | D70 | Every CodeLens action is also a Command Palette command: `Open Kanban`, `Open Calendar`, `Open Timeline`, `Open Gallery`, `Open Query` (and `Open Widget` for any type). Each opens the block under the cursor; otherwise the only block of that type; otherwise a picker. | User decision. |
+| D71 | **Widget views.** A calendar panel opens on the next month that has an event (not an empty current month) and has previous/next/today buttons; an exported page lists every month with events. A timeline has a month scale and a mark for today, and its bars stay inside their lane. A gallery is a list of `- ![caption](image)` items (the alt text is the caption); an image paragraph with its own caption paragraph also works, and `source="folder/"` lists a folder in panels and exports. | Found when the views rendered empty or unstyled. |
 
 ## 5. File format
 

@@ -1,5 +1,5 @@
 // Runs inside the preview webview.
-import { boardEdit, root } from './shared';
+import { boardEdit, root, vscode } from './shared';
 import { move, startRename } from './kanban';
 
 // ---- Calendar ----
@@ -159,4 +159,19 @@ root.addEventListener('click', (event) => {
   const closeButton = (event.target as Element).closest<HTMLElement>('.db-agenda-close');
   const agenda = closeButton?.closest<HTMLElement>('.db-agenda');
   if (agenda) agenda.hidden = true;
+});
+
+// Previous, next and today buttons: the extension re-renders the calendar on the month asked for.
+root.addEventListener('click', (event) => {
+  const button = (event.target as Element).closest<HTMLElement>('.db-month-nav');
+  const grid = button?.closest<HTMLElement>('.db-calendar');
+  const board = button?.closest<HTMLElement>('.kanban-calendar');
+  if (!button || !grid || !board) return;
+  const delta = Number(button.dataset['delta']);
+  let month = '';
+  if (delta !== 0) {
+    const [y, m] = (grid.dataset['month'] ?? '').split('-').map(Number) as [number, number];
+    month = new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 7);
+  }
+  vscode.postMessage({ type: 'calendarMonth', month });
 });

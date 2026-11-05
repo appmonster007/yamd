@@ -52,12 +52,12 @@ describe('gallery edits', () => {
   test('adds the first card right after an empty gallery opens', () => {
     const empty = ':::gallery\n:::';
     const out = apply(empty, addGalleryCard(empty, 0, 'first.jpg', 'First photo'));
-    assert.equal(out, ':::gallery\n\n![First photo](first.jpg)\nFirst photo\n:::');
+    assert.equal(out, ':::gallery\n- ![First photo](first.jpg)\n:::');
   });
 
   test('an image with no caption gets a generic alt text', () => {
     const empty = ':::gallery\n:::';
     const out = apply(empty, addGalleryCard(empty, 0, 'bare.jpg', ''));
-    assert.equal(out, ':::gallery\n\n![Image](bare.jpg)\n:::');
+    assert.equal(out, ':::gallery\n- ![Image](bare.jpg)\n:::');
   });
 });

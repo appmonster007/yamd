@@ -204,6 +204,27 @@ exports.run = async function run() {
     assert(!/<br/.test(html), 'a soft line break became <br>');
   });
 
+  test('exporting a calendar, a timeline and a gallery draws them with their content', async () => {
+    const dir = path.join(root, '02-widgets');
+    const cal = await open(root, '02-widgets/calendar.md');
+    await vscode.commands.executeCommand('yamd.exportHtml');
+    const calHtml = fs.readFileSync(cal.doc.uri.fsPath.replace(/\.md$/, '.html'), 'utf8');
+    assert(/December 2026/.test(calHtml) && /Submit grant report/.test(calHtml), 'the calendar export has no December events');
+    const tl = await open(root, '02-widgets/timeline.md');
+    await vscode.commands.executeCommand('yamd.exportHtml');
+    const tlHtml = fs.readFileSync(tl.doc.uri.fsPath.replace(/\.md$/, '.html'), 'utf8');
+    assert(/db-timeline-axis/.test(tlHtml) && /Migrate auth/.test(tlHtml), 'the timeline export has no scale or bars');
+    // A gallery written as a list, and one that names a folder.
+    const file = path.join(dir, 'qa-gallery.md');
+    fs.writeFileSync(file, '# G\n\n```gallery list\n- ![One](../assets/team.svg)\n- ![Two](../assets/architecture.svg)\n```\n\n```gallery id=folder source="../assets"\n```\n');
+    const g = await open(root, '02-widgets/qa-gallery.md');
+    await vscode.commands.executeCommand('yamd.exportHtml');
+    const gHtml = fs.readFileSync(g.doc.uri.fsPath.replace(/\.md$/, '.html'), 'utf8');
+    const cards = (gHtml.match(/class="db-card"/g) ?? []).length;
+    assert(cards === 5, `expected 5 gallery cards (2 listed + 3 in the folder), got ${cards}`);
+    assert(/<img src="\.\.\/assets\/team\.svg"/.test(gHtml), 'gallery image missing');
+  });
+
   test('Export Slides writes a deck', async () => {
     const { doc } = await open(root, '05-export/export.md');
     await vscode.commands.executeCommand('yamd.exportSlides');

@@ -21,6 +21,8 @@ export interface PreparedWidget {
   /** Start line of the block, which names its placeholder `YAMDWIDGET<line>`. */
   line: number;
   type: string;
+  /** The attributes from the block's opening line (`source`, `id`, …). */
+  attrs: Record<string, string>;
   body: string[];
 }
 
@@ -45,7 +47,7 @@ export function prepareExport(lines: string[]): Prepared {
   for (const w of scanWidgets(lines)) {
     if (!w.closed) continue;
     if (BOARDS.has(w.type)) {
-      widgets.push({ line: w.startLine, type: w.type, body: lines.slice(w.bodyStartLine, w.bodyEndLine + 1) });
+      widgets.push({ line: w.startLine, type: w.type, attrs: w.attrs, body: lines.slice(w.bodyStartLine, w.bodyEndLine + 1) });
       replace.set(w.startLine, { end: w.endLine, lines: ['', `YAMDWIDGET${w.startLine}`, ''] });
     } else if (w.type === 'sql') {
       queryBlocks.push(w.startLine);

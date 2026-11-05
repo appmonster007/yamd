@@ -1,5 +1,4 @@
 import * as path from 'node:path';
-import { readdirSync } from 'node:fs';
 import * as vscode from 'vscode';
 import { escapeHtml, parse, render } from '../../core/markdown';
 import type { RenderOptions } from '../../core/markdown';
@@ -11,10 +10,9 @@ import { bodyEdit } from '../../core/widgets/widgetBody';
 import { highlight, renderMath } from '../shared/richLoader';
 import { querySource, renderQueryWidget } from '../query/queryWidget';
 import { nonce } from '../shared/webviewShell';
-import { fileResolver, linesOf, MARKDOWN, widgetsOf } from './widgets';
+import { folderImages, fileResolver, linesOf, MARKDOWN, widgetsOf } from './widgets';
 
 const BOARD_TYPES = new Set(['kanban', 'calendar', 'timeline', 'gallery']);
-const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
 
 /** The note's block as a one-container document, so the board renderer and its edit logic apply unchanged. */
 function syntheticSource(doc: vscode.TextDocument, block: WidgetBlock): string {
@@ -24,19 +22,6 @@ function syntheticSource(doc: vscode.TextDocument, block: WidgetBlock): string {
   return [`:::${block.type}`, ...body, ':::'].join('\n');
 }
 
-/** Markdown image lines for the images in a folder next to the note. */
-function folderImages(doc: vscode.TextDocument, source: string): string[] {
-  if (doc.uri.scheme !== 'file') return [];
-  const dir = path.resolve(path.dirname(doc.uri.fsPath), source);
-  try {
-    return readdirSync(dir)
-      .filter((f) => IMAGE_FILE.test(f))
-      .sort()
-      .map((f) => `- ![${f.replace(/\.[^.]+$/, '')}](${path.posix.join(source.replace(/\\/g, '/'), f)})`);
-  } catch {
-    return [];
-  }
-}
 
 interface Entry {
   panel: vscode.WebviewPanel;
@@ -47,6 +32,8 @@ interface Entry {
   ready: boolean;
   timer?: ReturnType<typeof setTimeout>;
   watcher?: vscode.FileSystemWatcher;
+  /** The month a calendar panel is showing; undefined means its default. */
+  month?: string;
 }
 
 /** One widget preview per (note, block): shows a block with the fixed widget design and edits the note through it. */
@@ -129,6 +116,7 @@ class WidgetPanels implements vscode.Disposable {
     const folderGallery = block.type === 'gallery' && block.attrs['source'] !== undefined && block.bodyEndLine < block.bodyStartLine;
     const resolve = fileResolver(doc);
     const options: RenderOptions = {
+      ...(entry.month ? { month: entry.month } : {}),
       interactive: vscode.workspace.isTrusted && block.closed && !folderGallery && vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) !== false,
       highlight,
       renderMath,
@@ -151,6 +139,10 @@ class WidgetPanels implements vscode.Disposable {
       await this.refresh(entry, true);
     } else if (m.type === 'boardEdit') {
       await this.applyEdit(entry, m as unknown as BoardEditMessage);
+    } else if (m.type === 'calendarMonth') {
+      const month = (m as unknown as { month: string }).month;
+      entry.month = /^\d{4}-\d{2}$/.test(month) ? month : undefined;
+      await this.refresh(entry, true);
     } else if (m.type === 'link') {
       const href = (m as unknown as { href: string }).href;
       if (/^https?:/i.test(href)) await vscode.env.openExternal(vscode.Uri.parse(href));

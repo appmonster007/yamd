@@ -11,8 +11,8 @@ Use a copy of `examples/` as the workspace.
 - [ ] Tick a card's checkbox; the `[ ]` in the note becomes `[x]`.
 - [ ] Edit the note by hand while the panel is open; the panel follows. Delete the block; the panel says it is gone.
 - [ ] Open both boards in `kanban.md`; two panels open, and clicking a lens again reveals the same panel.
-- [ ] **Calendar:** drag an event to another day; only its `due=` changes. Click a date to expand it.
-- [ ] **Timeline:** drag a bar along its lane (start and end move together) and onto another lane.
+- [ ] **Calendar:** it opens on December 2026 (the next month with an event); ‹ › and Today move between months. Drag an event to another day; only its `due=` changes. Click a date to expand it.
+- [ ] **Timeline:** a month scale sits above the lanes and every bar stays inside its lane. Drag a bar along its lane (start and end move together) and onto another lane.
 - [ ] **Gallery:** drag to reorder; the folder gallery (`all-assets`) shows the images and cannot be reordered.
 - [ ] Images in a gallery load (the panel can read files next to the note).
 

@@ -13,7 +13,7 @@ import { bibSettings } from '../../core/build/build';
 import { parseBibtex } from '../../core/citations/bibtex';
 import { highlight, renderMath } from '../shared/richLoader';
 import { runBlockQuery } from '../query/queryWidget';
-import { linesOf } from '../widgets/widgets';
+import { folderImages, linesOf } from '../widgets/widgets';
 
 type Kind = 'html' | 'pdf' | 'slides';
 
@@ -40,6 +40,10 @@ async function exportNote(context: vscode.ExtensionContext, kind: Kind): Promise
   const prepared = prepareExport(built);
 
   // Query blocks are run now and shown as static tables, boards or charts.
+  // A gallery that names a folder lists that folder's images.
+  for (const w of prepared.widgets) {
+    if (w.type === 'gallery' && w.attrs['source'] && w.body.every((l) => l.trim() === '')) w.body = folderImages(doc, w.attrs['source']);
+  }
   const blocks = renderWidgets(prepared.widgets, { highlight, renderMath });
   for (const w of scanWidgets(built)) {
     if (w.type !== 'sql' || !w.closed) continue;

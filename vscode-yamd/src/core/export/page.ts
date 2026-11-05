@@ -52,8 +52,23 @@ body.export { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem; }
 `;
 
 const BASE_CSS = `
-:root { --yamd-fg: #1f2328; --yamd-bg: #fff; --yamd-muted: #656d76; --yamd-border: #d0d7de; --yamd-code-bg: #f6f8fa; --yamd-link: #0969da; --yamd-note: #0969da; --yamd-tip: #1a7f37; --yamd-warning: #9a6700; --yamd-danger: #cf222e; }
-body { background: var(--yamd-bg); color: var(--yamd-fg); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+/* The widget styles are written for VS Code's theme variables, which a standalone page doesn't have. */
+:root {
+  --vscode-editor-foreground: #1f2328; --vscode-editor-background: #ffffff; --vscode-textLink-foreground: #0969da;
+  --vscode-textLink-activeForeground: #0550ae; --vscode-descriptionForeground: #656d76; --vscode-focusBorder: #0969da;
+  --vscode-panel-border: #d0d7de; --vscode-input-foreground: #1f2328; --vscode-input-background: #ffffff;
+  --vscode-textCodeBlock-background: #f6f8fa; --vscode-button-foreground: #ffffff;
+  --yamd-fg: #1f2328; --yamd-bg: #fff; --yamd-muted: #656d76; --yamd-border: #d0d7de; --yamd-code-bg: #f6f8fa; --yamd-link: #0969da; --yamd-note: #0969da; --yamd-tip: #1a7f37; --yamd-warning: #9a6700; --yamd-danger: #cf222e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vscode-editor-foreground: #e6edf3; --vscode-editor-background: #0d1117; --vscode-textLink-foreground: #58a6ff;
+    --vscode-textLink-activeForeground: #79c0ff; --vscode-descriptionForeground: #8b949e; --vscode-focusBorder: #58a6ff;
+    --vscode-panel-border: #30363d; --vscode-input-foreground: #e6edf3; --vscode-input-background: #0d1117;
+    --vscode-textCodeBlock-background: #161b22; --vscode-button-foreground: #0d1117;
+  }
+}
+body { background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif; }
 `;
 
 function shell(title: string, lang: string, css: string, body: string, bodyClass = 'export', script = ''): string {

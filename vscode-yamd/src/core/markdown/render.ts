@@ -19,6 +19,8 @@ export interface RenderOptions {
   rawHtml?: 'sanitize' | 'trust';
   /** `newline` renders soft breaks as Markdown does (only for conformance tests). Default: `break`. */
   softBreaks?: 'break' | 'newline';
+  /** The month (`YYYY-MM`) a calendar block shows; by default the next one with an event. */
+  month?: string;
   /** Enables preview controls (task checkboxes, kanban editing). */
   interactive?: boolean;
   /** Today's date as `YYYY-MM-DD`, for overdue badges. Defaults to the current date. */

@@ -18,7 +18,7 @@ A widget is a fenced block named for its type. Give it an `id` so you can open i
 ```
 ````
 
-A CodeLens above the block opens it in a widget preview beside the note. The same actions are in the Command Palette (**YAMD: Open Kanban**, **Open Calendar**, **Open Timeline**, **Open Gallery**, **Open Query**): they open the block under the cursor, the only block of that type, or ask which. Edits there (drag a card, rename, add, tick a task) rewrite the block in the note, and undo works. Types: `kanban`, `calendar`, `timeline`, `gallery`. A `bare-word` after the type is the id; with several options use `id=…`.
+A CodeLens above the block opens it in a widget preview beside the note. The same actions are in the Command Palette (**YAMD: Open Kanban**, **Open Calendar**, **Open Timeline**, **Open Gallery**, **Open Query**): they open the block under the cursor, the only block of that type, or ask which. Edits there (drag a card, rename, add, tick a task) rewrite the block in the note, and undo works. Types: `kanban`, `calendar` (opens on the next month with an event, with buttons to move between months), `timeline` (with a month scale) and `gallery` (a list of `- ![caption](image)`, or `source="folder/"`). A `bare-word` after the type is the id; with several options use `id=…`.
 
 ### Queries
 

@@ -62,21 +62,22 @@ function renderCard(ctx: BoardContext, card: KanbanCard, index: number, now: str
 
 /** `:::calendar` is sugar for an implicit database rendered as a calendar (§6.2.1); a card with
  * no `{due=...}` isn't shown (Y606, reported by the linter, not here). */
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/**
+ * The month a calendar opens on: the next one with an event (counting today's), else the last one
+ * that has any, else today's. An empty month would look like a broken widget.
+ */
+export function defaultMonth(cards: { due?: string }[], now: string): string {
+  const months = [...new Set(cards.map((c) => c.due?.slice(0, 7)).filter((m): m is string => !!m && /^\d{4}-\d{2}$/.test(m)))].sort();
+  const current = now.slice(0, 7);
+  return months.find((m) => m >= current) ?? months[months.length - 1] ?? current;
+}
+
 export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string {
   const interactive = Boolean(ctx.options.interactive);
   const source = ctx.options.sourcePath ? ` data-source="${escapeHtml(ctx.options.sourcePath)}"` : '';
   const now = ctx.options.today ?? today();
-  const month = now.slice(0, 7);
-  const [y, m] = month.split('-').map(Number) as [number, number];
-  const first = new Date(Date.UTC(y, m - 1, 1));
-  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const offset = (first.getUTCDay() + 6) % 7;
-  const byDay = new Map<number, KanbanCard[]>();
-  for (const c of board.cards) {
-    if (!c.due?.startsWith(month)) continue;
-    const d = Number(c.due.slice(8, 10));
-    byDay.set(d, [...(byDay.get(d) ?? []), c]);
-  }
   const eventHtml = (c: KanbanCard): string => {
     const hash = hashText(cardSource(ctx.doc.lines, c));
     const drag = interactive ? ' draggable="true"' : '';
@@ -94,35 +95,56 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     html: string;
     iso?: string;
   }
-  const cells: Cell[] = [];
-  for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
-  for (let d = 1; d <= days; d++) {
-    const iso = `${month}-${String(d).padStart(2, '0')}`;
-    const items = (byDay.get(d) ?? []).map(eventHtml).join('');
-    const add = interactive
-      ? `<form class="kanban-add" data-date="${iso}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card on ${iso}"></form>`
+  /** One month as a grid of weeks. `nav` adds the previous/next/today buttons the widget panel uses. */
+  const grid = (month: string, nav: boolean): string => {
+    const [y, m] = month.split('-').map(Number) as [number, number];
+    const first = new Date(Date.UTC(y, m - 1, 1));
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const offset = (first.getUTCDay() + 6) % 7;
+    const byDay = new Map<number, KanbanCard[]>();
+    for (const c of board.cards) {
+      if (!c.due?.startsWith(month)) continue;
+      const d = Number(c.due.slice(8, 10));
+      byDay.set(d, [...(byDay.get(d) ?? []), c]);
+    }
+    const cells: Cell[] = [];
+    for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
+    for (let d = 1; d <= days; d++) {
+      const iso = `${month}-${String(d).padStart(2, '0')}`;
+      const items = (byDay.get(d) ?? []).map(eventHtml).join('');
+      const add = interactive
+        ? `<form class="kanban-add" data-date="${iso}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card on ${iso}"></form>`
+        : '';
+      cells.push({
+        html: `<div class="db-day${iso === now ? ' today' : ''}" data-date="${iso}"><button type="button" class="db-day-number">${d}</button>${items}${add}</div>`,
+        iso,
+      });
+    }
+    while (cells.length % 7 !== 0) cells.push({ html: '<div class="db-day empty"></div>' });
+    const weeks: string[] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      const week = cells.slice(i, i + 7);
+      const firstIso = week.find((c) => c.iso)?.iso;
+      const label = firstIso
+        ? `<button type="button" class="db-week-number" data-week="${isoWeek(firstIso)}">Wk ${isoWeek(firstIso)}</button>`
+        : '<span class="db-week-number empty"></span>';
+      weeks.push(`<div class="db-week">${label}${week.map((c) => c.html).join('')}</div>`);
+    }
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
+    const titleText = `${MONTH_NAMES[m - 1]} ${y}`;
+    const buttons = nav
+      ? `<button type="button" class="db-month-nav" data-delta="-1" aria-label="Previous month">\u2039</button><button type="button" class="db-month-nav" data-delta="0">Today</button><button type="button" class="db-month-nav" data-delta="1" aria-label="Next month">\u203a</button>`
       : '';
-    cells.push({
-      html: `<div class="db-day${iso === now ? ' today' : ''}" data-date="${iso}"><button type="button" class="db-day-number">${d}</button>${items}${add}</div>`,
-      iso,
-    });
-  }
-  while (cells.length % 7 !== 0) cells.push({ html: '<div class="db-day empty"></div>' });
-  const weeks: string[] = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    const week = cells.slice(i, i + 7);
-    const firstIso = week.find((c) => c.iso)?.iso;
-    const label = firstIso
-      ? `<button type="button" class="db-week-number" data-week="${isoWeek(firstIso)}">Wk ${isoWeek(firstIso)}</button>`
-      : '<span class="db-week-number empty"></span>';
-    weeks.push(`<div class="db-week">${label}${week.map((c) => c.html).join('')}</div>`);
-  }
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
-  const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
+    const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
+    return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span>${buttons}</div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div>`;
+  };
+  // The widget panel shows one month at a time (with buttons to move); a static page lists every month that has events.
+  const requested = ctx.options.month;
+  const withEvents = [...new Set(board.cards.map((c) => c.due?.slice(0, 7)).filter((m): m is string => !!m && /^\d{4}-\d{2}$/.test(m)))].sort();
+  const months = interactive ? [requested ?? defaultMonth(board.cards, now)] : requested ? [requested] : withEvents.length ? withEvents : [now.slice(0, 7)];
   const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
   const mode = interactive ? ' data-interactive' : '';
-  const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
-  return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div></div>`;
+  return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}${months.map((month) => grid(month, interactive)).join('')}</div>`;
 }
 
 /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are
@@ -164,6 +186,19 @@ export function renderTimeline(ctx: BoardContext, board: TimelineBoard): string 
     const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[i.card.line] ?? ''));
     return `<div class="db-timeline-bar" tabindex="0" data-line="${i.card.line}" data-hash="${hash}" data-start="${i.start}" data-title="${titleSource}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${ctx.inline(i.card.title)}</div>`;
   };
+  // A month scale above the lanes, with a mark for today when it falls inside the range.
+  const ticks: string[] = [];
+  const startDate = new Date(min);
+  const firstTick = Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + (startDate.getUTCDate() === 1 ? 0 : 1), 1);
+  ticks.push(`<span class="db-timeline-tick" style="left:0%">${MONTH_NAMES[startDate.getUTCMonth()]?.slice(0, 3)} ${startDate.getUTCFullYear()}</span>`);
+  for (let t = firstTick; t <= max; t = Date.UTC(new Date(t).getUTCFullYear(), new Date(t).getUTCMonth() + 1, 1)) {
+    if (t <= min) continue;
+    const d = new Date(t);
+    ticks.push(`<span class="db-timeline-tick" style="left:${pct(t)}%">${MONTH_NAMES[d.getUTCMonth()]?.slice(0, 3)}${d.getUTCMonth() === 0 ? ` ${d.getUTCFullYear()}` : ''}</span>`);
+  }
+  const nowTime = time(ctx.options.today ?? today());
+  const todayMark = items.length && nowTime >= min && nowTime <= max ? `<span class="db-timeline-today" style="left:${pct(nowTime)}%" title="Today"></span>` : '';
+  const axis = items.length ? `<div class="db-timeline-axis"><span class="db-timeline-label"></span><div class="db-timeline-scale">${ticks.join('')}${todayMark}</div></div>` : '';
   const rows = board.groups
     .map((g, gi) => {
       const bars = g.cards.map((c) => byLine.get(c.line)).filter((i): i is Item => i !== undefined).map(bar).join('');
@@ -180,7 +215,7 @@ export function renderTimeline(ctx: BoardContext, board: TimelineBoard): string 
     interactive && board.groups.length === 0
       ? `<form class="kanban-add" data-group=""><input type="text" class="kanban-add-input" placeholder="Add a card" aria-label="Add a card"></form>`
       : '';
-  return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${rows}</div>${globalAdd}</div>`;
+  return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${axis}${rows}</div>${globalAdd}</div>`;
 }
 
 /** `:::gallery` is sugar for an implicit database rendered as a gallery (§6.2.1): each image
@@ -196,9 +231,11 @@ export function renderGallery(ctx: BoardContext, board: GalleryBoard): string {
       const meta = chips ? `<div class="kanban-card-meta">${chips}</div>` : '';
       const bodyInline = c.bodyInline.length ? `<p>${ctx.inline(c.bodyInline)}</p>` : '';
       const bodyBlocks = c.body.length ? ctx.blocks(c.body) : '';
+      // A list item's alt text is its caption; an image with its own caption paragraph shows that instead.
+      const caption = !bodyInline && !bodyBlocks && c.image.alt ? `<p class="db-card-caption">${escapeHtml(c.image.alt)}</p>` : '';
       const hash = hashText(cardSource(ctx.doc.lines, c));
       const drag = interactive ? ' draggable="true"' : '';
-      return `<article class="db-card" tabindex="0" data-line="${c.line}" data-hash="${hash}"${drag}>${ctx.image(c.image)}<div class="db-card-body">${bodyInline}${bodyBlocks}${meta}</div></article>`;
+      return `<article class="db-card" tabindex="0" data-line="${c.line}" data-hash="${hash}"${drag}>${ctx.image(c.image)}<div class="db-card-body">${caption}${bodyInline}${bodyBlocks}${meta}</div></article>`;
     })
     .join('\n');
   const add = interactive
