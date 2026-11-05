@@ -212,8 +212,10 @@ describe('marker convention', () => {
 
   test('yamd:attrs becomes class and attribute pairs on the next element, and pagebreak a page break', () => {
     const { source } = prepareExport(L('<!-- yamd:attrs class="wide big" width=50% -->\n![x](a.png)\n\n<!-- yamd:pagebreak -->\n'));
-    assert.match(source, /!\[x\]\(a\.png\) \{\.wide \.big width=50%\}/);
     assert.match(source, /::pagebreak/);
-    assert.match(finalizeHtml(render(parse(source)), new Map()), /pagebreak/);
+    const html = finalizeHtml(render(parse(source, 'gfm')), new Map());
+    assert.match(html, /<img[^>]*class="wide big"[^>]*width="50%"/);
+    assert.match(html, /pagebreak/);
+    assert.doesNotMatch(html, /YAMDATTRS/);
   });
 });

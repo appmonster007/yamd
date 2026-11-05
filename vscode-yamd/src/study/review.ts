@@ -57,7 +57,8 @@ export class ReviewPanel implements vscode.Disposable {
   }
 
   private item(c: Card, today: string) {
-    const html = (src: string) => render(parse(src), { highlight, renderMath });
+    // Card text is plain Markdown: a newline is a space and no YAMD-only syntax applies.
+    const html = (src: string) => render(parse(src, 'gfm'), { highlight, renderMath, softBreaks: 'newline' });
     return {
       id: c.id,
       front: html(c.front),

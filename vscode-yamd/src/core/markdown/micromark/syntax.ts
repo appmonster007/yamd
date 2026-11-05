@@ -540,7 +540,14 @@ const attributesFlow: Construct = {
   },
 };
 
-export function yamdSyntax(): Extension {
+/**
+ * `yamd` is the full syntax, used inside widget blocks (tags, `{key=value}` attributes, variables…).
+ * `gfm` is for ordinary prose, where only Markdown's own syntax applies, plus `[[wikilinks]]`.
+ */
+export type Dialect = 'yamd' | 'gfm';
+
+export function yamdSyntax(dialect: Dialect = 'yamd'): Extension {
+  if (dialect === 'gfm') return { text: { [codes.leftSquareBracket]: [wikilink] } };
   return {
     flow: { [codes.leftCurlyBrace]: attributesFlow },
     text: {

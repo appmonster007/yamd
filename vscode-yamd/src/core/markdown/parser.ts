@@ -9,6 +9,7 @@ import { plainText } from './inline';
 import { SlugRegistry, slugify } from './slug';
 import type { Attrs, Block, Diagnostic, FootnoteDef, Range, RefDef, YamdDocument } from './types';
 import { Adapter, prepareLines, toMdast } from './adapter';
+import type { Dialect } from './micromark/syntax';
 import { KNOWN_CONTAINERS, KNOWN_LEAVES } from './known';
 
 export { KNOWN_CONTAINERS, KNOWN_LEAVES };
@@ -57,17 +58,19 @@ const cache = new Map<string, YamdDocument>();
 let cachedChars = 0;
 
 /** Parses `source`, reusing the result of an earlier parse of the same text. Don't modify the result. */
-export function parse(source: string): YamdDocument {
-  const hit = cache.get(source);
+export function parse(source: string, dialect: Dialect = 'yamd'): YamdDocument {
+  // The two dialects read the same text differently, so each has its own entries.
+  const key = dialect === 'gfm' ? `\u0000gfm\u0000${source}` : source;
+  const hit = cache.get(key);
   if (hit) {
     // Move to the newest position.
-    cache.delete(source);
-    cache.set(source, hit);
+    cache.delete(key);
+    cache.set(key, hit);
     return hit;
   }
-  const doc = parseUncached(source);
+  const doc = parseUncached(source, 'auto', dialect);
   if (source.length <= CACHE_CHARS / 2) {
-    cache.set(source, doc);
+    cache.set(key, doc);
     cachedChars += source.length;
     for (const [key] of cache) {
       if (cache.size <= CACHE_ENTRIES && cachedChars <= CACHE_CHARS) break;
@@ -111,17 +114,18 @@ function prelude(source: string): Prelude {
   return { lines, lineStarts, prepared: prepareLines(rawLines) };
 }
 
-export function parseUncached(source: string, mode: ParseMode = 'auto'): YamdDocument {
+export function parseUncached(source: string, mode: ParseMode = 'auto', dialect: Dialect = 'yamd'): YamdDocument {
   const pre = prelude(source);
   const { lines, lineStarts, prepared } = pre;
 
   let doc: YamdDocument | null = null;
-  if (mode === 'chunked' || (mode === 'auto' && source.length >= CHUNKED_MIN_CHARS)) {
+  // Chunked parsing is only built for the full syntax; prose in the plain dialect is parsed whole.
+  if (dialect === 'yamd' && (mode === 'chunked' || (mode === 'auto' && source.length >= CHUNKED_MIN_CHARS))) {
     doc = parseChunked(source, pre);
   }
   if (!doc) {
-    const tree = toMdast(prepared.text.join('\n'));
-    const adapter = new Adapter(source, lines, prepared.attrs);
+    const tree = toMdast(prepared.text.join('\n'), dialect);
+    const adapter = new Adapter(source, lines, prepared.attrs, dialect);
     const blocks = adapter.blocks(tree.children ?? []);
     doc = {
       source,

@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../../core/markdown';
 import { buildNote } from '../../core/build/build';
-import { finalizeHtml, prepareExport } from '../../core/export/prepare';
+import { finalizeHtml, prepareExport, renderWidgets } from '../../core/export/prepare';
 import { scanWidgets } from '../../core/widgets/fences';
 import { renderQueryResult } from '../../core/query/views';
 import { errorBox } from '../../core/query/views';
@@ -40,11 +40,11 @@ async function exportNote(context: vscode.ExtensionContext, kind: Kind): Promise
   const prepared = prepareExport(built);
 
   // Query blocks are run now and shown as static tables, boards or charts.
-  const queries = new Map<number, string>();
+  const blocks = renderWidgets(prepared.widgets, { highlight, renderMath });
   for (const w of scanWidgets(built)) {
     if (w.type !== 'sql' || !w.closed) continue;
     const outcome = await runBlockQuery(doc, { ...w, bodyStartLine: w.bodyStartLine, bodyEndLine: w.bodyEndLine });
-    queries.set(
+    blocks.set(
       w.startLine,
       outcome.ok
         ? renderQueryResult(outcome.result, { view: w.attrs['view'] ?? 'table', group: w.attrs['group'], type: w.attrs['type'], x: w.attrs['x'], y: w.attrs['y'] })
@@ -58,9 +58,10 @@ async function exportNote(context: vscode.ExtensionContext, kind: Kind): Promise
   } catch {
     /* the page still has its own base styles */
   }
-  const parsed = parse(prepared.source);
-  const options = { css, render: { highlight, renderMath }, readOnly: false, footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date(), 'YYYY-MM-DD')}`, titlePage: false, toc: false };
-  const page = finalizeHtml(kind === 'slides' ? slidesHtml(parsed, options) : documentHtml(parsed, options), queries);
+  // The prose is read as plain Markdown (a newline is a space, as in the editor's preview); widgets were rendered above.
+  const parsed = parse(prepared.source, 'gfm');
+  const options = { css, render: { highlight, renderMath, softBreaks: 'newline' as const }, readOnly: false, footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date(), 'YYYY-MM-DD')}`, titlePage: false, toc: false };
+  const page = finalizeHtml(kind === 'slides' ? slidesHtml(parsed, options) : documentHtml(parsed, options), blocks);
 
   const base = doc.uri.fsPath.replace(/\.[^.]+$/, '');
   const out = vscode.Uri.file(`${base}${kind === 'slides' ? '-slides' : ''}.html`);

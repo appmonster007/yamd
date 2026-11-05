@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { parse, render } from '../src/core/markdown';
-import { finalizeHtml, prepareExport } from '../src/core/export/prepare';
+import { finalizeHtml, prepareExport, renderWidgets } from '../src/core/export/prepare';
 import { buildNote } from '../src/core/build/build';
 import { documentHtml, slidesHtml } from '../src/core/export/page';
 
@@ -11,7 +11,8 @@ const note = `---\ntitle: Paper\n---\n# Paper\n\n> [!theorem] Pythagoras ^thm-py
 function html(text: string, queries = new Map<number, string>()) {
   const built = buildNote(L(text)).lines;
   const p = prepareExport(built);
-  return { p, html: finalizeHtml(render(parse(p.source)), queries) };
+  const blocks = new Map([...renderWidgets(p.widgets), ...queries]);
+  return { p, html: finalizeHtml(render(parse(p.source, 'gfm'), { softBreaks: 'newline' }), blocks) };
 }
 
 describe('export', () => {
@@ -29,10 +30,9 @@ describe('export', () => {
   });
 
   test('widgets render as static boards and query blocks as their result', () => {
-    const queries = new Map<number, string>();
     const { p } = html(note);
-    queries.set(p.queryBlocks[0] as number, '<table id="result"></table>');
-    const h = finalizeHtml(render(parse(p.source)), queries);
+    const queries = new Map<number, string>([[p.queryBlocks[0] as number, '<table id="result"></table>']]);
+    const h = html(note, queries).html;
     assert.match(h, /class="kanban/);
     assert.match(h, /<table id="result"><\/table>/);
     assert.doesNotMatch(h, /YAMDQUERY/);
@@ -41,7 +41,7 @@ describe('export', () => {
   test('page breaks, attribute comments, critic HTML', () => {
     const { html: h } = html(note);
     assert.match(h, /pagebreak/);
-    assert.match(h, /class="[^"]*wide/);
+    assert.match(h, /<h2[^>]*class="wide"[^>]*width="50%"[^>]*>Second<\/h2>/);
     assert.match(h, /<ins>added<\/ins>/);
     assert.match(h, /<mark>flag<\/mark>/);
   });
@@ -54,7 +54,7 @@ describe('export', () => {
 
   test('document and slides wrappers accept the prepared source', () => {
     const p = prepareExport(buildNote(L(note)).lines);
-    const doc = parse(p.source);
+    const doc = parse(p.source, 'gfm');
     const page = documentHtml(doc, { css: '', render: {}, titlePage: true, toc: true });
     assert.match(page, /<title>Paper<\/title>/);
     const deck = slidesHtml(doc, { css: '', render: {} });
@@ -64,5 +64,41 @@ describe('export', () => {
   test('code fences are untouched', () => {
     const p = prepareExport(L('```md\n> [!note] x\n^fig-a\n```\n'));
     assert.match(p.source, /> \[!note\] x\n\^fig-a/);
+  });
+});
+
+describe('export dialect', () => {
+  const prose = 'First line\nsecond line.\n\nA #tag, ==marked==, ++under++, x^2 and H_{2}O, {{ name }} and ^[note].\n\n:::note\ntyped by hand\n:::\n\n[[guide]] and [[guide#Install|setup]].\n';
+
+  test('prose is plain Markdown: a newline is a space and YAMD-only syntax stays text', () => {
+    const { html: h } = html(prose);
+    assert.match(h, /First line\nsecond line\./);
+    assert.doesNotMatch(h, /<br/);
+    assert.match(h, /A #tag, ==marked==, \+\+under\+\+, x\^2 and H_\{2\}O, \{\{ name \}\} and \^\[note\]\./);
+    assert.doesNotMatch(h, /class="tag"|<sup>|<sub>|<mark>|<u>/);
+  });
+
+  test('a directive typed by hand is text, not a container', () => {
+    const { html: h } = html(prose);
+    assert.match(h, /:::note/);
+    assert.doesNotMatch(h, /callout-note/);
+  });
+
+  test('wikilinks link to the note file next to the export', () => {
+    const { html: h } = html(prose);
+    assert.match(h, /<a href="guide\.md" class="wikilink">guide<\/a>/);
+    assert.match(h, /<a href="guide\.md#install" class="wikilink">setup<\/a>/);
+  });
+
+  test('widgets keep the full syntax: tags and attributes work inside them', () => {
+    const { html: h } = html('```kanban b\n## Todo\n- [ ] Fix it #bug {due=2026-12-01 owner=ada}\n```\n');
+    assert.match(h, /class="kanban/);
+    assert.match(h, /bug/);
+    assert.match(h, /2026-12-01/);
+  });
+
+  test('the full dialect is still available for widget bodies', () => {
+    assert.match(render(parse('A #tag and ==mark==')), /tag/);
+    assert.doesNotMatch(render(parse('A #tag and ==mark==', 'gfm')), /class="tag"|<mark/);
   });
 });

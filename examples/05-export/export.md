@@ -11,6 +11,8 @@ citation-style: ieee
 
 The exported page resolves callouts, cross-references and citations, and draws widgets and queries as static HTML.
 
+The prose of a note is read as plain Markdown, so it exports the way VS Code's preview and GitHub show it: a line break inside a paragraph is a space, a #hashtag or ==equals signs== are just text, and [[another-note]] becomes a link to `another-note.md` next to the export. Inside a widget block the fuller syntax still works, so a kanban card can carry a #tag and a `{due=…}` date.
+
 ## A callout
 
 > [!theorem] A short theorem ^thm-short

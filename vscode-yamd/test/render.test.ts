@@ -144,7 +144,7 @@ describe('links and images', () => {
   });
 
   test('wikilinks', () => {
-    assert.match(html('[[guide#Install|setup]]'), /<a href="guide\.yamd#install" class="wikilink">setup<\/a>/);
+    assert.match(html('[[guide#Install|setup]]'), /<a href="guide\.md#install" class="wikilink">setup<\/a>/);
   });
 
   test('reference links', () => {

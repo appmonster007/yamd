@@ -7,7 +7,7 @@ import type { SqlJsStatic } from 'sql.js';
 import { bibSettings, buildNote } from '../src/core/build/build';
 import { calloutProblems, scanCallouts } from '../src/core/build/callouts';
 import { collectTargets } from '../src/core/build/refs';
-import { finalizeHtml, prepareExport } from '../src/core/export/prepare';
+import { finalizeHtml, prepareExport, renderWidgets } from '../src/core/export/prepare';
 import { documentHtml, slidesHtml } from '../src/core/export/page';
 import { parse, render } from '../src/core/markdown';
 import { parseBibtex } from '../src/core/citations/bibtex';
@@ -82,8 +82,9 @@ describe('example notes', () => {
 
     test(`${rel}: exports without errors`, () => {
       const prepared = prepareExport(lines);
-      const doc = parse(prepared.source);
-      const html = finalizeHtml(documentHtml(doc, { css: '', render: {} }), new Map(prepared.queryBlocks.map((l) => [l, '<table></table>'])));
+      const doc = parse(prepared.source, 'gfm');
+      const blocks = new Map([...renderWidgets(prepared.widgets), ...prepared.queryBlocks.map((l): [number, string] => [l, '<table></table>'])]);
+      const html = finalizeHtml(documentHtml(doc, { css: '', render: { softBreaks: 'newline' } }), blocks);
       assert.doesNotMatch(html, /YAMDANCHOR|YAMDQUERY/);
       assert.ok(slidesHtml(doc, { css: '', render: {} }).includes('slide'));
       void render;

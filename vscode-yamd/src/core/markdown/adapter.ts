@@ -16,6 +16,7 @@ import { attrNumber, mergeAttrs, parseAttrBlock, parseAttrs } from './attrs';
 import { KNOWN_INLINE_DIRECTIVES, plainText } from './inline';
 import { yamdFromMarkdown } from './micromark/mdast';
 import { yamdSyntax } from './micromark/syntax';
+import type { Dialect } from './micromark/syntax';
 import { slugify } from './slug';
 import type { Align, Attrs, Block, Diagnostic, FootnoteDef, InlineNode, ListItem, Range, RefDef, TableCell } from './types';
 import { KNOWN_CONTAINERS, KNOWN_LEAVES } from './known';
@@ -24,7 +25,9 @@ import { KNOWN_CONTAINERS, KNOWN_LEAVES } from './known';
 /** An mdast node, including YAMD's custom node types. */
 type MNode = any;
 
-const EXTENSIONS = [frontmatter(['yaml']), gfm(), { flow: math().flow }, { flow: directive().flow }, yamdSyntax()];
+const extensionsFor = (dialect: Dialect) => [frontmatter(['yaml']), gfm(), { flow: math().flow }, { flow: directive().flow }, yamdSyntax(dialect)];
+const EXTENSIONS = extensionsFor('yamd');
+const GFM_EXTENSIONS = extensionsFor('gfm');
 const MDAST_EXTENSIONS = [
   frontmatterFromMarkdown(['yaml']),
   gfmFromMarkdown(),
@@ -33,8 +36,8 @@ const MDAST_EXTENSIONS = [
   yamdFromMarkdown(),
 ];
 
-export function toMdast(source: string): MNode {
-  return fromMarkdown(source, { extensions: EXTENSIONS, mdastExtensions: MDAST_EXTENSIONS });
+export function toMdast(source: string, dialect: Dialect = 'yamd'): MNode {
+  return fromMarkdown(source, { extensions: dialect === 'gfm' ? GFM_EXTENSIONS : EXTENSIONS, mdastExtensions: MDAST_EXTENSIONS });
 }
 
 /** Tokens for YAMD syntax that GFM reads as text. Math is left out: GitHub renders `$` math too. */
@@ -122,6 +125,7 @@ export class Adapter {
     readonly source: string,
     readonly lines: string[],
     readonly directiveAttrs: Map<number, Attrs | undefined>,
+    readonly dialect: Dialect = 'yamd',
   ) {}
 
   private startLine(n: MNode): number {
@@ -393,7 +397,7 @@ export class Adapter {
 
   /** Parses inline content of a raw span, with positions shifted to the original source. */
   private fragment(text: string, base: number): InlineNode[] {
-    const tree = toMdast(text);
+    const tree = toMdast(text, this.dialect);
     const nodes: MNode[] = [];
     for (const c of tree.children ?? []) {
       if (c.type === 'paragraph') {
@@ -495,7 +499,7 @@ export class Adapter {
     const hash = target.indexOf('#');
     const file = hash === -1 ? target : target.slice(0, hash);
     const anchor = hash === -1 ? '' : target.slice(hash + 1);
-    const path = file === '' ? '' : /\.[A-Za-z0-9]+$/.test(file) ? file : `${file}.yamd`;
+    const path = file === '' ? '' : /\.[A-Za-z0-9]+$/.test(file) ? file : `${file}.md`;
     const href = path + (anchor ? `#${anchor.startsWith('^') ? anchor : slugify(anchor)}` : '');
     const children: InlineNode[] =
       pipe === -1

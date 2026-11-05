@@ -56,7 +56,7 @@ Suggest changes with `<ins>added</ins>` and `<del>removed</del>`, which render i
 
 ## Export
 
-**YAMD: Export HTML / PDF / Slides** writes a standalone page next to the note, with callouts numbered, references and citations resolved and widgets rendered as static HTML. PDF opens the page in your browser to print. Slides start a new slide at a `---` rule or an H1/H2 heading. Page breaks (`<!-- yamd:pagebreak -->`) and attributes (`<!-- yamd:attrs class=wide width=50% -->` above an element) apply in exports.
+**YAMD: Export HTML / PDF / Slides** writes a standalone page next to the note, with callouts numbered, references and citations resolved and widgets rendered as static HTML. PDF opens the page in your browser to print. Slides start a new slide at a `---` rule or an H1/H2 heading. The prose of a note is read as plain Markdown, so a note exports the way VS Code and GitHub show it (a newline inside a paragraph is a space, and `[[page]]` links to `page.md`); tags and `{key=value}` attributes apply only inside widget blocks. Page breaks (`<!-- yamd:pagebreak -->`) and attributes (`<!-- yamd:attrs class=wide width=50% -->` above an element) apply in exports.
 
 ### Markers
 
