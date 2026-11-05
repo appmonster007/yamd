@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { onEnter, toggleMarker } from './editing';
+import { cycleHeadingLevel, onEnter, toggleBlockquote, toggleMarker } from './editing';
 
 const MARKERS: Record<string, string> = {
   'yamd.toggleBold': '**',
@@ -44,9 +44,26 @@ async function enter(editor: vscode.TextEditor): Promise<void> {
   }
 }
 
+/** Applies a per-line pure transform to every selected line (or the cursor's line if the selection is empty). */
+async function transformLines(editor: vscode.TextEditor, fn: (line: string) => string): Promise<void> {
+  const doc = editor.document;
+  const lines = new Set<number>();
+  for (const sel of editor.selections) for (let l = sel.start.line; l <= sel.end.line; l++) lines.add(l);
+  await editor.edit((b) => {
+    for (const l of lines) {
+      const range = doc.lineAt(l).range;
+      b.replace(range, fn(doc.getText(range)));
+    }
+  });
+}
+
 export function registerEditingCommands(context: vscode.ExtensionContext): void {
   for (const [command, marker] of Object.entries(MARKERS)) {
     context.subscriptions.push(vscode.commands.registerTextEditorCommand(command, (editor) => toggle(editor, marker)));
   }
-  context.subscriptions.push(vscode.commands.registerTextEditorCommand('yamd.onEnter', (editor) => enter(editor)));
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand('yamd.onEnter', (editor) => enter(editor)),
+    vscode.commands.registerTextEditorCommand('yamd.toggleBlockquote', (editor) => void transformLines(editor, toggleBlockquote)),
+    vscode.commands.registerTextEditorCommand('yamd.cycleHeadingLevel', (editor) => void transformLines(editor, cycleHeadingLevel)),
+  );
 }

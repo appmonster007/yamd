@@ -58,6 +58,13 @@ export class DiagnosticsProvider implements vscode.Disposable {
     this.updateAll();
   }
 
+  /** Forces an immediate re-lint of `doc`, bypassing the debounce. Used by "YAMD: Validate Document". */
+  refreshNow(doc: vscode.TextDocument): Promise<void> {
+    clearTimeout(this.timers.get(doc.uri.toString()));
+    this.due.delete(doc.uri.toString());
+    return this.update(doc);
+  }
+
   private updateAll() {
     for (const d of vscode.workspace.textDocuments) void this.update(d);
   }

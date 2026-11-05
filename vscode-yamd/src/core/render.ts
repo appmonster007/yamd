@@ -1,10 +1,12 @@
 import { attrNumber, attrString } from './attrs';
+import { renderBoard, renderCalendar, renderGallery, renderTimeline } from './renderBoards';
+import type { BoardContext } from './renderBoards';
+import { escapeHtml, sanitizeUrl, today } from './renderUtil';
+
+export { escapeHtml, isoWeek, sanitizeUrl } from './renderUtil';
 import { lookupVariable } from './frontmatter';
 import { plainText } from './inline';
-import { buildBoard, buildCalendarCards, buildGallery, buildTimeline, cardSource, hashText } from './kanban';
-import type { CalendarBoard, GalleryBoard, TimelineBoard } from './kanban';
-import type { KanbanBoard, KanbanCard } from './kanban';
-import { cardTitleSource } from './kanbanEdit';
+import { buildBoard, buildCalendarCards, buildGallery, buildTimeline, hashText } from './kanban';
 import { blockInlines, walkInline } from './notes';
 import { walkBlocks } from './parser';
 import { normalizeUri } from 'micromark-util-sanitize-uri';
@@ -58,24 +60,6 @@ const CALLOUT_TITLES: Record<string, string> = {
 
 const IMAGE_FILE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
 
-const NEEDS_ESCAPE = /[&<>"']/;
-const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-
-/** Most strings have nothing to escape, so they are returned as they are; the rest take one pass. */
-export function escapeHtml(s: string): string {
-  return NEEDS_ESCAPE.test(s) ? s.replace(/[&<>"']/g, (c) => ESCAPES[c] as string) : s;
-}
-
-/** Applies the URL scheme allow-list from yamd-spec.md section 9. Returns null if the URL is unsafe. */
-export function sanitizeUrl(url: string, forImage = false): string | null {
-  const u = url.trim();
-  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(u.replace(/[\u0000- ]/g, ''))?.[1]?.toLowerCase();
-  if (scheme === undefined) return u;
-  if (['http', 'https', 'mailto', 'tel'].includes(scheme)) return u;
-  if (forImage && /^data:image\/(png|gif|jpe?g|webp|svg\+xml);/i.test(u)) return u;
-  return null;
-}
-
 /** True if a figure is an image alone in its paragraph with a caption. */
 function figureImage(b: Block): Extract<InlineNode, { type: 'image' }> | null {
   if (b.type !== 'paragraph') return null;
@@ -91,21 +75,6 @@ function blockEmbed(b: Block): Extract<InlineNode, { type: 'embed' }> | null {
   const nodes = b.children.filter((n) => !(n.type === 'text' && n.value.trim() === ''));
   const only = nodes[0];
   return nodes.length === 1 && only?.type === 'embed' ? only : null;
-}
-
-function today(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-/** ISO 8601 week number (weeks start Monday; week 1 is the one containing the year's first Thursday). */
-export function isoWeek(iso: string): number {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3);
-  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3);
-  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
 }
 
 class Renderer {
@@ -473,13 +442,13 @@ class Renderer {
       case 'table':
         return this.listTable(b);
       case 'kanban':
-        return this.board(buildBoard(b));
+        return renderBoard(this.boardContext(), buildBoard(b));
       case 'calendar':
-        return this.calendarSugar(buildCalendarCards(b));
+        return renderCalendar(this.boardContext(), buildCalendarCards(b));
       case 'timeline':
-        return this.timelineSugar(buildTimeline(b));
+        return renderTimeline(this.boardContext(), buildTimeline(b));
       case 'gallery':
-        return this.gallerySugar(buildGallery(b));
+        return renderGallery(this.boardContext(), buildGallery(b));
       case 'html':
         return `<div${this.attrs(b.attrs, b.line, ['raw-html'])}><div class="code-title">Raw HTML (not rendered: trusted mode is off)</div><pre><code>${escapeHtml(b.raw)}</code></pre></div>`;
       default:
@@ -514,194 +483,17 @@ class Renderer {
     return `<div${this.attrs(b.attrs, b.line, ['card'])} role="group" aria-label="Flashcard"><div class="card-front">\n${this.blocks(front)}\n</div>${answer}</div>`;
   }
 
-  private board(board: KanbanBoard): string {
-    const interactive = Boolean(this.options.interactive);
-    const now = this.options.today ?? today();
-    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
-    const columns = board.columns.map((col, ci) => {
-      const count = col.cards.length;
-      const over = col.limit !== undefined && count > col.limit;
-      const classes = ['kanban-column', over ? 'over-limit' : '', col.complete ? 'complete' : ''].filter(Boolean).join(' ');
-      const titleText = escapeHtml(plainText(col.title));
-      const countText = col.limit !== undefined ? `${count}/${col.limit}` : `${count}`;
-      const cards = col.cards.map((card, i) => this.card(card, i, now, interactive)).join('\n');
-      const description = col.description.length ? `<div class="kanban-column-description">${this.blocks(col.description)}</div>` : '';
-      const add = interactive
-        ? `<form class="kanban-add" data-column="${ci}"><input type="text" class="kanban-add-input" placeholder="Add card" aria-label="Add a card to ${titleText}"></form>`
-        : '';
-      return `<section class="${classes}" data-column="${ci}" data-line="${col.line}" aria-label="${titleText}">
-<header class="kanban-column-header"><button type="button" class="kanban-collapse" aria-expanded="true" aria-label="Collapse ${titleText}">▾</button><span class="kanban-column-title">${this.inline(col.title)}</span><span class="kanban-count${over ? ' over' : ''}" title="${over ? 'Over the work-in-progress limit' : 'Cards'}">${countText}</span></header>
-${description}<div class="kanban-cards" data-column="${ci}">${cards}</div>${add}
-</section>`;
-    });
-    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
-    const mode = interactive ? ' data-interactive' : '';
-    return `<div class="kanban" data-line="${board.line}" data-board="${board.line}"${source}${mode}>${title}<div class="kanban-columns">\n${columns.join('\n')}\n</div></div>`;
-  }
-
-  private card(card: KanbanCard, index: number, now: string, interactive: boolean): string {
-    const overdue = card.due !== undefined && !card.done && card.due < now;
-    const chips = card.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
-    const due = card.due ? `<span class="kanban-due${overdue ? ' overdue' : ''}" title="${overdue ? 'Overdue' : 'Due'}">${escapeHtml(card.due)}</span>` : '';
-    const owner = card.owner ? `<span class="kanban-owner">@${escapeHtml(card.owner)}</span>` : '';
-    const meta = chips || due || owner ? `<div class="kanban-card-meta">${chips}${due}${owner}</div>` : '';
-    const bodyInline = card.bodyInline.length ? `<p>${this.inline(card.bodyInline)}</p>` : '';
-    const bodyBlocks = card.body.length ? this.blocks(card.body) : '';
-    const body = bodyInline || bodyBlocks ? `<div class="kanban-card-body">${bodyInline}${bodyBlocks}</div>` : '';
-    const box = card.hasCheckbox ? `${this.checkbox(card.line, card.done)} ` : '';
-    const hash = hashText(cardSource(this.doc.lines, card));
-    const titleSource = escapeHtml(cardTitleSource(this.doc.lines[card.line] ?? ''));
-    const drag = interactive ? ' draggable="true"' : '';
-    const label = escapeHtml(plainText(card.title));
-    return `<article class="kanban-card${card.done ? ' done' : ''}${overdue ? ' overdue' : ''}" tabindex="0"${drag} data-line="${card.line}" data-index="${index}" data-hash="${hash}" aria-label="${label}"><div class="kanban-card-title">${box}<span class="kanban-card-text" data-title="${titleSource}">${this.inline(card.title)}</span></div>${meta}${body}</article>`;
-  }
-
-  /** `:::calendar` is sugar for an implicit database rendered as a calendar (§6.2.1); a card with
-   * no `{due=...}` isn't shown (Y606, reported by the linter, not here). */
-  private calendarSugar(board: CalendarBoard): string {
-    const interactive = Boolean(this.options.interactive);
-    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
-    const now = this.options.today ?? today();
-    const month = now.slice(0, 7);
-    const [y, m] = month.split('-').map(Number) as [number, number];
-    const first = new Date(Date.UTC(y, m - 1, 1));
-    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    const offset = (first.getUTCDay() + 6) % 7;
-    const byDay = new Map<number, KanbanCard[]>();
-    for (const c of board.cards) {
-      if (!c.due?.startsWith(month)) continue;
-      const d = Number(c.due.slice(8, 10));
-      byDay.set(d, [...(byDay.get(d) ?? []), c]);
-    }
-    const eventHtml = (c: KanbanCard): string => {
-      const hash = hashText(cardSource(this.doc.lines, c));
-      const drag = interactive ? ' draggable="true"' : '';
-      const box = c.hasCheckbox ? `${this.checkbox(c.line, c.done)} ` : '';
-      const titleSource = escapeHtml(cardTitleSource(this.doc.lines[c.line] ?? ''));
-      const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
-      const owner = c.owner ? `<span class="kanban-owner">@${escapeHtml(c.owner)}</span>` : '';
-      const meta = chips || owner ? `<div class="kanban-card-meta">${chips}${owner}</div>` : '';
-      const bodyInline = c.bodyInline.length ? `<p>${this.inline(c.bodyInline)}</p>` : '';
-      const bodyBlocks = c.body.length ? this.blocks(c.body) : '';
-      const detail = meta || bodyInline || bodyBlocks ? `<div class="db-event-detail">${bodyInline}${bodyBlocks}${meta}</div>` : '';
-      return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}><div class="db-event-summary">${box}${this.inline(c.title)}</div>${detail}</div>`;
+  private boardContext(): BoardContext {
+    return {
+      doc: this.doc,
+      options: this.options,
+      blocks: (b) => this.blocks(b),
+      checkbox: (line, done) => this.checkbox(line, done),
+      image: (n, inFigure) => this.image(n, inFigure),
+      inline: (n) => this.inline(n),
     };
-    interface Cell {
-      html: string;
-      iso?: string;
-    }
-    const cells: Cell[] = [];
-    for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
-    for (let d = 1; d <= days; d++) {
-      const iso = `${month}-${String(d).padStart(2, '0')}`;
-      const items = (byDay.get(d) ?? []).map(eventHtml).join('');
-      const add = interactive
-        ? `<form class="kanban-add" data-date="${iso}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card on ${iso}"></form>`
-        : '';
-      cells.push({
-        html: `<div class="db-day${iso === now ? ' today' : ''}" data-date="${iso}"><button type="button" class="db-day-number">${d}</button>${items}${add}</div>`,
-        iso,
-      });
-    }
-    while (cells.length % 7 !== 0) cells.push({ html: '<div class="db-day empty"></div>' });
-    const weeks: string[] = [];
-    for (let i = 0; i < cells.length; i += 7) {
-      const week = cells.slice(i, i + 7);
-      const firstIso = week.find((c) => c.iso)?.iso;
-      const label = firstIso
-        ? `<button type="button" class="db-week-number" data-week="${isoWeek(firstIso)}">Wk ${isoWeek(firstIso)}</button>`
-        : '<span class="db-week-number empty"></span>';
-      weeks.push(`<div class="db-week">${label}${week.map((c) => c.html).join('')}</div>`);
-    }
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<div class="db-weekday">${w}</div>`).join('');
-    const titleText = `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]} ${y}`;
-    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
-    const mode = interactive ? ' data-interactive' : '';
-    const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
-    return `<div class="kanban-calendar" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span></div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div></div>`;
   }
 
-  /** `:::timeline` is a calendar stretched into bars via `{start=...}`/`{due=...}`; headings are
-   * optional groups. A card with no `{start=...}` isn't shown (Y606, reported by the linter). */
-  private timelineSugar(board: TimelineBoard): string {
-    const interactive = Boolean(this.options.interactive);
-    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
-    interface Item {
-      card: KanbanCard;
-      start: string;
-      end: string;
-    }
-    const byLine = new Map<number, Item>();
-    for (const g of board.groups) {
-      for (const c of g.cards) {
-        if (!c.start) continue;
-        byLine.set(c.line, { card: c, start: c.start, end: c.due && c.due >= c.start ? c.due : c.start });
-      }
-    }
-    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
-    const mode = interactive ? ' data-interactive' : '';
-    const items = [...byLine.values()];
-    if (!items.length && !interactive) {
-      return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}><div class="db-timeline db-empty">No dated cards.</div></div>`;
-    }
-    const time = (d: string) => new Date(d).getTime();
-    const min = items.length ? Math.min(...items.map((i) => time(i.start))) : time(this.options.today ?? today());
-    const max = items.length ? Math.max(...items.map((i) => time(i.end))) : min + 86400000 * 30;
-    const span = Math.max(max - min, 86400000);
-    const toDate = (t: number) => new Date(t).toISOString().slice(0, 10);
-    const pct = (t: number) => ((t - min) / span) * 100;
-    const bar = (i: Item) => {
-      const left = pct(time(i.start));
-      const width = Math.max(pct(time(i.end)) - left, 1.5);
-      const label = escapeHtml(plainText(i.card.title));
-      const box = i.card.hasCheckbox ? `${this.checkbox(i.card.line, i.card.done)} ` : '';
-      const hash = hashText(cardSource(this.doc.lines, i.card));
-      const drag = interactive ? ' draggable="true"' : '';
-      const titleSource = escapeHtml(cardTitleSource(this.doc.lines[i.card.line] ?? ''));
-      return `<div class="db-timeline-bar" tabindex="0" data-line="${i.card.line}" data-hash="${hash}" data-start="${i.start}" data-title="${titleSource}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${this.inline(i.card.title)}</div>`;
-    };
-    const rows = board.groups
-      .map((g, gi) => {
-        const bars = g.cards.map((c) => byLine.get(c.line)).filter((i): i is Item => i !== undefined).map(bar).join('');
-        if (!bars && !interactive) return '';
-        const label = g.title ? this.inline(g.title) : '';
-        const add = interactive
-          ? `<form class="kanban-add" data-group="${gi}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card to ${label || 'this lane'}"></form>`
-          : '';
-        return `<div class="db-timeline-row" data-group="${gi}"><span class="db-timeline-label">${label}</span><div class="db-timeline-track">${bars}</div>${add}</div>`;
-      })
-      .filter(Boolean)
-      .join('');
-    const globalAdd =
-      interactive && board.groups.length === 0
-        ? `<form class="kanban-add" data-group=""><input type="text" class="kanban-add-input" placeholder="Add a card" aria-label="Add a card"></form>`
-        : '';
-    return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${rows}</div>${globalAdd}</div>`;
-  }
-
-  /** `:::gallery` is sugar for an implicit database rendered as a gallery (§6.2.1): each image
-   * starts a card, and the paragraph(s) following it are its caption. */
-  private gallerySugar(board: GalleryBoard): string {
-    const interactive = Boolean(this.options.interactive);
-    const source = this.options.sourcePath ? ` data-source="${escapeHtml(this.options.sourcePath)}"` : '';
-    const title = board.title ? `<div class="kanban-title">${escapeHtml(board.title)}</div>` : '';
-    const mode = interactive ? ' data-interactive' : '';
-    const cards = board.cards
-      .map((c) => {
-        const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
-        const meta = chips ? `<div class="kanban-card-meta">${chips}</div>` : '';
-        const bodyInline = c.bodyInline.length ? `<p>${this.inline(c.bodyInline)}</p>` : '';
-        const bodyBlocks = c.body.length ? this.blocks(c.body) : '';
-        const hash = hashText(cardSource(this.doc.lines, c));
-        const drag = interactive ? ' draggable="true"' : '';
-        return `<article class="db-card" tabindex="0" data-line="${c.line}" data-hash="${hash}"${drag}>${this.image(c.image)}<div class="db-card-body">${bodyInline}${bodyBlocks}${meta}</div></article>`;
-      })
-      .join('\n');
-    const add = interactive
-      ? `<form class="gallery-add"><input type="text" class="gallery-add-image" placeholder="Image path" aria-label="New image path"><input type="text" class="gallery-add-caption" placeholder="Caption" aria-label="New image caption"><button type="submit">Add</button></form>`
-      : '';
-    return `<div class="kanban-gallery" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-gallery">${cards}</div>${add}</div>`;
-  }
 
   private embedBlock(embed: Extract<InlineNode, { type: 'embed' }>, line: number): string {
     if (IMAGE_FILE.test(embed.file)) return `<p data-line="${line}">${this.embedInline(embed)}</p>`;

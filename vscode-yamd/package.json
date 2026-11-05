@@ -29,7 +29,8 @@
   "activationEvents": [
     "workspaceContains:**/*.yamd",
     "workspaceContains:**/*.ymd",
-    "onLanguage:ydb"
+    "onLanguage:ydb",
+    "onCustomEditor:yamd.editor"
   ],
   "contributes": {
     "languages": [
@@ -321,6 +322,281 @@
         "category": "YAMD"
       },
       {
+        "command": "yamd.acceptChangeAtCursor",
+        "title": "Accept Change at Cursor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.rejectChangeAtCursor",
+        "title": "Reject Change at Cursor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.exportMarkdown",
+        "title": "Export as Markdown",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.showWordCount",
+        "title": "Word Count",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.validateDocument",
+        "title": "Validate Document",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertBlock",
+        "title": "Insert Block…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.closeBlock",
+        "title": "Close Current Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.jumpToMatchingFence",
+        "title": "Jump to Matching Fence",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.selectBlock",
+        "title": "Select Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.unwrapBlock",
+        "title": "Unwrap Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.duplicateBlock",
+        "title": "Duplicate Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.changeBlockType",
+        "title": "Change Block Type…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertMenu",
+        "title": "Insert…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertLink",
+        "title": "Insert Link…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertEmbed",
+        "title": "Insert Embed…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.copyBlockLink",
+        "title": "Copy Link to This Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertFootnote",
+        "title": "Insert Footnote…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTag",
+        "title": "Insert Tag…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertVariable",
+        "title": "Insert Variable…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertFrontMatter",
+        "title": "Insert Front Matter",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.wrapInAttributes",
+        "title": "Wrap Selection in Attributes…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTable",
+        "title": "Insert Table",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertMathBlock",
+        "title": "Insert Math Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertDiagramBlock",
+        "title": "Insert Diagram Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertComment",
+        "title": "Insert Comment",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertHorizontalRule",
+        "title": "Insert Horizontal Rule",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTableOfContents",
+        "title": "Insert Table of Contents",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertQueryBlock",
+        "title": "Insert Query Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertFlashcardBlock",
+        "title": "Insert Flashcard Block",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCodeBlock",
+        "title": "Insert Code Block…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertHeadingAnchor",
+        "title": "Insert Heading Anchor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertBlockAttributes",
+        "title": "Insert Block Attributes…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCrossRefLabel",
+        "title": "Insert Cross-reference Label…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCrossRef",
+        "title": "Insert Cross-reference…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertCitation",
+        "title": "Insert Citation…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertInlineFootnote",
+        "title": "Insert Inline Footnote…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTrackedInsertion",
+        "title": "Insert Tracked Insertion…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTrackedDeletion",
+        "title": "Insert Tracked Deletion…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertTrackedSubstitution",
+        "title": "Insert Tracked Substitution…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertHighlightWithComment",
+        "title": "Insert Highlight with Comment…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertReviewComment",
+        "title": "Insert Review Comment…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertReviewMarkup",
+        "title": "Insert Review Markup…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleBlockquote",
+        "title": "Toggle Blockquote",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.cycleHeadingLevel",
+        "title": "Cycle Heading Level",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.insertDatabaseView",
+        "title": "Insert Database View…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.goToLinkedNote",
+        "title": "Go to Linked Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openRandomNote",
+        "title": "Open Random Note",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.showUnlinkedMentions",
+        "title": "Show Unlinked Mentions",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.showOrphanNotes",
+        "title": "Show Orphan Notes",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.revealBacklinks",
+        "title": "Show Backlinks",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openTemplatesFolder",
+        "title": "Open Templates Folder",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.saveAsTemplate",
+        "title": "Save Current Note as Template…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.applyTemplateToNote",
+        "title": "Apply Template to Note…",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.addFrontMatter",
+        "title": "Add Front Matter",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.convertMarkdownToYamdFile",
+        "title": "Convert Markdown File to YAMD",
+        "category": "YAMD"
+      },
+      {
         "command": "yamd.combineNotes",
         "title": "Combine Notes…",
         "category": "YAMD"
@@ -348,6 +624,45 @@
       {
         "command": "yamd.toggleQuiz",
         "title": "Toggle Quiz Mode",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openPreviewInEditor",
+        "title": "Open Preview in This Tab",
+        "category": "YAMD",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "yamd.showSource",
+        "title": "Show Source",
+        "category": "YAMD",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "yamd.toggleEditorMode",
+        "title": "Toggle Source / Preview",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.lockPreview",
+        "title": "Lock Preview (Read-only)",
+        "category": "YAMD",
+        "icon": "$(unlock)"
+      },
+      {
+        "command": "yamd.unlockPreview",
+        "title": "Unlock Preview (Allow Edits)",
+        "category": "YAMD",
+        "icon": "$(lock)"
+      },
+      {
+        "command": "yamd.togglePreviewLock",
+        "title": "Toggle Preview Lock",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.toggleLivePreview",
+        "title": "Toggle Live Preview (Hide Markup Away from Cursor)",
         "category": "YAMD"
       }
     ],
@@ -382,6 +697,21 @@
           "command": "yamd.toggleQuiz",
           "group": "yamd_study@1",
           "when": "resourceLangId == yamd"
+        },
+        {
+          "command": "yamd.showSource",
+          "when": "activeCustomEditorId == yamd.editor",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.lockPreview",
+          "when": "(activeWebviewPanelId == yamd.preview || activeCustomEditorId == yamd.editor) && !yamd.previewLocked",
+          "group": "navigation"
+        },
+        {
+          "command": "yamd.unlockPreview",
+          "when": "(activeWebviewPanelId == yamd.preview || activeCustomEditorId == yamd.editor) && yamd.previewLocked",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
@@ -443,6 +773,30 @@
         },
         {
           "command": "yamd.addDatabaseToNote",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.openPreviewInEditor",
+          "when": "editorLangId == yamd"
+        },
+        {
+          "command": "yamd.showSource",
+          "when": "activeCustomEditorId == yamd.editor"
+        },
+        {
+          "command": "yamd.toggleEditorMode",
+          "when": "editorLangId == yamd || activeCustomEditorId == yamd.editor"
+        },
+        {
+          "command": "yamd.lockPreview",
+          "when": "!yamd.previewLocked"
+        },
+        {
+          "command": "yamd.unlockPreview",
+          "when": "yamd.previewLocked"
+        },
+        {
+          "command": "yamd.toggleLivePreview",
           "when": "editorLangId == yamd"
         }
       ],
@@ -532,6 +886,48 @@
     },
     "keybindings": [
       {
+        "command": "yamd.insertMenu",
+        "key": "ctrl+alt+i",
+        "mac": "cmd+alt+i",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.insertLink",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.insertEmbed",
+        "key": "ctrl+alt+shift+k",
+        "mac": "cmd+alt+shift+k",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.closeBlock",
+        "key": "ctrl+alt+.",
+        "mac": "cmd+alt+.",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.jumpToMatchingFence",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.acceptChangeAtCursor",
+        "key": "ctrl+alt+y",
+        "mac": "cmd+alt+y",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
+        "command": "yamd.rejectChangeAtCursor",
+        "key": "ctrl+alt+shift+y",
+        "mac": "cmd+alt+shift+y",
+        "when": "editorTextFocus && editorLangId == yamd"
+      },
+      {
         "command": "yamd.openPreviewToSide",
         "key": "ctrl+k v",
         "mac": "cmd+k v",
@@ -587,6 +983,12 @@
         "command": "yamd.quickSwitcher",
         "key": "ctrl+alt+o",
         "mac": "cmd+alt+o"
+      },
+      {
+        "command": "yamd.toggleEditorMode",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v",
+        "when": "editorLangId == yamd || activeCustomEditorId == yamd.editor"
       }
     ],
     "configuration": {
@@ -699,6 +1101,25 @@
           "default": 14,
           "minimum": 1,
           "description": "Number of days without a review before a topic is considered stale in the dashboard."
+        },
+        "yamd.preview.startLocked": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open previews locked (read-only): boards, tasks and database views can't be changed from the preview until unlocked."
+        },
+        "yamd.livePreview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Render markup in the editor like Obsidian's Live Preview: syntax is hidden or restyled away from the cursor and shown on the line you are editing."
+        },
+        "yamd.livePreview.markers": {
+          "type": "string",
+          "enum": [
+            "hide",
+            "dim"
+          ],
+          "default": "hide",
+          "description": "What happens to syntax characters (such as ** and #) away from the cursor: hide them, or only dim them."
         }
       }
     },
@@ -738,7 +1159,22 @@
           "type": "webview"
         }
       ]
-    }
+    },
+    "customEditors": [
+      {
+        "viewType": "yamd.editor",
+        "displayName": "YAMD Preview",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.yamd"
+          },
+          {
+            "filenamePattern": "*.ymd"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/build-grammar.mjs && node esbuild.mjs",

@@ -10,9 +10,11 @@ import { collectStudyBlocks, buildCheatSheet } from '../core/study/blocks';
 import { extractCards } from '../core/study/cards';
 import { collectDeadlines } from '../core/study/deadlines';
 import { documentHtml, slidesHtml } from '../core/study/export';
+import { documentMarkdown } from '../core/study/markdown';
 import { buildDocx } from '../core/study/docx';
 import { htmlToYamd, obsidianToYamd, notionToYamd } from '../core/study/importers';
-import { collectReview, resolveReview } from '../core/study/review';
+import { collectReview, resolveReview, reviewReplacement, topLevel } from '../core/study/review';
+import { expandPlaceholders, formatDate } from '../core/templates';
 import { STUDY_TEMPLATES, READING_LIST_YDB, MATH_SYMBOLS } from '../core/study/templates';
 import type { WorkspaceIndex } from '../workspace/index';
 import { noteUri } from '../workspace/index';
@@ -28,23 +30,6 @@ import { bibliographyFor } from './bibliography';
 function activeYamd(): vscode.TextDocument | undefined {
   const doc = vscode.window.activeTextEditor?.document;
   return doc?.languageId === 'yamd' ? doc : undefined;
-}
-
-function formatDate(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-/** Substitute `{{@date}}`, `{{@title}}`, `{{@course}}` and `{{@cursor}}` placeholders. */
-function applyTemplate(text: string, title: string, course: string): { text: string; cursorOffset: number } {
-  const date = formatDate(new Date());
-  let out = text
-    .replace(/\{\{@date(?::[^}]*)?\}\}/g, date)
-    .replace(/\{\{@title\}\}/g, title)
-    .replace(/\{\{@course\}\}/g, course);
-  const cursorOffset = out.indexOf('{{@cursor}}');
-  out = out.replace('{{@cursor}}', '');
-  return { text: out, cursorOffset };
 }
 
 // ---- Study note (template picker) -------------------------------------------
@@ -78,12 +63,13 @@ async function newStudyNote(clicked?: vscode.Uri): Promise<void> {
 
   const slug = (title || template.label).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'note';
   const uri = vscode.Uri.joinPath(folder, `${slug}.yamd`);
-  const { text, cursorOffset } = applyTemplate(template.text, title || template.label, course);
+  const noteTitle = title || template.label;
+  const { text, cursor } = expandPlaceholders(template.text, { now: new Date(), title: noteTitle, vars: { course } });
   await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(text));
   const doc = await vscode.workspace.openTextDocument(uri);
   const editor = await vscode.window.showTextDocument(doc);
-  if (cursorOffset >= 0) {
-    const pos = doc.positionAt(cursorOffset);
+  if (cursor !== undefined) {
+    const pos = doc.positionAt(cursor);
     editor.selection = new vscode.Selection(pos, pos);
     editor.revealRange(new vscode.Range(pos, pos));
   }
@@ -130,7 +116,7 @@ async function generateCheatSheet(index: WorkspaceIndex): Promise<void> {
 
 // ---- Export -----------------------------------------------------------------
 
-type ExportFmt = 'html' | 'pdf' | 'docx' | 'slides';
+type ExportFmt = 'html' | 'pdf' | 'docx' | 'slides' | 'markdown';
 
 async function exportNote(fmt: ExportFmt): Promise<void> {
   const doc = activeYamd();
@@ -143,7 +129,7 @@ async function exportNote(fmt: ExportFmt): Promise<void> {
     css: '',
     render: { highlight, renderMath, bibliography: bib },
     readOnly: true,
-    footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date())}`,
+    footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date(), 'YYYY-MM-DD')}`,
   };
 
   const base = stripNoteExt(doc.uri.fsPath);
@@ -152,6 +138,14 @@ async function exportNote(fmt: ExportFmt): Promise<void> {
     const bytes = buildDocx(parsed, { title: parsed.frontMatter?.data['title'] as string | undefined });
     const outUri = vscode.Uri.file(`${base}.docx`);
     await vscode.workspace.fs.writeFile(outUri, bytes);
+    void vscode.window.showInformationMessage(`YAMD: Saved ${path.basename(outUri.fsPath)}`);
+    return;
+  }
+
+  if (fmt === 'markdown') {
+    const text = documentMarkdown(parsed, { footer: opts.footer });
+    const outUri = vscode.Uri.file(`${base}.md`);
+    await vscode.workspace.fs.writeFile(outUri, new TextEncoder().encode(text));
     void vscode.window.showInformationMessage(`YAMD: Saved ${path.basename(outUri.fsPath)}`);
     return;
   }
@@ -264,6 +258,22 @@ async function resolveAllReview(mode: 'accept' | 'reject'): Promise<void> {
   edit.replace(doc.uri, new vscode.Range(0, 0, doc.lineCount, 0), resolved);
   await vscode.workspace.applyEdit(edit);
   void vscode.window.showInformationMessage(`YAMD: ${items.length} change(s) ${mode === 'accept' ? 'accepted' : 'rejected'}.`);
+}
+
+/** "YAMD: Accept/Reject Change at Cursor": resolves only the one review node under the cursor. */
+async function resolveReviewAtCursor(mode: 'accept' | 'reject'): Promise<void> {
+  const doc = activeYamd();
+  if (!doc) { void vscode.window.showInformationMessage('YAMD: Open a .yamd file first.'); return; }
+  const editor = vscode.window.activeTextEditor!;
+  const parsed = parse(doc.getText());
+  const offset = doc.offsetAt(editor.selection.active);
+  const node = topLevel(parsed).find((n) => n.range.start <= offset && offset <= n.range.end);
+  if (!node) { void vscode.window.showInformationMessage('YAMD: No review markup under the cursor.'); return; }
+  const raw = parsed.source.slice(node.range.start, node.range.end);
+  const replacement = reviewReplacement(node, raw, mode);
+  const edit = new vscode.WorkspaceEdit();
+  edit.replace(doc.uri, new vscode.Range(doc.positionAt(node.range.start), doc.positionAt(node.range.end)), replacement);
+  await vscode.workspace.applyEdit(edit);
 }
 
 // ---- Combine notes ----------------------------------------------------------
@@ -411,6 +421,19 @@ async function pruneCards(index: WorkspaceIndex): Promise<void> {
   void vscode.window.showInformationMessage(`YAMD: Pruned ${before - after} orphaned card(s).`);
 }
 
+// ---- Word count ---------------------------------------------------------------
+
+/** "YAMD: Word Count": counts words (selection, if any, else the whole document) and estimates reading time. */
+function showWordCount(): void {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'yamd') { void vscode.window.showInformationMessage('YAMD: Open a .yamd file first.'); return; }
+  const sel = editor.selection;
+  const text = sel.isEmpty ? editor.document.getText() : editor.document.getText(sel);
+  const words = (text.match(/[\p{L}\p{N}][\p{L}\p{N}'-]*/gu) ?? []).length;
+  const minutes = Math.max(1, Math.round(words / 200));
+  void vscode.window.showInformationMessage(`YAMD: ${words} word(s)${sel.isEmpty ? '' : ' (selection)'} · ~${minutes} min read.`);
+}
+
 // ---- Registration -----------------------------------------------------------
 
 export function registerStudyCommands(
@@ -443,10 +466,14 @@ export function registerStudyCommands(
     vscode.commands.registerCommand('yamd.exportPdf', () => exportNote('pdf')),
     vscode.commands.registerCommand('yamd.exportDocx', () => exportNote('docx')),
     vscode.commands.registerCommand('yamd.exportSlides', () => exportNote('slides')),
+    vscode.commands.registerCommand('yamd.exportMarkdown', () => exportNote('markdown')),
     vscode.commands.registerCommand('yamd.addCitation', () => addCitation()),
     vscode.commands.registerCommand('yamd.insertSymbol', () => insertSymbol()),
     vscode.commands.registerCommand('yamd.acceptAllChanges', () => resolveAllReview('accept')),
     vscode.commands.registerCommand('yamd.rejectAllChanges', () => resolveAllReview('reject')),
+    vscode.commands.registerCommand('yamd.acceptChangeAtCursor', () => resolveReviewAtCursor('accept')),
+    vscode.commands.registerCommand('yamd.rejectChangeAtCursor', () => resolveReviewAtCursor('reject')),
+    vscode.commands.registerCommand('yamd.showWordCount', () => showWordCount()),
     vscode.commands.registerCommand('yamd.combineNotes', () => combineNotes(index)),
     vscode.commands.registerCommand('yamd.importFolder', () => importFolder()),
     vscode.commands.registerCommand('yamd.insertPdfReference', () => insertPdfReference()),

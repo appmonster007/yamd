@@ -1,20 +1,18 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { existsSync } from 'node:fs';
-import { escapeHtml, parse, render, sanitizeUrl } from '../core';
+import { escapeHtml, parse, render } from '../core';
 import { WARM_MIN_CHARS, warmParse } from '../core/parser';
 import type { RenderOptions } from '../core';
 import { embedResolver } from '../core/embeds';
 
-import { addCalendarCard, moveCalendarCard, renameCalendarCard } from '../core/calendarEdit';
-import { addGalleryCard, moveGalleryCard } from '../core/galleryEdit';
-import { addCard, moveCard, renameCard, toggleTask } from '../core/kanbanEdit';
+import { computeBoardEdit } from '../core/boardEdit';
+import type { BoardEditMessage } from '../core/boardEdit';
 import type { LineEdit } from '../core/kanbanEdit';
-import { addTimelineCard, moveTimelineCard, renameTimelineCard } from '../core/timelineEdit';
-import { resolveNote, splitTarget, stripNoteExt } from '../core/notes';
-import { anchorLine, createNote } from '../workspace/features';
 import type { WorkspaceIndex } from '../workspace/index';
 import { notePath, noteUri } from '../workspace/index';
+import { lastLines, openPreviewLink, pendingLines, SYNC_QUIET_MS, YAMD_EDITOR } from './previewLinks';
+import { nonce } from './webviewShell';
 import type { DatabaseService, DbMessage } from './databases';
 import { fileResolver } from './diagnostics';
 import { highlight, renderMath } from './richLoader';
@@ -34,52 +32,38 @@ interface CardRef {
 type FromWebview =
   | { type: 'link'; href: string; source?: string }
   | { type: 'ready' }
-  | { type: 'toggleTask'; line: number; hash: string; done: boolean; source?: string }
-  | { type: 'kanbanMove'; board: number; card: CardRef; toColumn: number; toIndex: number; source?: string }
-  | { type: 'kanbanAdd'; board: number; column: number; text: string; source?: string }
-  | { type: 'kanbanRename'; board: number; card: CardRef; title: string; source?: string }
-  | { type: 'calendarMove'; board: number; card: CardRef; toDate: string; source?: string }
-  | { type: 'calendarAdd'; board: number; date: string; text: string; source?: string }
-  | { type: 'calendarRename'; board: number; card: CardRef; title: string; source?: string }
-  | { type: 'timelineMove'; board: number; card: CardRef; toGroup: number; newStart: string; source?: string }
-  | { type: 'timelineAdd'; board: number; group: number | null; text: string; source?: string }
-  | { type: 'timelineRename'; board: number; card: CardRef; title: string; source?: string }
-  | { type: 'galleryMove'; board: number; card: CardRef; toIndex: number; source?: string }
-  | { type: 'galleryAdd'; board: number; image: string; caption: string; source?: string }
+  | { type: 'reveal'; line: number }
+  | { type: 'editAt'; line: number }
+  | BoardEditMessage
   | DbMessage;
 
-/** Messages that change the document; only accepted in trusted workspaces. */
-const EDITS = new Set([
-  'toggleTask',
-  'kanbanMove',
-  'kanbanAdd',
-  'kanbanRename',
-  'calendarMove',
-  'calendarAdd',
-  'calendarRename',
-  'timelineMove',
-  'timelineAdd',
-  'timelineRename',
-  'galleryMove',
-  'galleryAdd',
-]);
-
-function nonce(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 32 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+export interface SessionOptions {
+  /** Panel mode: the preview follows whichever YAMD editor is active. Custom-editor mode stays on its own note. */
+  follow: boolean;
+  /** Whether `:cloze[…]` answers are hidden (quiz mode), shared by every preview. */
+  quiz: () => boolean;
+  /** Locked previews are read-only: nothing in them edits the note. */
+  locked: () => boolean;
+  onDispose?: () => void;
 }
 
-/** A single preview panel that follows the active YAMD editor. */
-export class PreviewManager implements vscode.Disposable {
+/** One preview webview (a side panel or a custom editor tab) showing one note. */
+export class PreviewSession implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
+  /** True when the webview is the note's editor tab itself, not a companion panel. */
+  private isEditor = false;
+  private initialLine: number | undefined;
+  private lastReveal = 0;
+  private lastSent = 0;
   private document: vscode.TextDocument | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly index?: WorkspaceIndex,
-    private readonly db?: DatabaseService,
+    private readonly index: WorkspaceIndex | undefined,
+    private readonly db: DatabaseService | undefined,
+    private readonly opts: SessionOptions,
   ) {
     this.disposables.push(
       // Views and queries re-run when their data changes.
@@ -96,17 +80,37 @@ export class PreviewManager implements vscode.Disposable {
       // Embedded notes may have changed.
       ...(index ? [index.onDidChange(() => this.schedule())] : []),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (this.panel && editor?.document.languageId === 'yamd' && editor.document !== this.document) {
+        if (this.opts.follow && this.panel && editor?.document.languageId === 'yamd' && editor.document !== this.document) {
           this.setDocument(editor.document);
         }
       }),
       vscode.workspace.onDidGrantWorkspaceTrust(() => void this.update()),
       vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
-        if (e.textEditor.document === this.document && e.visibleRanges[0]) {
+        if (e.textEditor.document === this.document && e.visibleRanges[0] && Date.now() - this.lastReveal > SYNC_QUIET_MS) {
+          this.lastSent = Date.now();
           void this.panel?.webview.postMessage({ type: 'scroll', line: e.visibleRanges[0].start.line });
         }
       }),
     );
+  }
+
+  /** Binds this session to a webview VS Code created for the note's custom editor. */
+  attach(panel: vscode.WebviewPanel, doc: vscode.TextDocument): void {
+    this.panel = panel;
+    this.isEditor = true;
+    this.initialLine = pendingLines.get(doc.uri.toString());
+    pendingLines.delete(doc.uri.toString());
+    panel.webview.options = { enableScripts: true };
+    panel.onDidDispose(() => this.dispose());
+    panel.webview.onDidReceiveMessage((m: FromWebview) => this.onMessage(m));
+    panel.webview.html = this.shell(panel.webview);
+    this.setDocument(doc);
+  }
+
+  /** Re-renders now, e.g. after quiz mode flips. */
+  refresh(): void {
+    this.forceNext = true;
+    void this.update();
   }
 
   show(doc: vscode.TextDocument, toSide: boolean): void {
@@ -123,6 +127,7 @@ export class PreviewManager implements vscode.Disposable {
       this.panel.onDidDispose(() => {
         this.panel = undefined;
         this.document = undefined;
+        this.opts.onDispose?.();
       });
       this.panel.webview.onDidReceiveMessage((m: FromWebview) => this.onMessage(m));
       this.panel.webview.html = this.shell(this.panel.webview);
@@ -134,7 +139,8 @@ export class PreviewManager implements vscode.Disposable {
     if (!this.panel) return;
     if (this.document !== doc) this.lastHtml = undefined;
     this.document = doc;
-    this.panel.title = `Preview ${path.basename(doc.uri.path)}`;
+    this.initialLine ??= undefined;
+    if (!this.isEditor) this.panel.title = `Preview ${path.basename(doc.uri.path)}`;
     this.panel.webview.options = { ...this.panel.webview.options, localResourceRoots: this.resourceRoots(doc) };
     void this.update();
   }
@@ -190,10 +196,10 @@ export class PreviewManager implements vscode.Disposable {
         : docResolver;
       return {
         // Checkboxes and boards are editable only in trusted workspaces and writable files.
-        interactive: vscode.workspace.isTrusted && vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) !== false,
+        interactive: !this.opts.locked() && vscode.workspace.isTrusted && vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) !== false,
         highlight,
         renderMath,
-        quiz: this.quiz,
+        quiz: this.opts.quiz(),
         resolveImage: (src) => {
           if (/^(https?|data):/i.test(src)) return src;
           const file = resolve?.(decodeURIComponent(src.split(/[?#]/)[0] ?? src));
@@ -223,19 +229,20 @@ export class PreviewManager implements vscode.Disposable {
     const full = this.forceNext;
     this.forceNext = false;
     void panel.webview.postMessage({ type: 'update', html, full });
+    this.sendInitialLine(panel);
     void this.fill(doc, parsed);
   }
 
   /** The HTML last sent to the webview, so identical renders aren't sent again. */
   private lastHtml: string | undefined;
-  /** Whether `:cloze[…]` answers are hidden (quiz mode). */
-  private quiz = false;
 
-  toggleQuiz(): boolean {
-    this.quiz = !this.quiz;
-    this.forceNext = true;
-    void this.update();
-    return this.quiz;
+  /** Scrolls a freshly opened preview to the position carried over from the editor or a link. */
+  private sendInitialLine(panel: vscode.WebviewPanel) {
+    if (this.initialLine === undefined) return;
+    const line = this.initialLine;
+    this.initialLine = undefined;
+    this.lastSent = Date.now();
+    void panel.webview.postMessage({ type: 'scroll', line });
   }
 
   /** The next update replaces the whole page, even if its HTML hasn't changed. */
@@ -255,7 +262,7 @@ export class PreviewManager implements vscode.Disposable {
     const panel = this.panel;
     if (!this.db || !panel) return;
     const generation = ++this.fillGeneration;
-    const results = await this.db.runDocument(doc, parsed, vscode.workspace.isTrusted);
+    const results = await this.db.runDocument(doc, parsed, vscode.workspace.isTrusted && !this.opts.locked());
     // A newer render or document switch replaced these placeholders.
     if (generation !== this.fillGeneration || doc !== this.document || !results.length) return;
     const items = results.map((r) => ({
@@ -265,7 +272,45 @@ export class PreviewManager implements vscode.Disposable {
     void panel.webview.postMessage({ type: 'fill', items });
   }
 
+  /** Opens the note's source with the cursor on `line`: this tab switches to Source, or a source editor takes focus. */
+  private async editAt(line: number) {
+    const doc = this.document;
+    if (!doc) return;
+    if (this.isEditor) {
+      await vscode.commands.executeCommand('yamd.showSource', doc.uri, line);
+      return;
+    }
+    const pos = new vscode.Position(Math.min(line, doc.lineCount - 1), 0);
+    const existing = vscode.window.visibleTextEditors.find((e) => e.document === doc);
+    await vscode.window.showTextDocument(doc, {
+      viewColumn: existing?.viewColumn ?? vscode.ViewColumn.One,
+      selection: new vscode.Range(pos, pos),
+    });
+  }
+
+  /** The user scrolled the preview: remember where, and scroll the note's source editor to match. */
+  private onPreviewScrolled(line: number) {
+    const doc = this.document;
+    if (!doc) return;
+    lastLines.set(doc.uri.toString(), line);
+    if (this.isEditor || Date.now() - this.lastSent < SYNC_QUIET_MS) return;
+    for (const editor of vscode.window.visibleTextEditors) {
+      if (editor.document !== doc) continue;
+      this.lastReveal = Date.now();
+      const pos = new vscode.Position(Math.min(line, doc.lineCount - 1), 0);
+      editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.AtTop);
+    }
+  }
+
   private async onMessage(m: FromWebview) {
+    if (m.type === 'editAt') {
+      await this.editAt(m.line);
+      return;
+    }
+    if (m.type === 'reveal') {
+      this.onPreviewScrolled(m.line);
+      return;
+    }
     if (m.type === 'ready') {
       // A new webview has an empty page.
       this.lastHtml = undefined;
@@ -273,107 +318,24 @@ export class PreviewManager implements vscode.Disposable {
       return;
     }
     if (m.type === 'db') {
-      if (this.document && this.db) await this.db.handle(this.document, m);
+      if (this.document && this.db && (!this.opts.locked() || m.op === 'month')) await this.db.handle(this.document, m);
       return;
     }
-    if (EDITS.has(m.type)) {
+    if (m.type === 'boardEdit') {
       await this.applyEdit(m);
       return;
     }
-    if (m.type !== 'link') return;
-    const doc = this.document;
-    const href = sanitizeUrl(m.href);
-    if (!doc || !href) return;
-    if (/^(https?|mailto|tel):/i.test(href)) {
-      await vscode.env.openExternal(vscode.Uri.parse(href));
-      return;
-    }
-    const [target = '', fragment] = href.split('#');
-    const decoded = decodeURIComponent(target);
-    // Links inside an embed are relative to the embedded note.
-    const from = m.source ?? (doc.uri.scheme === 'file' ? notePath(doc.uri) : undefined);
-    let file = m.source
-      ? [path.resolve(path.dirname(m.source), decoded)].find((c) => existsSync(c))
-      : fileResolver(doc)?.(decoded);
-    if (!file && this.index && from) {
-      // Wikilinks resolve by name and alias anywhere in the workspace.
-      const r = resolveNote(this.index.store, stripNoteExt(decoded), from);
-      if (r && r.candidates.length > 1) {
-        // Ambiguous: never auto-pick (the shortest path could silently change later as notes are
-        // added or removed), so ask which one was meant instead of guessing.
-        const picked = await vscode.window.showQuickPick(r.candidates, { placeHolder: `"${decoded}" matches more than one note — which one?` });
-        file = picked;
-      } else {
-        file = r?.path;
-      }
-    }
-    if (!file) {
-      const name = stripNoteExt(splitTarget(decoded).file);
-      const choice = await vscode.window.showInformationMessage(`YAMD: "${name}" does not exist. Create it?`, 'Create Note');
-      if (choice) await createNote(from ? noteUri(from) : doc.uri, name);
-      return;
-    }
-    const opened = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
-    const editor = await vscode.window.showTextDocument(opened, vscode.ViewColumn.One);
-    if (fragment && opened.languageId === 'yamd') {
-      const id = decodeURIComponent(fragment);
-      const line = id.startsWith('^') ? anchorLine(opened.getText(), undefined, id.slice(1)) : findIdLine(opened.getText(), id);
-      if (line !== undefined) {
-        const pos = new vscode.Position(line, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.AtTop);
-      }
-    }
+    if (m.type !== 'link' || !this.document) return;
+    await openPreviewLink({ doc: this.document, index: this.index, inEditorTab: this.isEditor, column: this.panel?.viewColumn }, m);
   }
 
   /** Applies an edit from the preview as one undoable step, or re-renders if the source changed. */
-  private async applyEdit(m: FromWebview) {
-    if (!this.document || !vscode.workspace.isTrusted || m.type === 'link' || m.type === 'ready' || m.type === 'db') return;
+  private async applyEdit(m: BoardEditMessage) {
+    if (!this.document || this.opts.locked() || !vscode.workspace.isTrusted) return;
     // Edits to embedded content go to the embedded note.
     const doc = m.source ? await vscode.workspace.openTextDocument(noteUri(m.source)) : this.document;
     if (vscode.workspace.fs.isWritableFileSystem(doc.uri.scheme) === false) return;
-    const source = doc.getText();
-    let edit: LineEdit | null = null;
-    switch (m.type) {
-      case 'toggleTask':
-        edit = toggleTask(source, m.line, m.hash, m.done);
-        break;
-      case 'kanbanMove':
-        edit = moveCard(source, m.board, m.card, m.toColumn, m.toIndex);
-        break;
-      case 'kanbanAdd':
-        edit = addCard(source, m.board, m.column, m.text);
-        break;
-      case 'kanbanRename':
-        edit = renameCard(source, m.board, m.card, m.title);
-        break;
-      case 'calendarMove':
-        edit = moveCalendarCard(source, m.board, m.card, m.toDate);
-        break;
-      case 'calendarAdd':
-        edit = addCalendarCard(source, m.board, m.date, m.text);
-        break;
-      case 'calendarRename':
-        edit = renameCalendarCard(source, m.board, m.card, m.title);
-        break;
-      case 'timelineMove':
-        edit = moveTimelineCard(source, m.board, m.card, m.toGroup, m.newStart);
-        break;
-      case 'timelineAdd':
-        edit = addTimelineCard(source, m.board, m.group, m.text, new Date().toISOString().slice(0, 10));
-        break;
-      case 'timelineRename':
-        edit = renameTimelineCard(source, m.board, m.card, m.title);
-        break;
-      case 'galleryMove':
-        edit = moveGalleryCard(source, m.board, m.card, m.toIndex);
-        break;
-      case 'galleryAdd':
-        edit = addGalleryCard(source, m.board, m.image, m.caption);
-        break;
-      default:
-        return;
-    }
+    const edit: LineEdit | null = computeBoardEdit(doc.getText(), m);
     if (!edit) {
       // The text changed since the preview rendered it; show the current state instead.
       this.forceUpdate();
@@ -431,24 +393,114 @@ export class PreviewManager implements vscode.Disposable {
   }
 
   dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
     clearTimeout(this.timer);
-    this.panel?.dispose();
+    clearTimeout(this.fillTimer);
+    const panel = this.panel;
+    this.panel = undefined;
+    panel?.dispose();
     for (const d of this.disposables) d.dispose();
+    this.opts.onDispose?.();
   }
+  private disposed = false;
 }
 
-/** Finds the line of the heading or block with the given id. */
-function findIdLine(source: string, id: string): number | undefined {
-  const doc = parse(source);
-  let found: number | undefined;
-  const visit = (blocks: typeof doc.blocks) => {
-    for (const b of blocks) {
-      if (found !== undefined) return;
-      if ((b.type === 'heading' && b.id === id) || b.attrs?.id === id) found = b.line;
-      if (b.type === 'list') b.items.forEach((it) => visit(it.children));
-      else if (b.type === 'blockquote' || b.type === 'container') visit(b.children);
+/** Owns the side-panel preview and every preview-mode editor tab, and the switching between Source and Preview. */
+export class PreviewManager implements vscode.Disposable, vscode.CustomTextEditorProvider {
+  private panelSession: PreviewSession | undefined;
+  private readonly editors = new Set<PreviewSession>();
+  private quiz = false;
+  /** Locked: previews show the note but can't change it. Starts from `yamd.preview.startLocked`. */
+  private locked = vscode.workspace.getConfiguration('yamd.preview').get<boolean>('startLocked', false);
+  private readonly disposables: vscode.Disposable[] = [];
+
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    private readonly index?: WorkspaceIndex,
+    private readonly db?: DatabaseService,
+  ) {
+    this.publishLock();
+    this.disposables.push(
+      vscode.window.registerCustomEditorProvider(YAMD_EDITOR, this, {
+        webviewOptions: { retainContextWhenHidden: true },
+        supportsMultipleEditorsPerDocument: true,
+      }),
+    );
+  }
+
+  private session(follow: boolean, onDispose?: () => void): PreviewSession {
+    return new PreviewSession(this.extensionUri, this.index, this.db, { follow, quiz: () => this.quiz, locked: () => this.locked, onDispose });
+  }
+
+  /** Companion preview panel (Markdown's "Open Preview" / "Open Preview to the Side"). */
+  show(doc: vscode.TextDocument, toSide: boolean): void {
+    if (!this.panelSession) this.panelSession = this.session(true, () => (this.panelSession = undefined));
+    this.panelSession.show(doc, toSide);
+  }
+
+  resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): void {
+    const s = this.session(false, () => this.editors.delete(s));
+    this.editors.add(s);
+    s.attach(webviewPanel, document);
+  }
+
+  /** Switches the current tab to the rendered editor, landing on the same part of the note. */
+  async showPreviewInTab(uri?: vscode.Uri): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    const target = uri ?? editor?.document.uri;
+    if (!target) return;
+    if (editor && editor.document.uri.toString() === target.toString() && editor.visibleRanges[0]) {
+      pendingLines.set(target.toString(), editor.visibleRanges[0].start.line);
     }
-  };
-  visit(doc.blocks);
-  return found;
+    await vscode.commands.executeCommand('vscode.openWith', target, YAMD_EDITOR);
+  }
+
+  /** Switches the current preview tab back to the source text editor. */
+  async showSource(uri?: vscode.Uri, cursorLine?: number): Promise<void> {
+    const target = uri ?? vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+    const resource = target instanceof vscode.Uri ? target : (target as { uri?: vscode.Uri } | undefined)?.uri;
+    if (!resource) return;
+    await vscode.commands.executeCommand('vscode.openWith', resource, 'default');
+    const line = cursorLine ?? lastLines.get(resource.toString());
+    const active = vscode.window.activeTextEditor;
+    if (line !== undefined && active && active.document.uri.toString() === resource.toString()) {
+      const pos = new vscode.Position(Math.min(line, active.document.lineCount - 1), 0);
+      if (cursorLine !== undefined) active.selection = new vscode.Selection(pos, pos);
+      active.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+    }
+  }
+
+  /** Flips the active tab between Source and Preview. */
+  async toggleMode(): Promise<void> {
+    const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+    if (input instanceof vscode.TabInputCustom && input.viewType === YAMD_EDITOR) await this.showSource(input.uri);
+    else if (vscode.window.activeTextEditor?.document.languageId === 'yamd') await this.showPreviewInTab();
+  }
+
+  private publishLock() {
+    void vscode.commands.executeCommand('setContext', 'yamd.previewLocked', this.locked);
+  }
+
+  /** Locks (read-only) or unlocks (editable) every preview. Omit `locked` to flip it. */
+  setLocked(locked = !this.locked): boolean {
+    this.locked = locked;
+    this.publishLock();
+    this.panelSession?.refresh();
+    for (const s of this.editors) s.refresh();
+    return this.locked;
+  }
+
+  toggleQuiz(): boolean {
+    this.quiz = !this.quiz;
+    this.panelSession?.refresh();
+    for (const s of this.editors) s.refresh();
+    return this.quiz;
+  }
+
+  dispose() {
+    this.panelSession?.dispose();
+    for (const s of [...this.editors]) s.dispose();
+    for (const d of this.disposables) d.dispose();
+  }
 }

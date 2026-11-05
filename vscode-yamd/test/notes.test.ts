@@ -267,6 +267,11 @@ describe('templates', () => {
     assert.equal(parseDate('notes', 'YYYY-MM-DD'), null);
   });
 
+  test('custom variables fill their placeholders', () => {
+    const r = expandPlaceholders('{{@course}} / {{@title}} / {{@missing}}', { now, title: 'T', vars: { course: 'CS101' } });
+    assert.equal(r.text, 'CS101 / T / {{@missing}}');
+  });
+
   test('placeholders and cursor', () => {
     const r = expandPlaceholders('# {{@title}}\nDate: {{@date:DD/MM/YYYY}} {{@time}}\n{{@cursor}}\n{{@other}}', { now, title: 'standup' });
     assert.equal(r.text, '# standup\nDate: 16/10/2026 09:05\n\n{{@other}}');

@@ -27,12 +27,13 @@ A calendar stretched into a bar: `{start=...}`/`{due=...}` are the start and end
 :::timeline {title="Q4 Roadmap"}
 ## Ada
 
+- [ ] Ship billing API {start=2026-10-14 due=2026-10-28}
+
 
 ## Alan
 
 - [ ] Migrate auth {start=2026-11-10 due=2026-12-07}
-- [ ] Ship billing API {start=2026-10-05 due=2026-10-19}
-- [ ] Sign-up flow redesign {start=2026-10-22 due=2026-11-03}
+- [ ] Sign-up flow redesign {start=2026-10-23 due=2026-11-04}
 :::
 
 ## Gallery

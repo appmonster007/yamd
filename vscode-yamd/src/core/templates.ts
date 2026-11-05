@@ -53,8 +53,11 @@ export interface Expanded {
   cursor?: number;
 }
 
-/** Expands `{{@date}}`, `{{@date:FORMAT}}`, `{{@time}}`, `{{@title}}` and removes `{{@cursor}}`. */
-export function expandPlaceholders(template: string, context: { now: Date; title: string }): Expanded {
+/**
+ * Expands `{{@date}}`, `{{@date:FORMAT}}`, `{{@time}}`, `{{@title}}`, any name given in `vars`
+ * (for example `{{@course}}`), and removes `{{@cursor}}`. Unknown names are left as written.
+ */
+export function expandPlaceholders(template: string, context: { now: Date; title: string; vars?: Record<string, string> }): Expanded {
   let cursor: number | undefined;
   let text = '';
   let last = 0;
@@ -76,7 +79,7 @@ export function expandPlaceholders(template: string, context: { now: Date; title
         cursor ??= text.length;
         break;
       default:
-        text += whole;
+        text += name !== undefined && context.vars && Object.hasOwn(context.vars, name) ? context.vars[name] : whole;
     }
   }
   text += template.slice(last);

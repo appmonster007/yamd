@@ -141,12 +141,80 @@ async function insertTemplate(): Promise<void> {
   await editor.insertSnippet(snippet(text, title));
 }
 
+/** "YAMD: Open Templates Folder": reveals the configured templates folder in the OS file explorer. */
+async function openTemplatesFolder(): Promise<void> {
+  const base = root();
+  if (!base) {
+    void vscode.window.showInformationMessage('YAMD: Open a folder to use templates.');
+    return;
+  }
+  const { templates } = settings();
+  const dir = vscode.Uri.joinPath(base, templates);
+  await vscode.workspace.fs.createDirectory(dir);
+  await vscode.commands.executeCommand('revealFileInOS', dir);
+}
+
+/** "YAMD: Save Current Note as Template": copies the active note's text into the templates folder. */
+async function saveAsTemplate(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  const base = root();
+  if (!editor || editor.document.languageId !== 'yamd' || !base) {
+    void vscode.window.showInformationMessage('YAMD: Open a YAMD note to save it as a template.');
+    return;
+  }
+  const { templates } = settings();
+  const name = await vscode.window.showInputBox({
+    title: 'Save as Template',
+    prompt: 'Template name',
+    value: stripNoteExt(path.basename(editor.document.uri.fsPath)),
+    validateInput: (v) => (v.trim() ? null : 'Enter a name.'),
+  });
+  if (!name) return;
+  const dir = vscode.Uri.joinPath(base, templates);
+  await vscode.workspace.fs.createDirectory(dir);
+  const uri = vscode.Uri.joinPath(dir, `${stripNoteExt(name.trim())}.yamd`);
+  await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(editor.document.getText()));
+  void vscode.window.showInformationMessage(`YAMD: Saved template "${path.basename(uri.fsPath)}".`);
+}
+
+/**
+ * "YAMD: Apply Template to Note…": wraps the active note's existing content in a chosen template,
+ * substituting it for a `{{@body}}` placeholder in the template (or appending it, if there is none).
+ */
+async function applyTemplateToNote(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  const base = root();
+  if (!editor || editor.document.languageId !== 'yamd' || !base) {
+    void vscode.window.showInformationMessage('YAMD: Open a YAMD note to apply a template to it.');
+    return;
+  }
+  const items = await findTemplates(base);
+  if (!items.length) {
+    const { templates } = settings();
+    void vscode.window.showInformationMessage(`YAMD: No templates found in "${templates}". Set yamd.templates.folder to change it.`);
+    return;
+  }
+  const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Choose a template to wrap this note in' });
+  if (!pick) return;
+  const doc = editor.document;
+  const title = stripNoteExt(path.basename(doc.uri.fsPath));
+  const existing = doc.getText();
+  const { text: expanded } = expandPlaceholders(await readText(pick.uri), { now: new Date(), title });
+  const merged = expanded.includes('{{@body}}') ? expanded.replace('{{@body}}', existing) : `${expanded}\n${existing}`;
+  const edit = new vscode.WorkspaceEdit();
+  edit.replace(doc.uri, new vscode.Range(0, 0, doc.lineCount, 0), merged);
+  await vscode.workspace.applyEdit(edit);
+}
+
 export function registerDailyNotes(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('yamd.openTodayDailyNote', () => openDaily(new Date())),
     vscode.commands.registerCommand('yamd.previousDailyNote', () => stepDaily(-1)),
     vscode.commands.registerCommand('yamd.nextDailyNote', () => stepDaily(1)),
     vscode.commands.registerCommand('yamd.insertTemplate', insertTemplate),
+    vscode.commands.registerCommand('yamd.openTemplatesFolder', () => openTemplatesFolder()),
+    vscode.commands.registerCommand('yamd.saveAsTemplate', () => saveAsTemplate()),
+    vscode.commands.registerCommand('yamd.applyTemplateToNote', () => applyTemplateToNote()),
   );
 }
 

@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { convertFromMarkdown, joinParagraphLines } from '../core';
+import { stripNoteExt } from '../core/notes';
 
 /** "YAMD: Convert from Markdown": rewrites the active document in one undoable edit. */
 async function convertActive(): Promise<void> {
@@ -53,6 +54,52 @@ async function openMarkdownAsYamd(uri?: vscode.Uri): Promise<void> {
   await vscode.window.showTextDocument(target);
 }
 
+/** A front-matter block auto-filled from the file name and today's date, for a note that lacks one. */
+function autoFrontMatter(fileName: string): string {
+  const title = stripNoteExt(fileName);
+  const date = new Date().toISOString().slice(0, 10);
+  const lang = vscode.workspace.getConfiguration('yamd.newNote').get<string>('lang', 'en');
+  return `---\ntitle: ${JSON.stringify(title)}\ndate: ${date}\nlang: ${lang}\n---\n\n`;
+}
+
+/** "YAMD: Add Front Matter": inserts an auto-filled front-matter block if the active note doesn't have one. */
+async function addFrontMatter(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'yamd') {
+    void vscode.window.showInformationMessage('YAMD: Open a YAMD note to add front matter to it.');
+    return;
+  }
+  const doc = editor.document;
+  if (/^---\r?\n/.test(doc.getText())) {
+    void vscode.window.showInformationMessage('YAMD: This note already has front matter.');
+    return;
+  }
+  await editor.edit((b) => b.insert(new vscode.Position(0, 0), autoFrontMatter(path.basename(doc.uri.fsPath))));
+}
+
+/**
+ * "YAMD: Convert Markdown File to YAMD": renames a `.md`/`.markdown` file to `.yamd` in place,
+ * converts its body, and adds front matter if it doesn't already have one.
+ */
+async function convertMarkdownToYamdFile(uri?: vscode.Uri): Promise<void> {
+  const source = uri ?? vscode.window.activeTextEditor?.document.uri;
+  if (!source || !/\.(md|markdown)$/i.test(source.path)) {
+    void vscode.window.showInformationMessage('YAMD: Choose a Markdown (.md) file to convert.');
+    return;
+  }
+  const target = source.with({ path: source.path.replace(/\.(md|markdown)$/i, '.yamd') });
+  if (await exists(target)) {
+    void vscode.window.showErrorMessage(`YAMD: ${path.basename(target.path)} already exists.`);
+    return;
+  }
+  const bytes = await vscode.workspace.fs.readFile(source);
+  const { text } = convertFromMarkdown(new TextDecoder().decode(bytes));
+  const withFrontMatter = /^---\r?\n/.test(text) ? text : autoFrontMatter(path.basename(target.path)) + text;
+  await vscode.workspace.fs.rename(source, target);
+  await vscode.workspace.fs.writeFile(target, new TextEncoder().encode(withFrontMatter));
+  await vscode.window.showTextDocument(target);
+}
+
 async function exists(uri: vscode.Uri): Promise<boolean> {
   try {
     await vscode.workspace.fs.stat(uri);
@@ -87,6 +134,8 @@ export function registerMigration(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('yamd.convertFromMarkdown', convertActive),
     vscode.commands.registerCommand('yamd.openMarkdownAsYamd', openMarkdownAsYamd),
+    vscode.commands.registerCommand('yamd.addFrontMatter', addFrontMatter),
+    vscode.commands.registerCommand('yamd.convertMarkdownToYamdFile', convertMarkdownToYamdFile),
     vscode.languages.registerCodeActionsProvider('yamd', new JoinWrappedLines(), {
       providedCodeActionKinds: JoinWrappedLines.kinds,
     }),

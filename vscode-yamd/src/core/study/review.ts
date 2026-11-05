@@ -49,7 +49,7 @@ function lineAt(doc: YamdDocument, offset: number): number {
 const short = (s: string) => (s.length > 60 ? `${s.slice(0, 57)}…` : s);
 
 /** Top-level review nodes in source order (nested ones are covered by their parent). */
-function topLevel(doc: YamdDocument): InlineNode[] {
+export function topLevel(doc: YamdDocument): InlineNode[] {
   const found: InlineNode[] = [];
   const roots = [...doc.blocks, ...[...doc.footnotes.values()].flatMap((f) => f.children)];
   walkBlocks(roots, (b) => {
@@ -92,17 +92,21 @@ export function collectReview(doc: YamdDocument): ReviewItem[] {
   return merged;
 }
 
+/** What a single review node becomes once accepted or rejected (comments and markers removed). */
+export function reviewReplacement(n: InlineNode, raw: string, mode: 'accept' | 'reject'): string {
+  if (n.type === 'review') return (n.kind === 'insert') === (mode === 'accept') ? raw.slice(3, -3) : '';
+  if (n.type === 'reviewSubstitute') return raw.slice(3, -3).split('~>')[mode === 'accept' ? 1 : 0] ?? '';
+  if (n.type === 'reviewHighlight') return /^\{==([\s\S]*?)==\}/.exec(raw)?.[1] ?? '';
+  return '';
+}
+
 /** The note with every suggestion applied (`accept`) or undone (`reject`) and comments removed. */
 export function resolveReview(doc: YamdDocument, mode: 'accept' | 'reject'): string {
   let out = '';
   let last = 0;
   for (const n of topLevel(doc)) {
     const raw = doc.source.slice(n.range.start, n.range.end);
-    let replacement = '';
-    if (n.type === 'review') replacement = (n.kind === 'insert') === (mode === 'accept') ? raw.slice(3, -3) : '';
-    else if (n.type === 'reviewSubstitute') replacement = raw.slice(3, -3).split('~>')[mode === 'accept' ? 1 : 0] ?? '';
-    else if (n.type === 'reviewHighlight') replacement = /^\{==([\s\S]*?)==\}/.exec(raw)?.[1] ?? '';
-    out += doc.source.slice(last, n.range.start) + replacement;
+    out += doc.source.slice(last, n.range.start) + reviewReplacement(n, raw, mode);
     last = n.range.end;
   }
   return out + doc.source.slice(last);

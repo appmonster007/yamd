@@ -83,16 +83,25 @@ Tools for coursework and academic writing. See `examples/07-study/` for a full g
 | YAMD: Toggle Strikethrough      | Alt+S        | Alt+S           |
 | YAMD: Toggle Highlight          | Cmd+Shift+H  | Ctrl+Shift+H    |
 | YAMD: Toggle Inline Code        | Cmd+`        | Ctrl+`          |
+| YAMD: Insert…                   | Cmd+Alt+I    | Ctrl+Alt+I      |
+| YAMD: Insert Link…              | Cmd+Alt+K    | Ctrl+Alt+K      |
+| YAMD: Insert Embed…             | Cmd+Alt+Shift+K | Ctrl+Alt+Shift+K |
+| YAMD: Close Current Block       | Cmd+Alt+.    | Ctrl+Alt+.      |
+| YAMD: Jump to Matching Fence    | Cmd+Alt+M    | Ctrl+Alt+M      |
+| YAMD: Accept Change at Cursor   | Cmd+Alt+Y    | Ctrl+Alt+Y      |
+| YAMD: Reject Change at Cursor   | Cmd+Alt+Shift+Y | Ctrl+Alt+Shift+Y |
 | YAMD: New Note…                 |              |                 |
 | YAMD: New Timestamped Note      |              |                 |
 | YAMD: Convert from Markdown     |              |                 |
 | YAMD: Open Markdown as YAMD     |              |                 |
+| YAMD: Convert Markdown File to YAMD |          |                 |
+| YAMD: Add Front Matter          |              |                 |
 | YAMD: Review Flashcards         |              |                 |
 | YAMD: Open Study Dashboard      |              |                 |
 | YAMD: Start / Pause / Stop Study Timer |       |                 |
 | YAMD: New Study Note…           |              |                 |
 | YAMD: Generate Cheat Sheet      |              |                 |
-| YAMD: Export as HTML / PDF / Word (.docx) / Slides |  |          |
+| YAMD: Export as HTML / PDF / Word (.docx) / Slides / Markdown |  |          |
 | YAMD: Add Citation              |              |                 |
 | YAMD: Insert Math Symbol        |              |                 |
 | YAMD: Accept / Reject All Review Changes |     |                 |
@@ -102,12 +111,55 @@ Tools for coursework and academic writing. See `examples/07-study/` for a full g
 | YAMD: New Reading List          |              |                 |
 | YAMD: Prune Orphaned Card Data  |              |                 |
 | YAMD: Toggle Quiz Mode          |              |                 |
+| YAMD: Word Count                |              |                 |
+| YAMD: Validate Document         |              |                 |
+| YAMD: Insert Block…             |              |                 |
+| YAMD: Select Block              |              |                 |
+| YAMD: Unwrap Block              |              |                 |
+| YAMD: Duplicate Block           |              |                 |
+| YAMD: Change Block Type…        |              |                 |
+| YAMD: Insert Database View…     |              |                 |
+| YAMD: Insert Footnote… / Tag… / Variable… |     |                 |
+| YAMD: Insert Front Matter / Table / Math Block / Diagram Block / Comment / Horizontal Rule / Table of Contents / Query Block / Flashcard Block |  |  |
+| YAMD: Wrap Selection in Attributes… |          |                 |
+| YAMD: Copy Link to This Block   |              |                 |
+| YAMD: Toggle Blockquote         |              |                 |
+| YAMD: Cycle Heading Level       |              |                 |
+| YAMD: Go to Linked Note         |              |                 |
+| YAMD: Open Random Note          |              |                 |
+| YAMD: Show Unlinked Mentions / Show Orphan Notes / Show Backlinks |  |          |
+| YAMD: Open Templates Folder     |              |                 |
+| YAMD: Save Current Note as Template… |         |                 |
+| YAMD: Apply Template to Note…   |              |                 |
+| YAMD: Insert Code Block…        |              |                 |
+| YAMD: Insert Heading Anchor     |              |                 |
+| YAMD: Insert Block Attributes…  |              |                 |
+| YAMD: Insert Cross-reference Label… / Insert Cross-reference… |  |  |
+| YAMD: Insert Citation…          |              |                 |
+| YAMD: Insert Inline Footnote…   |              |                 |
+| YAMD: Insert Review Markup…     |              |                 |
+| YAMD: Insert Tracked Insertion… / Deletion… / Substitution… |    |  |
+| YAMD: Insert Highlight with Comment… / Insert Review Comment… |  |  |
 
 The shortcuts only apply in `.yamd` files.
 
 **New Note…** asks for a name and creates `<name>.yamd` with `title`, `date` and `lang` in its front matter. **New Timestamped Note** skips the question and names the file after the current time (`2026-10-17-1430.yamd`; set the format with `yamd.newNote.timestampFormat`). Both are buttons at the top of the YAMD sidebar, appear when you right-click a folder in the Explorer (the note is created there), and New Note is also in File > New File…. Without a folder, notes go next to the active note.
 
-**Convert from Markdown** rewrites the active file in one undoable edit: it joins hard-wrapped paragraph lines and backslash-escapes text that YAMD would read as its own syntax. **Open Markdown as YAMD** (also in the Explorer context menu for `.md` files) writes a converted `.yamd` copy next to the Markdown file and opens it; the `.md` file isn't changed.
+**Convert from Markdown** rewrites the active file in one undoable edit: it joins hard-wrapped paragraph lines and backslash-escapes text that YAMD would read as its own syntax. **Open Markdown as YAMD** (also in the Explorer context menu for `.md` files) writes a converted `.yamd` copy next to the Markdown file and opens it; the `.md` file isn't changed. **Convert Markdown File to YAMD** goes further: it renames the file itself from `.md`/`.markdown` to `.yamd` in place, converts its body, and adds a front-matter block (auto-filled from the file name and today's date) if it doesn't already have one. **Add Front Matter** does just that last part, on its own, for any note that's missing a front-matter block.
+
+**Insert…** is the single entry point for every "insert a thing" command — a link, an embed, a block, a footnote, a table, and so on — picked from a quick menu; each of those is also its own command for direct binding. **Insert Block…** picks any `:::name`/`::name` directive known to the parser and inserts its fence(s) with the cursor placed inside; **Close Current Block** finds the nearest still-open container and closes it; **Jump to Matching Fence**, **Select Block**, **Unwrap Block**, **Duplicate Block** and **Change Block Type…** all work from the same fence scanner. Directive blocks also fold/unfold with VS Code's native folding commands.
+
+**Copy Link to This Block** adds a `^blockid` to the current line if it doesn't have one yet, then copies a `[[note#^blockid]]` wikilink to the clipboard. **Go to Linked Note** resolves and opens the link under the cursor. **Show Unlinked Mentions** and **Show Orphan Notes** complement the Backlinks panel (**Show Backlinks** focuses it) by surfacing plain-text mentions that aren't yet links, and notes with no links in or out, as quick picks.
+
+**Accept/Reject Change at Cursor** resolve only the single review node (an insertion, deletion, substitution or comment) under the cursor, unlike **Accept/Reject All Review Changes** which resolve the whole document at once.
+
+**Apply Template to Note…** is the inverse of **Insert Template**: it wraps the *active note's existing content* into a chosen template, substituting it for a `{{@body}}` placeholder in the template (or appending it, if the template has none) — useful for retrofitting structure onto notes that already have content. **Save Current Note as Template…** copies the active note into the templates folder so it can be reused the same way. **Open Templates Folder** reveals that folder (`yamd.templates.folder`, default `templates`) in the OS file explorer.
+
+**Insert Link…/Insert Embed…** now follow up a note pick with an optional heading or block-id anchor (from that note's own headings and block IDs) and, for links only, an optional alias (`[[note#Heading|alias]]`). **Insert Code Block…** picks a language (or free text) and optionally a `title=`/`lines=`/`highlight=` attribute string for the fence's info line. **Insert Heading Anchor** appends a `{#slug}` to the heading under the cursor, pre-filling an editable slug generated from its text; it's a no-op if the heading already has one. **Insert Block Attributes…** inserts a `{#id .class key=value}` line directly above the block under the cursor (for a paragraph or list with no opening token of its own to attach to), distinct from **Wrap Selection in Attributes…**, which wraps an inline span.
+
+**Insert Cross-reference Label…** attaches a `{#fig:name}`/`{#tbl:name}`/`{#eq:name}`/`{#sec:name}` label to the current line; **Insert Cross-reference…** scans the open note for existing labels and inserts a `[@label]` reference to the one you pick. **Insert Citation…** inserts a bare `[@key]` citation marker (pair it with **Add Citation** to add the bibliography entry itself). **Insert Inline Footnote…** inserts the `^[text]` shorthand, as opposed to the reference-style **Insert Footnote…**.
+
+**Insert Review Markup…** is a quick menu over the five CriticMarkup-based tracked-change forms: **Insert Tracked Insertion…** (`{++text++}`), **Insert Tracked Deletion…** (`{--text--}`), **Insert Tracked Substitution…** (`{~~old~>new~~}`), **Insert Highlight with Comment…** (`{==text==}{>>note<<}`) and **Insert Review Comment…** (a standalone `{>>note<<}`). Each defaults its text prompt to the current selection when there is one.
 
 ## Snippets
 

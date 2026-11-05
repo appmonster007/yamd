@@ -44,6 +44,21 @@ export function toggleMarker(text: string, start: number, end: number, marker: s
   };
 }
 
+/** Toggles a `> ` blockquote marker at the start of `line`. */
+export function toggleBlockquote(line: string): string {
+  const m = /^(\s*)> ?(.*)$/.exec(line);
+  return m ? `${m[1]}${m[2]}` : `> ${line}`;
+}
+
+/** Cycles a line's heading level: none → `#` → `##` → … → `######` → none. */
+export function cycleHeadingLevel(line: string): string {
+  const m = /^(#{1,6}) (.*)$/.exec(line);
+  if (!m) return `# ${line}`;
+  const level = (m[1] as string).length;
+  const rest = m[2] as string;
+  return level >= 6 ? rest : `${'#'.repeat(level + 1)} ${rest}`;
+}
+
 const LIST_ITEM = /^(\s*)(?:([-*+])|(\d{1,9})([.)]))(?:([ \t]+)(\[[ xX]\][ \t]+)?|$)(.*)$/;
 
 export type EnterAction =

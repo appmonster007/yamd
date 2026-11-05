@@ -126,11 +126,15 @@ The review panel (`YAMD: Review Flashcards` shares the panel) also shows a diff 
 
 **Slides** (`YAMD: Export as Slides (HTML)`) — each level-1 heading (or a `---` thematic break) starts a new slide. The output is a single HTML file with a keyboard-navigable presentation.
 
+**Markdown** (`YAMD: Export as Markdown`) — a plain GFM `.md` rendering for tools outside the YAMD ecosystem; inline formatting is flattened to plain text, so it isn't meant to round-trip back into YAMD.
+
 ---
 
 ### Note templates
 
 `YAMD: New Study Note…` shows a template picker with four built-in templates: **Lecture notes**, **Lab report**, **Exam prep** and **Reading note**. Each template has placeholders `{{@date}}`, `{{@title}}`, `{{@course}}` and `{{@cursor}}` (where the cursor should land) — see yamd-spec.md §4.12.
+
+`YAMD: Open Templates Folder` reveals the `yamd.templates.folder` folder in the OS file explorer, and `YAMD: Save Current Note as Template…` copies the active note there. `YAMD: Apply Template to Note…` runs template expansion in reverse: it substitutes the active note's existing content for a `{{@body}}` placeholder in a chosen template, for retrofitting structure onto a note that already has content.
 
 ---
 
