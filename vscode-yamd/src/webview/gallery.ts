@@ -1,5 +1,5 @@
 // Runs inside the preview webview.
-import { boardEdit, root } from './shared';
+import { boardEdit, root, vscode } from './shared';
 import { move } from './kanban';
 
 // ---- Gallery ----
@@ -100,3 +100,42 @@ root.addEventListener('submit', (event) => {
   if (caption) caption.value = '';
 });
 
+
+// ---- Image picker and enlarge ----
+
+root.addEventListener('click', (event) => {
+  const pick = (event.target as Element).closest<HTMLElement>('.gallery-pick');
+  if (pick) {
+    vscode.postMessage({ type: 'pickImage' });
+    return;
+  }
+  // Clicking an image enlarges it; clicking the enlarged view (or pressing Escape) closes it.
+  const img = (event.target as Element).closest<HTMLImageElement>('.db-card img');
+  if (!img || (event.target as Element).closest('a, button, input')) return;
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-label', img.alt || 'Image');
+  box.tabIndex = -1;
+  const big = document.createElement('img');
+  big.src = img.src;
+  big.alt = img.alt;
+  box.append(big);
+  if (img.alt) {
+    const cap = document.createElement('div');
+    cap.className = 'lightbox-caption';
+    cap.textContent = img.alt;
+    box.append(cap);
+  }
+  const close = () => {
+    box.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+  document.addEventListener('keydown', onKey);
+  box.addEventListener('click', close);
+  document.body.append(box);
+  box.focus();
+});

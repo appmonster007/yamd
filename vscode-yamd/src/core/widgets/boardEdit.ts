@@ -7,10 +7,12 @@ import { addCalendarCard, moveCalendarCard, renameCalendarCard } from './calenda
 import { addGalleryCard, moveGalleryCard } from './galleryEdit';
 import { addCard, moveCard, renameCard, toggleTask } from './kanbanEdit';
 import type { CardRef, LineEdit } from './kanbanEdit';
+import { setCardDetails } from './detailsEdit';
+import type { CardDetails } from './detailsEdit';
 import { addTimelineCard, moveTimelineCard, renameTimelineCard } from './timelineEdit';
 
 type BoardKind = 'task' | 'kanban' | 'calendar' | 'timeline' | 'gallery';
-type BoardOp = 'toggle' | 'move' | 'add' | 'rename';
+type BoardOp = 'toggle' | 'move' | 'add' | 'rename' | 'details';
 
 /** A card as the preview saw it: its first line and the hash of its source when rendered. */
 export type { CardRef };
@@ -49,6 +51,9 @@ const HANDLERS: Record<string, Handler> = {
   'gallery.add': (s, b, _c, a) => addGalleryCard(s, b, str(a['image']), str(a['caption'])),
 };
 
+const details = (a: Args): CardDetails => ({ due: str(a['due']), start: str(a['start']), owner: str(a['owner']), tags: str(a['tags']), body: str(a['body']) });
+
 export function computeBoardEdit(source: string, m: Pick<BoardEditMessage, 'kind' | 'op' | 'board' | 'card' | 'args'>): LineEdit | null {
+  if (m.op === 'details') return m.card ? setCardDetails(source, m.kind, m.board, m.card, details(m.args)) : null;
   return HANDLERS[`${m.kind}.${m.op}`]?.(source, m.board, m.card, m.args) ?? null;
 }

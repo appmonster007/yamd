@@ -320,6 +320,11 @@
         "command": "yamd.exportWidget",
         "title": "Export Widget as HTML",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.transcribeAudio",
+        "title": "Transcribe Audio",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -476,6 +481,10 @@
         {
           "command": "yamd.exportWidget",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.transcribeAudio",
+          "when": "editorLangId == markdown"
         }
       ],
       "explorer/context": [
@@ -560,6 +569,16 @@
           "type": "boolean",
           "default": false,
           "description": "When a note is saved, refresh the result snapshots under query blocks that already have one."
+        },
+        "yamd.audio.transcribeCommand": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "A speech-to-text command that prints the text. `{file}` is replaced with the recording's path, for example `whisper-cli -m ~/models/ggml-base.en.bin -nt -f {file}`. Used by **YAMD: Transcribe Audio**; nothing is sent anywhere by YAMD."
+        },
+        "yamd.study.reminders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Once a day, when a workspace opens, say how many flashcards are due and which deadlines are today or overdue."
         }
       }
     },

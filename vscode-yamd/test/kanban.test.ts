@@ -194,7 +194,7 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     const html = render(parse(src), { today: '2026-10-16' });
     // The list under the grid shows the month's events from the start; "Show all" only appears once it is narrowed.
     assert.match(html, /<div class="db-agenda"><div class="db-agenda-header"><span class="db-agenda-title">Events in October 2026<span class="db-agenda-count">1 event<\/span><\/span><button type="button" class="db-agenda-close"[^>]*hidden>Show all<\/button><\/div>/);
-    assert.match(html, /<section class="db-agenda-day" data-date="2026-10-10"><h4 class="db-agenda-date">Sat 10 Oct<\/h4><div class="db-event expanded"/);
+    assert.match(html, /<section class="db-agenda-day" data-date="2026-10-10"><h4 class="db-agenda-date">Sat 10 Oct<\/h4><div class="db-event overdue expanded"/);
   });
 
   test('calendar and timeline cards render a clickable task-toggle checkbox, same as kanban', () => {

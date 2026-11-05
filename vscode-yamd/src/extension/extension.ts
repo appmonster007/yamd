@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { registerOnboarding } from './onboarding/commands';
 import { registerAudio } from './audio/recorder';
+import { registerTranscribe } from './audio/transcribe';
 import { registerTools } from './writing/tools';
 import { registerRefresh } from './query/refresh';
 import { registerWritingCommands } from './writing/commands';
@@ -43,6 +44,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerAddCommands(context);
   registerRefresh(context);
   registerTools(context);
+  registerTranscribe(context);
 }
 
 export function deactivate(): void {}

@@ -4,6 +4,8 @@ import { toInternal } from '../core/markdown/compat';
 import { parse } from '../core/markdown';
 import { collectDeadlines, groupDeadlines } from '../core/study/deadlines';
 import type { Deadline } from '../core/study/deadlines';
+import { reminderMessage, shouldRemind } from '../core/study/reminders';
+import { buildQueue, parseSchedule } from '../core/study/cards';
 import { STUDY_TEMPLATES } from '../core/study/templates';
 import { pruneSchedule } from '../core/study/cards';
 import { stringifySchedule } from '../core/study/cards';
@@ -86,8 +88,33 @@ class DeadlinesView implements vscode.TreeDataProvider<Node>, vscode.Disposable 
   }
 }
 
+/** Once a day, tells the user about cards to review and deadlines that are today or overdue. */
+async function remind(context: vscode.ExtensionContext, index: StudyIndex): Promise<void> {
+  if (!vscode.workspace.getConfiguration('yamd.study').get<boolean>('reminders', true) || !vscode.workspace.workspaceFolders?.length) return;
+  const today = todayIso();
+  if (!shouldRemind(context.workspaceState.get<string>('yamd.reminded'), today)) return;
+  await index.whenReady();
+  const schedule = await loadSchedule();
+  const cards = collectCards(index);
+  const queue = buildQueue(cards, schedule, today, 0);
+  const items: Deadline[] = [];
+  for (const s of index.store.summaries()) {
+    const text = index.store.read(s.path);
+    if (text && /\bdue\b/.test(text)) items.push(...collectDeadlines(parse(toInternal(text)), s.path, s.title));
+  }
+  const agenda = groupDeadlines(items.filter((d) => !d.done), today);
+  const message = reminderMessage({ dueCards: queue.due.length, overdue: agenda.overdue.length, dueToday: agenda.today.length });
+  if (!message) return;
+  await context.workspaceState.update('yamd.reminded', today);
+  const actions = [...(queue.due.length ? ['Review Cards'] : []), ...(agenda.overdue.length + agenda.today.length ? ['Show Deadlines'] : [])];
+  const choice = await vscode.window.showInformationMessage(message, ...actions);
+  if (choice === 'Review Cards') void vscode.commands.executeCommand('yamd.reviewCards');
+  else if (choice === 'Show Deadlines') void vscode.commands.executeCommand('yamd.deadlines.focus');
+}
+
 export function registerStudy(context: vscode.ExtensionContext, index: StudyIndex, review: ReviewPanel, dashboard: DashboardPanel, timer: StudyTimer): void {
   const deadlines = new DeadlinesView(index);
+  setTimeout(() => void remind(context, index), 4000);
   context.subscriptions.push(
     deadlines,
     vscode.window.registerTreeDataProvider('yamd.deadlines', deadlines),

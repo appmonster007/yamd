@@ -4,6 +4,7 @@ import { restoreCollapsed, restoreFocus, position } from './kanban';
 import './calendar';
 import './timeline';
 import './gallery';
+import { addFilterBars } from './details';
 
 
 
@@ -80,6 +81,7 @@ function update(html: string, full = false) {
     }
   }
   restoreCollapsed();
+  addFilterBars();
   restoreFocus();
   window.scrollTo({ top: y });
 }

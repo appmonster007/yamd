@@ -19,6 +19,7 @@ export const MENU: MenuGroup[] = [
       { label: '$(file-media) Insert figure or table', description: 'with an id to refer to', command: 'yamd.insertTarget' },
       { label: '$(quote) Insert citation', description: 'from your .bib file', command: 'yamd.insertCitation' },
       { label: '$(mic) Record audio and add link', command: 'yamd.recordAudio' },
+      { label: '$(comment) Transcribe a recording', description: 'needs a speech-to-text tool', command: 'yamd.transcribeAudio' },
       { label: '$(list-tree) Insert table of contents', command: 'yamd.insertToc' },
       { label: '$(book) Insert bibliography', command: 'yamd.insertBibliography' },
       { label: '$(sync) Build', description: 'refresh references, contents and bibliography', command: 'yamd.build' },

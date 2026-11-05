@@ -61,12 +61,13 @@ exports.run = async function run() {
     assert(titles.some((t) => t.includes('Open kanban: personal-reading')), titles.join(' | '));
   });
 
-  test('a plain sql block has no lens, a query block has one', async () => {
+  test('a plain sql block has no lens; each query block has Open and Run lenses', async () => {
     const { uri } = await open(root, '03-queries/queries.md');
     const lenses = await vscode.commands.executeCommand('vscode.executeCodeLensProvider', uri);
     const titles = lenses.map((l) => l.command?.title ?? '');
     assert(titles.some((t) => t.includes('Open sql: open-bugs')), titles.join(' | '));
-    assert(titles.length === 7, `expected 7 lenses (one per query block), got ${titles.length}: ${titles.join(' | ')}`);
+    const opens = titles.filter((t) => t.includes('Open sql:')).length;
+    assert(opens === 7 && titles.length === 14, `expected 7 Open lenses and 7 Run lenses, got ${opens} of ${titles.length}: ${titles.join(' | ')}`);
   });
 
   test('diagnostics: duplicate ids, a missing blank line and unknown markers are reported', async () => {
@@ -255,6 +256,41 @@ exports.run = async function run() {
     for (const id of ['foam.foam-vscode', 'yy0931.vscode-sqlite3-editor', 'janisdd.vscode-edit-csv', 'mechatroner.rainbow-csv', 'yzhang.markdown-all-in-one']) {
       assert(vscode.extensions.getExtension(id), `${id} is not installed`);
     }
+  });
+
+  test('completion offers widget types, callout types and source files', async () => {
+    const file = path.join(root, '__completion.md');
+    fs.writeFileSync(file, '```ka\n```\n\n> [!the\n\n```sql\n-- id="q" source="\n```\n');
+    const doc = await vscode.workspace.openTextDocument(file);
+    await vscode.window.showTextDocument(doc);
+    const labels = async (line, ch) => {
+      const list = await vscode.commands.executeCommand('vscode.executeCompletionItemProvider', doc.uri, new vscode.Position(line, ch));
+      return list.items.map((i) => (typeof i.label === 'string' ? i.label : i.label.label));
+    };
+    const types = await labels(0, 5);
+    assert(types.includes('kanban'), `widget types: ${types.slice(0, 8).join(', ')}`);
+    const callouts = await labels(3, 8);
+    assert(callouts.includes('theorem'), `callouts: ${callouts.slice(0, 8).join(', ')}`);
+  });
+
+  test('Run All Queries writes snapshots and a second run changes nothing', async () => {
+    const { doc, editor } = await open(root, '03-queries/queries.md');
+    const run = async () => {
+      await vscode.commands.executeCommand('yamd.runAllQueries');
+      await sleep(600);
+      return doc.getText();
+    };
+    const first = await run();
+    assert(/<!-- yamd:query:/.test(first), 'no snapshot written');
+    assert((await run()) === first, 'second run changed the note');
+    await vscode.commands.executeCommand('workbench.action.files.revert');
+    void editor;
+  });
+
+  test('the snippets and walkthrough are contributed', async () => {
+    const c = ext.packageJSON.contributes;
+    assert(c.snippets?.some((s) => s.language === 'markdown'), 'no markdown snippets');
+    assert(c.walkthroughs?.some((w) => w.id === 'yamd.start'), 'no walkthrough');
   });
 
   const report = [];

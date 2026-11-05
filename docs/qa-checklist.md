@@ -53,3 +53,29 @@ Use a copy of `examples/` as the workspace.
 ## Restricted Mode
 
 - [ ] Open the workspace untrusted: boards render but cannot be edited, and queries on files outside the workspace are refused.
+
+## Writing and onboarding (1.2 additions)
+
+- [ ] First install: the welcome toast appears once; `YAMD: Open Walkthrough` shows six steps whose buttons work.
+- [ ] `YAMD: Menu` and the status-bar item open the same list; each entry runs.
+- [ ] `YAMD: New Note` for each template: no leftover placeholders, `Build` is clean.
+- [ ] Snippets (`kanban`, `callout`) and completion (`source="`, `> [!`, `[@`) show in a real editor; hover over `source="…"` shows columns.
+- [ ] Paste an image into a note (VS Code's own paste) and check the link renders in the panel.
+
+## Widgets and data (1.2 additions)
+
+- [ ] The pencil on a kanban card, a calendar agenda event and a timeline item opens the form; saving changes only that card; Escape closes it.
+- [ ] The filter box hides cards by text, `@owner` and `#tag`, and keeps what you typed after an edit.
+- [ ] Overdue cards, events and bars are red.
+- [ ] Gallery: "Choose images…" opens the file dialog; clicking an image enlarges it; Escape closes.
+- [ ] `Insert Query…` walks through file, table, columns, filter and view, then runs it.
+- [ ] `yamd.queries.refreshOnSave` on: saving refreshes an existing snapshot and nothing else.
+
+## Media, study and checks (1.2 additions)
+
+- [ ] `Transcribe Audio` with a real tool set in `yamd.audio.transcribeCommand` writes a Transcript callout under the link; running it again replaces it.
+- [ ] `Export as Single Markdown File` opens correctly elsewhere with images visible.
+- [ ] `Export Widget as HTML` opens in a browser and looks like the panel.
+- [ ] `Study This Note` creates the `cards` region and starts a review; running it twice changes nothing.
+- [ ] The daily reminder appears once per day with cards due or a deadline today.
+- [ ] `Check This Note` lists a missing image and a dangling `[@fig-x]`, and "Fix safe problems" adds a missing blank line.

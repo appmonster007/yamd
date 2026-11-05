@@ -76,9 +76,19 @@ The YAMD icon in the activity bar has five views: **Widgets in This Note** (clic
 
 Backlinks, the note graph and tags come from Foam: **YAMD: Show Backlinks (Foam)**, **Show Note Graph (Foam)** and **Show Tags (Foam)** open them. [examples/06-linked-notes](../examples/06-linked-notes/) has notes to try them on.
 
+## Getting started and writing faster
+
+Run **YAMD: Menu** (or click YAMD in the status bar) for every command grouped by task, **YAMD: New Note** for a template, and **YAMD: Open Walkthrough** for a six-step tour. While you write, type `kanban`, `callout`, `theorem`, `card` or `toc` for a snippet; completion fills in widget types, `source=` files, callout types, `[@citation]` keys and `[@fig-…]` ids, and hovering a `source=` file shows its tables and columns. **Insert Callout / Figure, Table or Equation / Citation / Query**, **Add Card / Event / Timeline Item / Image** and **Turn Selection into a Widget** write the markup for you.
+
+In a widget panel, the pencil on a card opens a form for due date, owner, tags and notes; the filter box accepts text, `@owner` and `#tag`; overdue items are red; gallery images enlarge on click.
+
+## Data, sharing and checks
+
+**Run All Queries in This Note** refreshes every query snapshot (`yamd.queries.refreshOnSave` does it for existing snapshots when you save). **Export as Single Markdown File** inlines images and query results; **Export Widget as HTML** writes one widget as a read-only page. **Transcribe Audio** runs the speech-to-text command you set in `yamd.audio.transcribeCommand`. **Study This Note** turns definitions, theorems and questions into flashcards, and a once-a-day reminder lists due cards and deadlines. **Check This Note** lists everything wrong with the note (missing images and data files, dangling references, unknown citation keys, widget, callout and marker problems) and fixes the safe ones.
+
 ## Settings
 
-`yamd.audio.folder`, `yamd.build.onSave`, `yamd.build.linkCitations`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
+`yamd.audio.folder`, `yamd.audio.transcribeCommand`, `yamd.queries.refreshOnSave`, `yamd.statusBar.enabled`, `yamd.study.reminders`, `yamd.build.onSave`, `yamd.build.linkCitations`, `yamd.study.newCardsPerDay`, `yamd.study.pomodoroMinutes`, `yamd.study.staleAfterDays`.
 
 ## What changed from 0.1
 

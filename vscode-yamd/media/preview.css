@@ -804,3 +804,26 @@ ul.references li { padding-left: 2rem; text-indent: -2rem; margin: 0.4rem 0; }
 .db-timeline.has-add .db-timeline-axis::after { content: ""; flex: 0 0 96px; }
 .db-timeline-scale { min-width: 0; }
 .db-timeline-track { min-width: 0; }
+
+/* Card details form, filter bar, overdue items */
+.card-edit { margin-left: auto; padding: 0 4px; border: 0; background: transparent; color: var(--yamd-muted); cursor: pointer; opacity: 0; font-size: 12px; line-height: 1; }
+.kanban-card:hover .card-edit, .db-event:hover .card-edit, .db-timeline-item:hover .card-edit, .card-edit:focus-visible { opacity: 1; }
+.kanban-card-title { display: flex; align-items: baseline; gap: 4px; }
+.db-event-summary, .db-timeline-item-head { display: flex; align-items: baseline; gap: 4px; }
+.details-form { position: relative; z-index: 5; display: grid; gap: 8px; max-width: 28rem; margin: 8px 0; padding: 12px; border: 1px solid var(--yamd-border); border-radius: 6px; background: var(--vscode-editor-background); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.details-title { font-weight: 600; }
+.details-field { display: grid; gap: 2px; font-size: 12px; color: var(--yamd-muted); }
+.details-field input, .details-field textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--yamd-border); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); }
+.details-actions { display: flex; gap: 8px; }
+.details-actions button { padding: 4px 12px; border: 1px solid var(--yamd-border); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background, #0969da); color: var(--vscode-button-foreground); }
+.details-actions button.secondary { background: transparent; color: inherit; }
+.board-filter { display: block; width: 100%; max-width: 20rem; margin: 0 0 8px; padding: 4px 8px; font: inherit; border: 1px solid var(--yamd-border); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); }
+.filtered-out { display: none !important; }
+.db-event.overdue { border-left: 3px solid var(--yamd-danger); color: var(--yamd-danger); }
+.db-timeline-bar.overdue { box-shadow: inset 0 0 0 2px var(--yamd-danger); }
+.db-timeline-item.overdue .db-timeline-dates { color: var(--yamd-danger); font-weight: 600; }
+.db-card img { cursor: zoom-in; }
+.lightbox { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; background: rgba(0, 0, 0, .82); cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain; }
+.lightbox-caption { color: #fff; font-size: 14px; }
+.gallery-add .gallery-pick { cursor: pointer; }

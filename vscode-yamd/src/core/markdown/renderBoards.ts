@@ -4,6 +4,7 @@ import { cardSource, hashText } from '../widgets/kanban';
 import type { CalendarBoard, GalleryBoard, TimelineBoard } from '../widgets/kanban';
 import type { KanbanBoard, KanbanCard } from '../widgets/kanban';
 import { cardTitleSource } from '../widgets/kanbanEdit';
+import { detailsOf as cardDetails } from '../widgets/detailsEdit';
 import { escapeHtml, today, isoWeek } from './renderUtil';
 import type { RenderOptions } from './render';
 import type { Block, InlineNode, YamdDocument } from './types';
@@ -17,6 +18,10 @@ export interface BoardContext {
   image(n: Extract<InlineNode, { type: 'image' }>, inFigure?: boolean): string;
   inline(nodes: InlineNode[]): string;
 }
+
+/** The card's details for the edit form, as an attribute, and the button that opens it (interactive boards only). */
+const detailsAttr = (ctx: BoardContext, card: KanbanCard, interactive: boolean) => (interactive ? ` data-details="${escapeHtml(JSON.stringify(cardDetails(ctx.doc.lines, card)))}"` : '');
+const editButton = (interactive: boolean) => (interactive ? '<button type="button" class="card-edit" aria-label="Edit details" title="Edit details">\u270e</button>' : '');
 
 export function renderBoard(ctx: BoardContext, board: KanbanBoard): string {
   const interactive = Boolean(ctx.options.interactive);
@@ -57,7 +62,7 @@ function renderCard(ctx: BoardContext, card: KanbanCard, index: number, now: str
   const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[card.line] ?? ''));
   const drag = interactive ? ' draggable="true"' : '';
   const label = escapeHtml(plainText(card.title));
-  return `<article class="kanban-card${card.done ? ' done' : ''}${overdue ? ' overdue' : ''}" tabindex="0"${drag} data-line="${card.line}" data-index="${index}" data-hash="${hash}" aria-label="${label}"><div class="kanban-card-title">${box}<span class="kanban-card-text" data-title="${titleSource}">${ctx.inline(card.title)}</span></div>${meta}${body}</article>`;
+  return `<article class="kanban-card${card.done ? ' done' : ''}${overdue ? ' overdue' : ''}" tabindex="0"${drag} data-line="${card.line}" data-index="${index}" data-hash="${hash}"${detailsAttr(ctx, card, interactive)}${card.owner ? ` data-owner="${escapeHtml(card.owner)}"` : ''} data-tags="${escapeHtml(card.tags.join(' '))}" aria-label="${label}"><div class="kanban-card-title">${box}<span class="kanban-card-text" data-title="${titleSource}">${ctx.inline(card.title)}</span>${editButton(interactive)}</div>${meta}${body}</article>`;
 }
 
 /** `:::calendar` is sugar for an implicit database rendered as a calendar (§6.2.1); a card with
@@ -92,8 +97,8 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     const drag = interactive && !agenda ? ' draggable="true"' : '';
     const box = c.hasCheckbox ? `${ctx.checkbox(c.line, c.done)} ` : '';
     const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[c.line] ?? ''));
-    const cls = `db-event${c.done ? ' done' : ''}${agenda ? ' expanded' : ''}`;
-    return `<div class="${cls}" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}><div class="db-event-summary">${box}${ctx.inline(c.title)}</div>${detailOf(c, 'db-event-detail')}</div>`;
+    const cls = `db-event${c.done ? ' done' : ''}${c.due && !c.done && c.due < now ? ' overdue' : ''}${agenda ? ' expanded' : ''}`;
+    return `<div class="${cls}" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${agenda ? detailsAttr(ctx, c, interactive) : ''}${c.owner ? ` data-owner="${escapeHtml(c.owner)}"` : ''} data-tags="${escapeHtml(c.tags.join(' '))}"${drag}><div class="db-event-summary">${box}${ctx.inline(c.title)}${agenda ? editButton(interactive) : ''}</div>${detailOf(c, 'db-event-detail')}</div>`;
   };
   interface Cell {
     html: string;
@@ -152,7 +157,7 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     const count = monthEvents.length;
     const heading = `Events in ${titleText}<span class="db-agenda-count">${count} ${count === 1 ? 'event' : 'events'}</span>`;
     const addEvent = interactive
-      ? `<form class="kanban-add db-agenda-add" data-date="${month}-01"><input type="date" class="db-add-date" value="${month === now.slice(0, 7) ? now : `${month}-01`}" aria-label="Date of the new event"><input type="text" class="kanban-add-input" placeholder="Add an event" aria-label="Add an event"><button type="submit">Add</button></form>`
+      ? `<form class="kanban-add db-agenda-add" data-date="${month}-01"><input type="date" class="db-add-date" value="${month === now.slice(0, 7) ? now : `${month}-01`}" aria-label="Date of the new event"><input type="text" class="kanban-add-input" placeholder="Add an event" aria-label="Add an event"><button type="button" class="gallery-pick">Choose images\u2026</button><button type="submit">Add</button></form>`
       : '';
     const agenda = `<div class="db-agenda"><div class="db-agenda-header"><span class="db-agenda-title">${heading}</span><button type="button" class="db-agenda-close" aria-label="Show all events of the month" hidden>Show all</button></div><div class="db-agenda-list">${overview.join('') || '<p class="db-empty">No events this month.</p>'}</div>${addEvent}</div>`;
     return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span>${buttons}</div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div>`;
@@ -203,7 +208,8 @@ export function renderTimeline(ctx: BoardContext, board: TimelineBoard): string 
     const hash = hashText(cardSource(ctx.doc.lines, i.card));
     const drag = interactive ? ' draggable="true"' : '';
     const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[i.card.line] ?? ''));
-    return `<div class="db-timeline-bar" tabindex="0" data-line="${i.card.line}" data-hash="${hash}" data-start="${i.start}" data-title="${titleSource}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${ctx.inline(i.card.title)}</div>`;
+    const late = i.end < (ctx.options.today ?? today()) && !i.card.done ? ' overdue' : '';
+    return `<div class="db-timeline-bar${late}" tabindex="0" data-line="${i.card.line}" data-hash="${hash}" data-start="${i.start}"${i.card.owner ? ` data-owner="${escapeHtml(i.card.owner)}"` : ''} data-tags="${escapeHtml(i.card.tags.join(' '))}" data-title="${titleSource}"${drag} style="left:${left}%;width:${width}%" title="${label}">${box}${ctx.inline(i.card.title)}</div>`;
   };
   // A month scale above the lanes, with a mark for today when it falls inside the range.
   const ticks: string[] = [];
@@ -251,7 +257,7 @@ export function renderTimeline(ctx: BoardContext, board: TimelineBoard): string 
           const range = i.start === i.end ? shortDate(i.start) : `${shortDate(i.start)} \u2013 ${shortDate(i.end)}`;
           const laneName = lane(i.card);
           const box = i.card.hasCheckbox ? `${ctx.checkbox(i.card.line, i.card.done)} ` : '';
-          return `<article class="db-timeline-item${i.card.done ? ' done' : ''}" tabindex="0" data-line="${i.card.line}"><div class="db-timeline-item-head"><span class="db-timeline-dates">${range}</span><span class="db-timeline-item-title">${box}${ctx.inline(i.card.title)}</span>${laneName ? `<span class="db-timeline-lane">${laneName}</span>` : ''}</div>${detailsOf(i.card)}</article>`;
+          return `<article class="db-timeline-item${i.card.done ? ' done' : ''}${i.end < (ctx.options.today ?? today()) && !i.card.done ? ' overdue' : ''}" tabindex="0" data-line="${i.card.line}" data-hash="${hashText(cardSource(ctx.doc.lines, i.card))}"${detailsAttr(ctx, i.card, interactive)}${i.card.owner ? ` data-owner="${escapeHtml(i.card.owner)}"` : ''} data-tags="${escapeHtml(i.card.tags.join(' '))}"><div class="db-timeline-item-head"><span class="db-timeline-dates">${range}</span><span class="db-timeline-item-title">${box}${ctx.inline(i.card.title)}</span>${editButton(interactive)}${laneName ? `<span class="db-timeline-lane">${laneName}</span>` : ''}</div>${detailsOf(i.card)}</article>`;
         })
         .join('')}</div>`
     : '';

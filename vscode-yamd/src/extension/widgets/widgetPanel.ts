@@ -129,6 +129,10 @@ class WidgetPanels implements vscode.Disposable {
       await this.refresh(entry, true);
     } else if (m.type === 'boardEdit') {
       await this.applyEdit(entry, m as unknown as BoardEditMessage);
+    } else if (m.type === 'pickImage') {
+      const doc = await vscode.workspace.openTextDocument(entry.uri);
+      const block = this.find(entry, doc);
+      if (block) await vscode.commands.executeCommand('yamd.addImage', entry.uri, block.startLine);
     } else if (m.type === 'calendarMonth') {
       const month = (m as unknown as { month: string }).month;
       entry.month = /^\d{4}-\d{2}$/.test(month) ? month : undefined;
