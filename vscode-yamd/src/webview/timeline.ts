@@ -133,3 +133,16 @@ root.addEventListener('dblclick', (event) => {
     boardEdit('timeline', 'rename', board, tlRef(bar), { title }, board.dataset['source']);
   });
 });
+
+// Clicking a bar marks its entry in the schedule below the lanes and brings it into view.
+root.addEventListener('click', (event) => {
+  const target = event.target as Element;
+  if (target.closest('input[type="checkbox"]')) return;
+  const bar = target.closest<HTMLElement>('.db-timeline-bar');
+  const board = bar?.closest<HTMLElement>('.kanban-timeline');
+  if (!bar || !board) return;
+  board.querySelectorAll('.db-timeline-item.selected').forEach((e) => e.classList.remove('selected'));
+  const entry = board.querySelector<HTMLElement>(`.db-timeline-item[data-line="${bar.dataset['line']}"]`);
+  entry?.classList.add('selected');
+  entry?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});

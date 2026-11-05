@@ -389,19 +389,19 @@ h3):first-child { margin-top: 0; }
 
 /* Boards may be wider than the text: they start at the text column and can scroll to the right edge. */
 .kanban {
-  margin: 0 calc(50% - 50vw) 1.5em;
-  padding: 0 28px 0 max(28px, calc(50vw - var(--yamd-text-width) / 2));
+  margin: 0 0 1.5em;
 }
 .kanban-title { font-weight: 600; font-size: 1.05em; margin-bottom: 10px; }
+/* Columns share the width and wrap onto further rows in a narrow panel, so none is cut off behind a scrollbar. */
 .kanban-columns {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
-  align-items: flex-start;
-  overflow-x: auto;
+  align-items: start;
   padding-bottom: 10px;
 }
 .kanban-column {
-  flex: 0 0 264px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -500,7 +500,7 @@ h3):first-child { margin-top: 0; }
 .kanban-add-input::placeholder { color: var(--yamd-muted); }
 .kanban-add-input:hover { background: var(--yamd-tint); }
 .kanban-add-input:focus { cursor: text; background: var(--vscode-input-background); border-color: var(--vscode-focusBorder); outline: none; }
-.kanban-column.collapsed { flex-basis: 40px; }
+.kanban-column.collapsed { opacity: 0.8; }
 .kanban-column.collapsed .kanban-cards,
 .kanban-column.collapsed .kanban-add,
 .kanban-column.collapsed .kanban-column-description { display: none; }
@@ -756,3 +756,51 @@ ul.references li { padding-left: 2rem; text-indent: -2rem; margin: 0.4rem 0; }
 .db-calendar + .db-calendar { margin-top: 1.5rem; }
 .db-card-caption { margin: 0; font-size: 0.85em; color: var(--yamd-muted); }
 .db-chart svg { max-width: 640px; }
+
+/* The list under a calendar or timeline: full titles and details, which the grid and the bars are too small for. */
+.db-calendar { container-type: inline-size; }
+.db-agenda-title { display: flex; align-items: baseline; gap: 0.6em; }
+.db-agenda-count { font-weight: 400; font-size: 0.85em; color: var(--yamd-muted); }
+.db-agenda-day { display: grid; grid-template-columns: 5.5em 1fr; gap: 4px 10px; align-items: start; padding: 6px 0; border-top: 1px solid var(--yamd-border); }
+.db-agenda-day:first-child { border-top: 0; }
+.db-agenda-date { margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--yamd-muted); }
+.db-agenda-day > .db-event { grid-column: 2; margin-top: 0; }
+.db-agenda-list .db-event-summary { display: flex; align-items: center; gap: 6px; font-weight: 600; white-space: normal; }
+.db-agenda-list .db-event.expanded .db-event-detail { display: flex; }
+.db-event.done .db-event-summary { opacity: 0.65; }
+.db-agenda-list .db-event.done .db-event-summary > :not(input) { text-decoration: line-through; }
+.db-event.selected,
+.db-timeline-item.selected { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-agenda-add { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--yamd-border); }
+.db-agenda-add .kanban-add-input { flex: 1; min-width: 0; }
+.db-agenda-add input, .db-agenda-add button { padding: 3px 8px; font: inherit; font-size: 12px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--yamd-border); border-radius: var(--yamd-radius); }
+.db-agenda-add button { cursor: pointer; background: var(--yamd-surface); color: inherit; }
+/* Day cells: hide the add boxes until hovered, and give the title the room a checkbox used to take. */
+.db-day .kanban-add { display: none; }
+.db-day:hover .kanban-add, .db-day:focus-within .kanban-add { display: block; }
+.db-day .db-event { overflow: hidden; }
+@container (max-width: 720px) {
+  .db-day .db-event input[type="checkbox"] { display: none; }
+  .db-calendar .db-event:not(.expanded) .db-event-summary { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 11px; line-height: 1.25; }
+  .db-agenda-day { grid-template-columns: 1fr; }
+  .db-agenda-day > .db-event { grid-column: 1; }
+}
+.db-day .db-event.done { text-decoration: line-through; }
+
+.db-timeline-details { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--yamd-border); display: flex; flex-direction: column; gap: 6px; }
+.db-timeline-item { padding: 6px 8px; border-radius: var(--yamd-radius); background: color-mix(in srgb, var(--yamd-accent) 10%, transparent); }
+.db-timeline-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.db-timeline-dates { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--yamd-muted); white-space: nowrap; }
+.db-timeline-item-title { font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.db-timeline-lane { margin-left: auto; font-size: 11px; color: var(--yamd-muted); }
+.db-timeline-item.done .db-timeline-item-title { opacity: 0.65; text-decoration: line-through; }
+.db-timeline-item-detail { margin-top: 4px; font-size: 12.5px; color: var(--yamd-muted); }
+.db-timeline-item-detail p { margin: 0 0 4px; }
+
+/* The scale and the lanes' tracks must be the same width, or a bar and the month under it drift apart.
+   A lane's add box takes a fixed width, and the scale reserves the same. */
+.db-timeline-row .kanban-add { flex: 0 0 96px; width: 96px; margin: 0; }
+.db-timeline-row .kanban-add-input { width: 100%; box-sizing: border-box; }
+.db-timeline.has-add .db-timeline-axis::after { content: ""; flex: 0 0 96px; }
+.db-timeline-scale { min-width: 0; }
+.db-timeline-track { min-width: 0; }

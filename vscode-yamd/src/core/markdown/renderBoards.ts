@@ -78,18 +78,22 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
   const interactive = Boolean(ctx.options.interactive);
   const source = ctx.options.sourcePath ? ` data-source="${escapeHtml(ctx.options.sourcePath)}"` : '';
   const now = ctx.options.today ?? today();
-  const eventHtml = (c: KanbanCard): string => {
-    const hash = hashText(cardSource(ctx.doc.lines, c));
-    const drag = interactive ? ' draggable="true"' : '';
-    const box = c.hasCheckbox ? `${ctx.checkbox(c.line, c.done)} ` : '';
-    const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[c.line] ?? ''));
+  const detailOf = (c: KanbanCard, cls: string): string => {
     const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
     const owner = c.owner ? `<span class="kanban-owner">@${escapeHtml(c.owner)}</span>` : '';
     const meta = chips || owner ? `<div class="kanban-card-meta">${chips}${owner}</div>` : '';
     const bodyInline = c.bodyInline.length ? `<p>${ctx.inline(c.bodyInline)}</p>` : '';
     const bodyBlocks = c.body.length ? ctx.blocks(c.body) : '';
-    const detail = meta || bodyInline || bodyBlocks ? `<div class="db-event-detail">${bodyInline}${bodyBlocks}${meta}</div>` : '';
-    return `<div class="db-event" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}><div class="db-event-summary">${box}${ctx.inline(c.title)}</div>${detail}</div>`;
+    return meta || bodyInline || bodyBlocks ? `<div class="${cls}">${bodyInline}${bodyBlocks}${meta}</div>` : '';
+  };
+  /** An event in a day cell (dragged to reschedule), or, with `agenda`, in the list below the grid (always expanded). */
+  const eventHtml = (c: KanbanCard, agenda = false): string => {
+    const hash = hashText(cardSource(ctx.doc.lines, c));
+    const drag = interactive && !agenda ? ' draggable="true"' : '';
+    const box = c.hasCheckbox ? `${ctx.checkbox(c.line, c.done)} ` : '';
+    const titleSource = escapeHtml(cardTitleSource(ctx.doc.lines[c.line] ?? ''));
+    const cls = `db-event${c.done ? ' done' : ''}${agenda ? ' expanded' : ''}`;
+    return `<div class="${cls}" tabindex="0" data-line="${c.line}" data-hash="${hash}" data-title="${titleSource}"${drag}><div class="db-event-summary">${box}${ctx.inline(c.title)}</div>${detailOf(c, 'db-event-detail')}</div>`;
   };
   interface Cell {
     html: string;
@@ -111,7 +115,7 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     for (let i = 0; i < offset; i++) cells.push({ html: '<div class="db-day empty"></div>' });
     for (let d = 1; d <= days; d++) {
       const iso = `${month}-${String(d).padStart(2, '0')}`;
-      const items = (byDay.get(d) ?? []).map(eventHtml).join('');
+      const items = (byDay.get(d) ?? []).map((c) => eventHtml(c)).join('');
       const add = interactive
         ? `<form class="kanban-add" data-date="${iso}"><input type="text" class="kanban-add-input" placeholder="Add" aria-label="Add a card on ${iso}"></form>`
         : '';
@@ -135,7 +139,22 @@ export function renderCalendar(ctx: BoardContext, board: CalendarBoard): string 
     const buttons = nav
       ? `<button type="button" class="db-month-nav" data-delta="-1" aria-label="Previous month">\u2039</button><button type="button" class="db-month-nav" data-delta="0">Today</button><button type="button" class="db-month-nav" data-delta="1" aria-label="Next month">\u203a</button>`
       : '';
-    const agenda = `<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"></span><button type="button" class="db-agenda-close" aria-label="Close list">Close</button></div><div class="db-agenda-list"></div></div>`;
+    // Below the grid, every event of the month with its full title and details: day cells are too narrow for them.
+    const monthEvents = board.cards.filter((c) => c.due?.startsWith(month)).sort((x, y) => (x.due ?? '').localeCompare(y.due ?? '') || x.line - y.line);
+    const dayName = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const overview: string[] = [];
+    for (const c of monthEvents) {
+      const due = c.due as string;
+      const last = overview[overview.length - 1];
+      if (!last || !last.includes(`data-date="${due}"`)) overview.push(`<section class="db-agenda-day" data-date="${due}"><h4 class="db-agenda-date">${dayName(due)}</h4>${eventHtml(c, true)}</section>`);
+      else overview[overview.length - 1] = last.replace(/<\/section>$/, `${eventHtml(c, true)}</section>`);
+    }
+    const count = monthEvents.length;
+    const heading = `Events in ${titleText}<span class="db-agenda-count">${count} ${count === 1 ? 'event' : 'events'}</span>`;
+    const addEvent = interactive
+      ? `<form class="kanban-add db-agenda-add" data-date="${month}-01"><input type="date" class="db-add-date" value="${month === now.slice(0, 7) ? now : `${month}-01`}" aria-label="Date of the new event"><input type="text" class="kanban-add-input" placeholder="Add an event" aria-label="Add an event"><button type="submit">Add</button></form>`
+      : '';
+    const agenda = `<div class="db-agenda"><div class="db-agenda-header"><span class="db-agenda-title">${heading}</span><button type="button" class="db-agenda-close" aria-label="Show all events of the month" hidden>Show all</button></div><div class="db-agenda-list">${overview.join('') || '<p class="db-empty">No events this month.</p>'}</div>${addEvent}</div>`;
     return `<div class="db-calendar" data-month="${month}"><div class="db-calendar-header"><span class="db-month-title">${titleText}</span>${buttons}</div><div class="db-calendar-weekdays"><span class="db-week-number"></span>${weekdays}</div>${weeks.join('')}${agenda}</div>`;
   };
   // The widget panel shows one month at a time (with buttons to move); a static page lists every month that has events.
@@ -211,11 +230,36 @@ export function renderTimeline(ctx: BoardContext, board: TimelineBoard): string 
     })
     .filter(Boolean)
     .join('');
+  // Under the lanes, each dated card in order with its dates and details, which a bar is too short to show.
+  const shortDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const ordered = [...items].sort((a, b) => a.start.localeCompare(b.start) || a.card.line - b.card.line);
+  const detailsOf = (c: KanbanCard): string => {
+    const chips = c.tags.map((t) => `<span class="tag">#${escapeHtml(t)}</span>`).join('');
+    const owner = c.owner ? `<span class="kanban-owner">@${escapeHtml(c.owner)}</span>` : '';
+    const meta = chips || owner ? `<div class="kanban-card-meta">${chips}${owner}</div>` : '';
+    const bodyInline = c.bodyInline.length ? `<p>${ctx.inline(c.bodyInline)}</p>` : '';
+    const bodyBlocks = c.body.length ? ctx.blocks(c.body) : '';
+    return bodyInline || bodyBlocks || meta ? `<div class="db-timeline-item-detail">${bodyInline}${bodyBlocks}${meta}</div>` : '';
+  };
+  const lane = (c: KanbanCard) => {
+    const g = board.groups.find((x) => x.cards.includes(c));
+    return g?.title?.length ? ctx.inline(g.title) : '';
+  };
+  const details = ordered.length
+    ? `<div class="db-timeline-details"><div class="db-agenda-title">Schedule<span class="db-agenda-count">${ordered.length} ${ordered.length === 1 ? 'item' : 'items'}</span></div>${ordered
+        .map((i) => {
+          const range = i.start === i.end ? shortDate(i.start) : `${shortDate(i.start)} \u2013 ${shortDate(i.end)}`;
+          const laneName = lane(i.card);
+          const box = i.card.hasCheckbox ? `${ctx.checkbox(i.card.line, i.card.done)} ` : '';
+          return `<article class="db-timeline-item${i.card.done ? ' done' : ''}" tabindex="0" data-line="${i.card.line}"><div class="db-timeline-item-head"><span class="db-timeline-dates">${range}</span><span class="db-timeline-item-title">${box}${ctx.inline(i.card.title)}</span>${laneName ? `<span class="db-timeline-lane">${laneName}</span>` : ''}</div>${detailsOf(i.card)}</article>`;
+        })
+        .join('')}</div>`
+    : '';
   const globalAdd =
     interactive && board.groups.length === 0
       ? `<form class="kanban-add" data-group=""><input type="text" class="kanban-add-input" placeholder="Add a card" aria-label="Add a card"></form>`
       : '';
-  return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline" data-start="${toDate(min)}" data-end="${toDate(max)}">${axis}${rows}</div>${globalAdd}</div>`;
+  return `<div class="kanban-timeline" data-line="${board.line}" data-board="${board.line}"${mode}${source}>${title}<div class="db-timeline${interactive ? ' has-add' : ''}" data-start="${toDate(min)}" data-end="${toDate(max)}">${axis}${rows}</div>${details}${globalAdd}</div>`;
 }
 
 /** `:::gallery` is sugar for an implicit database rendered as a gallery (§6.2.1): each image

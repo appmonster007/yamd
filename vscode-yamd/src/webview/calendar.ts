@@ -77,7 +77,9 @@ root.addEventListener('submit', (event) => {
   event.preventDefault();
   const text = input.value.trim();
   if (!text) return;
-  boardEdit('calendar', 'add', board, undefined, { date: form.dataset['date'], text }, board.dataset['source']);
+  // The form under the agenda carries its own date picker; a day cell's form is for that day.
+  const date = form.querySelector<HTMLInputElement>('.db-add-date')?.value || form.dataset['date'];
+  boardEdit('calendar', 'add', board, undefined, { date, text }, board.dataset['source']);
   input.value = '';
 });
 
@@ -103,11 +105,16 @@ function calFormatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+/** The month-wide list the agenda shows until a day, week or event narrows it, kept so it can come back. */
+const calOverviews = new WeakMap<HTMLElement, { title: string; html: string }>();
+
 function calShowAgenda(grid: HTMLElement, title: string, events: HTMLElement[], expandAll: boolean) {
   const agenda = grid.querySelector<HTMLElement>('.db-agenda');
   const list = agenda?.querySelector<HTMLElement>('.db-agenda-list');
   const titleEl = agenda?.querySelector<HTMLElement>('.db-agenda-title');
+  const close = agenda?.querySelector<HTMLElement>('.db-agenda-close');
   if (!agenda || !list || !titleEl) return;
+  if (!calOverviews.has(agenda)) calOverviews.set(agenda, { title: titleEl.innerHTML, html: list.innerHTML });
   list.replaceChildren();
   for (const original of events) {
     const clone = original.cloneNode(true) as HTMLElement;
@@ -116,8 +123,20 @@ function calShowAgenda(grid: HTMLElement, title: string, events: HTMLElement[], 
     list.appendChild(clone);
   }
   titleEl.textContent = title;
-  agenda.hidden = false;
+  if (close) close.hidden = false;
   agenda.scrollIntoView({ block: 'nearest' });
+}
+
+/** Back to every event of the month. */
+function calShowOverview(agenda: HTMLElement) {
+  const saved = calOverviews.get(agenda);
+  const list = agenda.querySelector<HTMLElement>('.db-agenda-list');
+  const titleEl = agenda.querySelector<HTMLElement>('.db-agenda-title');
+  const close = agenda.querySelector<HTMLElement>('.db-agenda-close');
+  if (!saved || !list || !titleEl) return;
+  titleEl.innerHTML = saved.title;
+  list.innerHTML = saved.html;
+  if (close) close.hidden = true;
 }
 
 // Click a day's or week's number to list every event in that range below the calendar.
@@ -150,15 +169,21 @@ root.addEventListener('click', (event) => {
     return;
   }
   const grid = calGridOf(card);
-  if (!grid) return;
-  calShowAgenda(grid, card.dataset['title'] ?? card.textContent ?? '', [card], true);
+  const agenda = grid?.querySelector<HTMLElement>('.db-agenda');
+  if (!grid || !agenda) return;
+  // The event's full details are already listed below the grid: bring them into view and mark them.
+  if (!agenda.querySelector('.db-agenda-close')?.hasAttribute('hidden')) calShowOverview(agenda);
+  agenda.querySelectorAll('.db-event.selected').forEach((e) => e.classList.remove('selected'));
+  const entry = agenda.querySelector<HTMLElement>(`.db-event[data-line="${card.dataset['line']}"]`);
+  entry?.classList.add('selected');
+  entry?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 });
 
-// Close the agenda.
+// "Show all" returns the agenda to every event of the month.
 root.addEventListener('click', (event) => {
   const closeButton = (event.target as Element).closest<HTMLElement>('.db-agenda-close');
   const agenda = closeButton?.closest<HTMLElement>('.db-agenda');
-  if (agenda) agenda.hidden = true;
+  if (agenda) calShowOverview(agenda);
 });
 
 // Previous, next and today buttons: the extension re-renders the calendar on the month asked for.
