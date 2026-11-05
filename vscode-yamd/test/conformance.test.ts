@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from 'node:test';
 import commonmark from 'commonmark-spec';
-import { parse, render } from '../src/core';
+import { parse, render } from '../src/core/markdown';
 
 interface Example {
   number: number;

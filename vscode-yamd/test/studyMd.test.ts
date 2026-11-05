@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse } from '../src/core';
-import { toInternal } from '../src/core/compat';
+import { parse } from '../src/core/markdown';
+import { toInternal } from '../src/core/markdown/compat';
 import { extractCardsMd } from '../src/core/study/calloutCards';
 import { collectDeadlines } from '../src/core/study/deadlines';
 import { STUDY_TEMPLATES } from '../src/core/study/templates';
-import { expandPlaceholders } from '../src/core/templates';
-import { scanCallouts } from '../src/core/callouts';
+import { expandPlaceholders } from '../src/core/templates/placeholders';
+import { scanCallouts } from '../src/core/build/callouts';
 
 const note = '---\ncourse: CS101\n---\n# Notes\n\n> [!card] What is O(log n)?\n> Binary search.\n>\n> Halving.\n\n> [!card] Second ^c2\n> A2\n\n> [!note] Not a card\n> x\n';
 

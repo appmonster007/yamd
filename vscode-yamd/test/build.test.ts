@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { buildNote, bibSettings } from '../src/core/build/build';
 import { diffLines } from '../src/core/build/diff';
-import { calloutProblems, scanCallouts } from '../src/core/callouts';
-import { collectTargets, refAt, resolveReferences } from '../src/core/refs';
+import { calloutProblems, scanCallouts } from '../src/core/build/callouts';
+import { collectTargets, refAt, resolveReferences } from '../src/core/build/refs';
 import { headings, tocLines } from '../src/core/build/toc';
-import { parseBibtex } from '../src/core/study/bibtex';
+import { parseBibtex } from '../src/core/citations/bibtex';
 
 const L = (s: string) => s.split('\n');
 

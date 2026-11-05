@@ -3,7 +3,7 @@
  * between the markers, and writing the same content twice changes nothing.
  */
 
-export interface Region {
+interface Region {
   name: string;
   /** Attribute text from the opening marker, e.g. `depth=2`. */
   attrs: string;

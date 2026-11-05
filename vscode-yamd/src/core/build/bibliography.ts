@@ -1,6 +1,6 @@
-import { mapOutsideCode } from '../refs';
-import { Bibliography, citationStyle, formatEntry, parseCitation } from '../study/bibtex';
-import type { BibEntry, CitationStyle } from '../study/bibtex';
+import { mapOutsideCode } from './refs';
+import { Bibliography, citationStyle, formatEntry, parseCitation } from '../citations/bibtex';
+import type { BibEntry, CitationStyle } from '../citations/bibtex';
 
 /** Citation keys in the order they are first cited, skipping cross-reference ids. */
 export function citedKeys(lines: string[], isTarget: (id: string) => boolean): string[] {
@@ -16,7 +16,7 @@ export function citedKeys(lines: string[], isTarget: (id: string) => boolean): s
   return keys;
 }
 
-export interface BibliographyResult {
+interface BibliographyResult {
   lines: string[];
   /** Cited keys that are not in the `.bib` file. */
   missing: string[];

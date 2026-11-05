@@ -77,3 +77,20 @@ Open an issue with:
 ## Questions
 
 Open a discussion or issue — there's no separate chat channel yet.
+
+## Code layout (vscode-yamd/src)
+
+| Folder | What lives there |
+|---|---|
+| `core/markdown` | The Markdown engine: parser, adapter, micromark syntax, renderer, sanitizer, front matter. No `vscode` imports. |
+| `core/widgets` | Fence scanner, widget linter, board edit logic (kanban, calendar, timeline, gallery) and the block-body edit mapping. |
+| `core/query` | CSV/JSON/SQLite loading, the read-only SQL engine, result views and snapshots. |
+| `core/build` | Callouts, references, markers, TOC, bibliography and the Build orchestrator. |
+| `core/citations` | The BibTeX reader and citation styles. |
+| `core/export` | Preparing a note for export, and the HTML/slide page wrappers. |
+| `core/study`, `core/notes`, `core/templates` | Study logic (cards, SRS, deadlines), note summaries, template placeholders. |
+| `extension/widgets`, `extension/query`, `extension/build`, `extension/companions`, `extension/shared` | The VS Code layer, one folder per feature. |
+| `study` | The study panels, deadlines view and index. |
+| `webview` | Scripts that run inside the widget panel. |
+
+`core/**` never imports `vscode`, so every feature there is covered by `node:test` tests.

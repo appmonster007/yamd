@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { scanWidgets } from '../src/core/fences';
-import { lintWidgets, setIdChange, suggestId, widgetTemplate } from '../src/core/widgetLint';
+import { scanWidgets } from '../src/core/widgets/fences';
+import { lintWidgets, setIdChange, suggestId, widgetTemplate } from '../src/core/widgets/widgetLint';
 
 const lines = (s: string) => s.split('\n');
 const codes = (s: string) => lintWidgets(lines(s)).map((p) => p.code);

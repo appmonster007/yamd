@@ -2,9 +2,9 @@
  * Flashcards written as callouts: `> [!card] Question` with the answer in the body. A card is
  * identified by a hash of its question (or an explicit `^id`), so editing the answer keeps its schedule.
  */
-import { scanCallouts } from '../callouts';
-import { extractFrontMatter } from '../frontmatter';
-import { hashText } from '../kanban';
+import { scanCallouts } from '../build/callouts';
+import { extractFrontMatter } from '../markdown/frontmatter';
+import { hashText } from '../widgets/kanban';
 import type { Card } from './cards';
 
 const stripQuote = (line: string) => line.replace(/^[ \t]*>[ \t]?/, '');

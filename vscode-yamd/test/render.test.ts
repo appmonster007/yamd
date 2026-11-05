@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse, render } from '../src/core';
-import { highlight, renderMath } from '../src/core/rich';
+import { parse, render } from '../src/core/markdown';
+import { highlight, renderMath } from '../src/core/markdown/rich';
 
 const html = (src: string) => render(parse(src));
 const count = (s: string, sub: string) => s.split(sub).length - 1;

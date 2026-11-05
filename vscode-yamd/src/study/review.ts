@@ -1,10 +1,10 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { parse, render } from '../core';
+import { parse, render } from '../core/markdown';
 import type { Card, Grade, Schedule } from '../core/study/cards';
 import { buildQueue, parseSchedule, previewIntervals, pruneSchedule, review, stringifySchedule } from '../core/study/cards';
-import { nonce } from '../extension/webviewShell';
-import { highlight, renderMath } from '../extension/richLoader';
+import { nonce } from '../extension/shared/webviewShell';
+import { highlight, renderMath } from '../extension/shared/richLoader';
 import type { StudyIndex } from './studyIndex';
 import { collectCards, openAt, readData, requireFolder, todayIso, writeData } from './workspace';
 

@@ -26,7 +26,7 @@ export const MAX_ROWS = 500;
 const quote = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
 /** SQL with strings, quoted names and comments blanked out, for checking its keywords. */
-export function stripSql(sql: string): string {
+function stripSql(sql: string): string {
   return sql.replace(/'(?:[^']|'')*'|"(?:[^"]|"")*"|`[^`]*`|\[[^\]]*\]|--[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/g, ' ');
 }
 
@@ -153,7 +153,7 @@ export function loadSqlite(SQL: SqlJsStatic, bytes: Uint8Array): Database {
   return db;
 }
 
-export type SourceKind = 'csv' | 'json' | 'sqlite';
+type SourceKind = 'csv' | 'json' | 'sqlite';
 
 export function sourceKind(file: string): SourceKind | undefined {
   if (/\.csv$/i.test(file)) return 'csv';

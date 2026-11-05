@@ -1,10 +1,10 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { toInternal } from '../core/compat';
-import { parse } from '../core';
+import { toInternal } from '../core/markdown/compat';
+import { parse } from '../core/markdown';
 import { collectDeadlines, groupDeadlines } from '../core/study/deadlines';
 import type { Deadline } from '../core/study/deadlines';
-import { expandPlaceholders, formatDate } from '../core/templates';
+import { expandPlaceholders, formatDate } from '../core/templates/placeholders';
 import { STUDY_TEMPLATES } from '../core/study/templates';
 import { pruneSchedule } from '../core/study/cards';
 import { stringifySchedule } from '../core/study/cards';

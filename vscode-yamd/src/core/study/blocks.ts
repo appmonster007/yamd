@@ -2,20 +2,15 @@
  * Study-aid blocks (§6.3): `:::definition`, `:::theorem` and friends. They are numbered per kind,
  * can be cross-referenced, and can be collected from every note into a cheat sheet.
  */
-import { attrString } from '../attrs';
-import { plainText } from '../inline';
-import { stripNoteExt } from '../notes';
-import { walkBlocks } from '../parser';
-import type { ContainerBlock, YamdDocument } from '../types';
 
-export interface StudyKind {
+interface StudyKind {
   name: string;
   label: string;
   /** Numbered blocks can be cross-referenced as `[@id]`. */
   numbered: boolean;
 }
 
-export const STUDY_KINDS: StudyKind[] = [
+const STUDY_KINDS: StudyKind[] = [
   { name: 'definition', label: 'Definition', numbered: true },
   { name: 'theorem', label: 'Theorem', numbered: true },
   { name: 'lemma', label: 'Lemma', numbered: true },

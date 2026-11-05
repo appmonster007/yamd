@@ -1,10 +1,10 @@
-import { escapeHtml } from '../renderUtil';
+import { escapeHtml } from '../markdown/renderUtil';
 import type { QueryResult } from './engine';
 
 const SHOWN = (r: QueryResult) => (r.total > r.rows.length ? `<div class="db-more">Showing ${r.rows.length} of ${r.total} rows.</div>` : '');
 const text = (v: unknown) => (v === null || v === undefined ? '' : String(v));
 
-export interface ViewOptions {
+interface ViewOptions {
   view: string;
   group?: string;
   type?: string;

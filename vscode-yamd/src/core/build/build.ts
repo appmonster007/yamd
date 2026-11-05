@@ -2,19 +2,19 @@
  * `YAMD: Build`: refreshes everything the extension generates in a note. It only touches reference
  * links and the content between `<!-- yamd:… -->` markers, and a second run changes nothing.
  */
-import { extractFrontMatter } from '../frontmatter';
-import type { BibEntry } from '../study/bibtex';
+import { extractFrontMatter } from '../markdown/frontmatter';
+import type { BibEntry } from '../citations/bibtex';
 import { bibliographyLines, citationStyle, citedKeys } from './bibliography';
 import { findRegions, writeRegion } from './markers';
-import { collectTargets, resolveReferences } from '../refs';
+import { collectTargets, resolveReferences } from './refs';
 import { tocLines } from './toc';
 
-export interface BuildContext {
+interface BuildContext {
   /** Parsed `.bib` entries, when the note names a bibliography file that could be read. */
   entries?: BibEntry[];
 }
 
-export interface BuildResult {
+interface BuildResult {
   lines: string[];
   warnings: string[];
 }

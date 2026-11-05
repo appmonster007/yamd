@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { computeBoardEdit } from '../src/core/boardEdit';
-import { applyBodyEdit, bodyEdit } from '../src/core/widgetBody';
-import { scanWidgets } from '../src/core/fences';
-import { parse } from '../src/core';
+import { computeBoardEdit } from '../src/core/widgets/boardEdit';
+import { applyBodyEdit, bodyEdit } from '../src/core/widgets/widgetBody';
+import { scanWidgets } from '../src/core/widgets/fences';
+import { parse } from '../src/core/markdown';
 
 /** Runs a board edit on the first widget of `note`, the way the widget panel does. */
 function edit(note: string, message: Parameters<typeof computeBoardEdit>[1]): string | null {
@@ -37,7 +37,7 @@ describe('widget body edits', () => {
     const block = scanWidgets(lines)[0]!;
     const synthetic = [`:::kanban`, ...lines.slice(block.bodyStartLine, block.bodyEndLine + 1), ':::'].join('\n');
     // The preview computes a card hash; reuse the real one.
-    const html = require('../src/core').render(parse(synthetic), { interactive: true }) as string;
+    const html = require('../src/core/markdown').render(parse(synthetic), { interactive: true }) as string;
     const m = /data-line="(\d+)" data-hash="([^"]+)"/.exec(html);
     assert.ok(m);
     const out = edit(note, { kind: 'task', op: 'toggle', board: 0, card: { line: Number(m[1]), hash: m[2]! }, args: { done: true } });

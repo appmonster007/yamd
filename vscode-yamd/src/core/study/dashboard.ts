@@ -1,5 +1,5 @@
 /** The study dashboard (§6.5): deadlines, course progress, cards due and study time, as HTML. */
-import { escapeHtml as esc } from '../render';
+import { escapeHtml as esc } from '../markdown/render';
 import type { Agenda, CourseProgress, Deadline, NoteProgress } from './deadlines';
 import { relativeDay } from './deadlines';
 import type { HeatCell } from './studylog';

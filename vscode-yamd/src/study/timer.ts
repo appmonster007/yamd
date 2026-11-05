@@ -8,7 +8,7 @@ export async function loadLog() {
   return parseLog(await readData(LOG));
 }
 
-export async function recordSession(minutes: number, course?: string, when = new Date()): Promise<void> {
+async function recordSession(minutes: number, course?: string, when = new Date()): Promise<void> {
   const log = await loadLog();
   log.sessions.push({ date: todayIso(when), minutes, ...(course ? { course } : {}) });
   await writeData(LOG, stringifyLog(log));

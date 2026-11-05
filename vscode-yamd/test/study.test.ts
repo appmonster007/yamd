@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parse, render } from '../src/core';
-import { derivationTex } from '../src/core/render';
-import { buildQueue, parseSchedule, review, stringifySchedule } from '../src/core/study/cards';
+import { parse, render } from '../src/core/markdown';
+import { derivationTex } from '../src/core/markdown/render';
+import { review } from '../src/core/study/cards';
 import { collectDeadlines, courseProgress, groupDeadlines, staleTopics } from '../src/core/study/deadlines';
 import { heatmap, parseLog, streak } from '../src/core/study/studylog';
-import { Bibliography, parseBibtex, parseCitation } from '../src/core/study/bibtex';
+import { Bibliography, parseBibtex, parseCitation } from '../src/core/citations/bibtex';
 
 
 describe('study blocks', () => {
@@ -106,7 +106,7 @@ describe('docx export', () => {
 describe('html export', () => {
   const doc = parse('---\ntitle: Notes\nauthor: Ada\ncourse: CS\n---\n\n# Notes\n\n## One\n\nText\n\n---\n\nMore\n\n## Two\n\n- x\n');
   it('builds a document with a title page and contents', async () => {
-    const { documentHtml } = await import('../src/core/study/export');
+    const { documentHtml } = await import('../src/core/export/page');
     const html = documentHtml(doc, { css: '', render: {}, titlePage: true, toc: true });
     assert.match(html, /export-title/);
     assert.match(html, /<h1>Notes<\/h1><p>Ada<\/p><p>CS<\/p>/);
@@ -114,7 +114,7 @@ describe('html export', () => {
     assert.doesNotMatch(html, /<script/);
   });
   it('splits slides', async () => {
-    const { slidesHtml, splitSlides } = await import('../src/core/study/export');
+    const { slidesHtml, splitSlides } = await import('../src/core/export/page');
     assert.equal(splitSlides(doc.blocks).length, 4);
     const html = slidesHtml(doc, { css: '', render: {} });
     assert.equal((html.match(/class="slide"/g) ?? []).length, 3);

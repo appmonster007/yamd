@@ -8,8 +8,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 import { before, describe, test } from 'node:test';
 import commonmark from 'commonmark-spec';
-import { planChunks } from '../src/core/chunking';
-import { isDefinitionLine, parse, parseUncached, setChunkMinChars } from '../src/core/parser';
+import { planChunks } from '../src/core/markdown/chunking';
+import { isDefinitionLine, parse, parseUncached, setChunkMinChars } from '../src/core/markdown/parser';
 
 before(() => setChunkMinChars(1));
 

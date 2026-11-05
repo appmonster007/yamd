@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse, render } from '../src/core';
-import { buildBoard } from '../src/core/kanban';
-import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/kanbanEdit';
-import { cardSource, hashText } from '../src/core/kanban';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse, render } from '../src/core/markdown';
+import { buildBoard } from '../src/core/widgets/kanban';
+import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/widgets/kanbanEdit';
+import { cardSource, hashText } from '../src/core/widgets/kanban';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const BOARD = `:::kanban {title="Sprint"}
 ## Todo

@@ -1,8 +1,8 @@
 import { readFile, stat } from 'node:fs/promises';
 import * as vscode from 'vscode';
-import { toInternal } from '../core/compat';
-import { summarize } from '../core/noteSummary';
-import type { NoteSummary } from '../core/noteSummary';
+import { toInternal } from '../core/markdown/compat';
+import { summarize } from '../core/notes/noteSummary';
+import type { NoteSummary } from '../core/notes/noteSummary';
 
 const MAX_BYTES = 2_000_000;
 const EXCLUDE = '**/{node_modules,.git,.yamd}/**';

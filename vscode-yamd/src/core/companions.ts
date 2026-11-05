@@ -11,7 +11,7 @@ export const COMPANIONS = {
   markdown: { id: 'yzhang.markdown-all-in-one', name: 'Markdown All in One' },
 } satisfies Record<string, Companion>;
 
-export type DataKind = 'sqlite' | 'csv' | 'json';
+type DataKind = 'sqlite' | 'csv' | 'json';
 
 export function dataKind(file: string): DataKind | undefined {
   if (/\.(sqlite3?|db3?|sdb|s3db)$/i.test(file)) return 'sqlite';

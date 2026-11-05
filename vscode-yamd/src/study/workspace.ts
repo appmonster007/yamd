@@ -11,7 +11,7 @@ export function todayIso(now = new Date()): string {
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
 }
 
-export function workspaceRoot(): vscode.Uri | undefined {
+function workspaceRoot(): vscode.Uri | undefined {
   const active = vscode.window.activeTextEditor?.document.uri;
   return (active && vscode.workspace.getWorkspaceFolder(active)?.uri) ?? vscode.workspace.workspaceFolders?.[0]?.uri;
 }

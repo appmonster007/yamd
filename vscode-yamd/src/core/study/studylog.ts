@@ -8,7 +8,7 @@ export interface Session {
   course?: string;
 }
 
-export interface StudyLog {
+interface StudyLog {
   version: 1;
   sessions: Session[];
 }

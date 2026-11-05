@@ -1,7 +1,7 @@
 import { closeMarker, openMarker, writeRegion } from '../build/markers';
 import type { QueryResult } from './engine';
 
-export const SNAPSHOT_ROWS = 50;
+const SNAPSHOT_ROWS = 50;
 
 const cell = (v: unknown) => (v === null || v === undefined ? '' : String(v)).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 

@@ -3,9 +3,6 @@
  * into cards, and a spaced-repetition schedule (SM-2) decides when each is due.
  * Everything here is pure; the extension keeps the schedule in a JSON file.
  */
-import { hashText } from '../kanban';
-import { walkBlocks } from '../parser';
-import type { Block, Diagnostic, InlineNode, YamdDocument } from '../types';
 
 export interface Card {
   /** Stable across moves: an explicit `{#id}`, or a hash of the card's text. */
@@ -25,9 +22,9 @@ export interface Card {
 // ---- Scheduling ----
 
 export type Grade = 'again' | 'hard' | 'good' | 'easy';
-export const GRADES: Grade[] = ['again', 'hard', 'good', 'easy'];
+const GRADES: Grade[] = ['again', 'hard', 'good', 'easy'];
 
-export interface CardState {
+interface CardState {
   /** Next review date, `YYYY-MM-DD`. */
   due: string;
   /** Days between the last two reviews. */
@@ -96,7 +93,7 @@ export function stringifySchedule(s: Schedule): string {
   return `${JSON.stringify({ version: 1, cards: sorted }, null, 1)}\n`;
 }
 
-export interface Queue {
+interface Queue {
   due: Card[];
   fresh: Card[];
   /** Cards reviewed and not yet due. */

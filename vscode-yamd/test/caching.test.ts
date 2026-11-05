@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { render } from '../src/core';
-import { summarize } from '../src/core/notes';
-import type { NoteLookup } from '../src/core/notes';
-import { parse, parseUncached } from '../src/core/parser';
-import { escapeHtml } from '../src/core/render';
+import { parse, parseUncached } from '../src/core/markdown/parser';
+import { escapeHtml } from '../src/core/markdown/render';
 
 describe('parse cache', () => {
   test('the same text gives the same document, different text a different one', () => {
@@ -58,7 +55,7 @@ describe('heading IDs', () => {
   }
 
   test('give the same IDs as counting up from -2 each time, including collisions', async () => {
-    const { SlugRegistry } = await import('../src/core/slug');
+    const { SlugRegistry } = await import('../src/core/markdown/slug');
     let seed = 42;
     const random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
     const names = ['a', 'a-2', 'a-3', 'b', '', 'a-2-2', 'section', 'section-2'];

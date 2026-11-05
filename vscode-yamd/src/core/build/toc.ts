@@ -1,4 +1,4 @@
-import { fencedLines } from '../callouts';
+import { fencedLines } from './callouts';
 
 export interface Heading {
   level: number;
@@ -8,7 +8,7 @@ export interface Heading {
 }
 
 /** GitHub's anchor for a heading: lowercase, punctuation removed, each space a hyphen (what VS Code's Markdown links resolve to). */
-export function githubSlug(text: string): string {
+function githubSlug(text: string): string {
   return text.toLowerCase().replace(/[^\p{L}\p{N}\p{M} _-]/gu, '').replace(/ /g, '-');
 }
 

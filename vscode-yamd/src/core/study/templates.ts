@@ -1,5 +1,5 @@
 /** Built-in note templates for coursework (§6.3), with `{{@date}}`, `{{@title}}` and `{{@course}}` placeholders. */
-export interface StudyTemplate {
+interface StudyTemplate {
   id: string;
   label: string;
   description: string;

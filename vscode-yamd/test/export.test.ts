@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse, render } from '../src/core';
+import { parse, render } from '../src/core/markdown';
 import { finalizeHtml, prepareExport } from '../src/core/export/prepare';
 import { buildNote } from '../src/core/build/build';
-import { documentHtml, slidesHtml } from '../src/core/study/export';
+import { documentHtml, slidesHtml } from '../src/core/export/page';
 
 const L = (s: string) => s.split('\n');
 const note = `---\ntitle: Paper\n---\n# Paper\n\n> [!theorem] Pythagoras ^thm-pyth\n> a^2 + b^2 = c^2.\n\n> [!note] Heads up\n> Careful.\n\n> [!card] Q?\n> A.\n\n![Diagram](a.png)\n\n^fig-arch\n\nSee [@fig-arch] and [@thm-pyth].\n\n<!-- pagebreak -->\n\n<!-- {.wide} -->\n## Second\n\n\`\`\`kanban b\n## Todo\n- [ ] one\n\`\`\`\n\n\`\`\`sql\n-- id="q" source="x.csv"\nSELECT 1;\n\`\`\`\n\n<ins>added</ins> <mark>flag</mark>\n`;

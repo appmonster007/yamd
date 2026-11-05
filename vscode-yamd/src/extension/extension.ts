@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { registerAliases } from './aliases';
-import { registerBuildCommands } from './buildCommands';
-import { registerExportCommands } from './exportCommands';
-import { registerQueryCommands } from './queryCommands';
-import { registerWidgetDiagnostics } from './widgetDiagnostics';
-import { registerWidgetPanels } from './widgetPanel';
+import { registerAliases } from './companions/aliases';
+import { registerBuildCommands } from './build/buildCommands';
+import { registerExportCommands } from './build/exportCommands';
+import { registerQueryCommands } from './query/queryCommands';
+import { registerWidgetDiagnostics } from './widgets/widgetDiagnostics';
+import { registerWidgetPanels } from './widgets/widgetPanel';
 import { DashboardPanel } from '../study/dashboard';
 import { registerStudy } from '../study/register';
 import { ReviewPanel } from '../study/review';

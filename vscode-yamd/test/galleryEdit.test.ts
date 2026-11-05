@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse } from '../src/core';
-import { buildGallery, cardSource, hashText } from '../src/core/kanban';
-import { addGalleryCard, moveGalleryCard } from '../src/core/galleryEdit';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse } from '../src/core/markdown';
+import { buildGallery, cardSource, hashText } from '../src/core/widgets/kanban';
+import { addGalleryCard, moveGalleryCard } from '../src/core/widgets/galleryEdit';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const SRC = `:::gallery {title="Trip photos"}
 ![Golden Gate Bridge](ggb.jpg)

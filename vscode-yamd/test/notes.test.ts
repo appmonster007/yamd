@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse, render } from '../src/core';
-import { resolveNote, selectEmbed, summarize } from '../src/core/notes';
-import { expandPlaceholders, formatDate } from '../src/core/templates';
-import type { RenderOptions } from '../src/core';
+import { parse, render } from '../src/core/markdown';
+import { selectEmbed, summarize } from '../src/core/notes/notes';
+import { expandPlaceholders } from '../src/core/templates/placeholders';
+import type { RenderOptions } from '../src/core/markdown';
 
 const html = (src: string) => render(parse(src));
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { computeBoardEdit } from '../src/core/boardEdit';
+import { computeBoardEdit } from '../src/core/widgets/boardEdit';
 
 describe('boardEdit', () => {
   test('adds a kanban card through the generic message', () => {

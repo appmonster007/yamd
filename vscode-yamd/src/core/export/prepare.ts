@@ -4,16 +4,16 @@
  * placeholders that `finalizeHtml` replaces after rendering (so ids and query tables survive
  * sanitizing untouched).
  */
-import { scanCallouts, STUDY_TYPES } from '../callouts';
-import { fencedLines } from '../callouts';
-import { scanWidgets } from '../fences';
+import { scanCallouts, STUDY_TYPES } from '../build/callouts';
+import { fencedLines } from '../build/callouts';
+import { scanWidgets } from '../widgets/fences';
 
 const BOARDS = new Set(['kanban', 'calendar', 'timeline', 'gallery']);
 const PLAIN = new Set(['note', 'tip', 'warning', 'danger']);
 const TYPE_ALIAS: Record<string, string> = { important: 'note', caution: 'warning' };
 const STUDY = new Set<string>(STUDY_TYPES);
 
-export interface Prepared {
+interface Prepared {
   source: string;
   /** Start lines of the query blocks, whose placeholders are `YAMDQUERY<line>`. */
   queryBlocks: number[];

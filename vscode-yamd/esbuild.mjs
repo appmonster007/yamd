@@ -35,7 +35,7 @@ const contexts = await Promise.all([
   }),
   esbuild.context({
     ...shared,
-    entryPoints: ['src/preview/main.ts'],
+    entryPoints: ['src/webview/main.ts'],
     outfile: 'dist/preview.js',
     platform: 'browser',
     format: 'iife',
@@ -44,7 +44,7 @@ const contexts = await Promise.all([
   // Syntax highlighting and math, loaded by the extension when a preview first needs them.
   esbuild.context({
     ...shared,
-    entryPoints: ['src/core/rich.ts'],
+    entryPoints: ['src/core/markdown/rich.ts'],
     outfile: 'dist/rich.js',
     platform: 'node',
     format: 'cjs',
