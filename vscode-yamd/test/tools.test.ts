@@ -23,7 +23,7 @@ test('check: code spans and fences are ignored', () => {
 test('cards from callouts', () => {
   const lines = ['> [!definition] Prime', '> A number with two divisors.', '', '> [!question] Why?', '> Because.', '', '> [!note] Skip', '> me'];
   const cards = cardsFromCallouts(lines);
-  assert.deepEqual(cards, ['> [!card] Definition: Prime', '> A number with two divisors.', '', '> [!card] Why?', '> Because.']);
+  assert.deepEqual(cards, ['> [!card] Definition: Prime', '> A number with two divisors.', '', '> [!card] Why?', '> Because.', '']);
   const note = writeRegion(lines, 'cards', cards, { insertAfter: lines.length - 1 });
   assert.equal(extractCardsMd(note.join('\n'), 'n.md').length, 2);
   assert.deepEqual(writeRegion(note, 'cards', cards), note);
@@ -41,4 +41,11 @@ test('inline images', () => {
   assert.equal(r.lines[1], '![b](gone.png)');
   assert.equal(r.lines[4], '![d](a.png)');
   assert.deepEqual(r.missing, ['gone.png']);
+});
+
+test('generated cards region passes the callout check', async () => {
+  const { calloutProblems } = await import('../src/core/build/callouts');
+  const lines = ['> [!definition] A', '> body'];
+  const note = writeRegion(lines, 'cards', cardsFromCallouts(lines), { insertAfter: lines.length - 1 });
+  assert.deepEqual(calloutProblems(note.filter((l, i) => i >= 0)).filter((p) => p.code === 'C002' && note[p.line + 1]?.includes('/yamd:cards')), []);
 });

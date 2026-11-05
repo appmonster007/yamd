@@ -18,5 +18,6 @@ export function cardsFromCallouts(lines: string[]): string[] {
     if (out.length) out.push('');
     out.push(`> [!card] ${front.replace(/\s*\^[\w-]+$/, '')}`, ...body.map((l) => `> ${l}`));
   }
-  return out;
+  // A blank line keeps the closing marker out of the last callout.
+  return out.length ? [...out, ''] : out;
 }
