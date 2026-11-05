@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import { parse } from '../core';
 import type { Card } from '../core/study/cards';
-import { extractCards } from '../core/study/cards';
-import type { WorkspaceIndex } from '../workspace/index';
-import { noteUri } from '../workspace/index';
+import { extractCardsMd } from '../core/study/calloutCards';
+import type { StudyIndex } from './studyIndex';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -52,21 +50,21 @@ export function requireFolder(): vscode.Uri | undefined {
   return root;
 }
 
-const CARD_HINT = /:::\s*card|::card\[|:cloze\[/;
+const CARD_HINT = /\[!card\]/i;
 
-/** Every card in the workspace's notes. Only notes that mention cards are parsed. */
-export function collectCards(index: WorkspaceIndex): Card[] {
+/** Every card in the workspace's notes. Only notes that mention cards are scanned. */
+export function collectCards(index: StudyIndex): Card[] {
   const cards: Card[] = [];
   for (const path of index.store.paths().sort()) {
     const text = index.store.read(path);
     if (!text || !CARD_HINT.test(text)) continue;
-    cards.push(...extractCards(parse(text), path).cards);
+    cards.push(...extractCardsMd(text, path));
   }
   return cards;
 }
 
 export async function openAt(path: string, line = 0): Promise<void> {
-  const doc = await vscode.workspace.openTextDocument(noteUri(path));
+  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(path));
   const editor = await vscode.window.showTextDocument(doc);
   const pos = new vscode.Position(Math.min(line, doc.lineCount - 1), 0);
   editor.selection = new vscode.Selection(pos, pos);

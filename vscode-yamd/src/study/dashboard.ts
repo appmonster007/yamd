@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse } from '../core';
-import { stripNoteExt } from '../core/notes';
+import { toInternal } from '../core/compat';
 import { buildQueue } from '../core/study/cards';
 import { DASHBOARD_CSS, dashboardBody } from '../core/study/dashboard';
 import type { DashboardData } from '../core/study/dashboard';
@@ -11,13 +11,13 @@ import { collectDeadlines, courseOf, courseProgress, groupDeadlines, isoDate, st
 import { heatmap, minutesByCourse, minutesByDay, streak } from '../core/study/studylog';
 import { addDays } from '../core/study/cards';
 import { nonce } from '../extension/webviewShell';
-import type { WorkspaceIndex } from '../workspace/index';
+import type { StudyIndex } from './studyIndex';
 import { loadSchedule } from './review';
 import { loadLog } from './timer';
 import { collectCards, openAt, todayIso } from './workspace';
 
 /** Everything the dashboard shows, gathered from the notes and the `.yamd/` data files. */
-export async function gather(index: WorkspaceIndex): Promise<DashboardData> {
+export async function gather(index: StudyIndex): Promise<DashboardData> {
   await index.whenReady();
   const today = todayIso();
   const staleDays = vscode.workspace.getConfiguration('yamd.study').get<number>('staleAfterDays', 14);
@@ -25,7 +25,7 @@ export async function gather(index: WorkspaceIndex): Promise<DashboardData> {
   const progress: NoteProgress[] = [];
   for (const summary of index.store.summaries()) {
     const text = index.store.read(summary.path);
-    if (text && /\bdue\b/.test(text)) deadlines.push(...collectDeadlines(parse(text), summary.path, summary.title));
+    if (text && /\bdue\b/.test(text)) deadlines.push(...collectDeadlines(parse(toInternal(text)), summary.path, summary.title));
     const course = courseOf(summary.properties);
     let lastTouched = isoDate(summary.properties['reviewed']);
     if (!lastTouched && course) {
@@ -62,7 +62,7 @@ export async function gather(index: WorkspaceIndex): Promise<DashboardData> {
       byCourse: [...minutesByCourse(log, addDays(today, -30))].sort((a, b) => b[1] - a[1]),
       heatmap: heatmap(log, today),
     },
-    label: (p) => stripNoteExt(path.basename(p)),
+    label: (p) => path.basename(p).replace(/\.md$/i, ''),
   };
 }
 
@@ -71,7 +71,7 @@ export class DashboardPanel implements vscode.Disposable {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly sub: vscode.Disposable;
 
-  constructor(private readonly index: WorkspaceIndex) {
+  constructor(private readonly index: StudyIndex) {
     this.sub = index.onDidChange(() => this.schedule());
   }
 

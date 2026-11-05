@@ -1,12 +1,11 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { parse, render } from '../core';
-import { stripNoteExt } from '../core/notes';
 import type { Card, Grade, Schedule } from '../core/study/cards';
 import { buildQueue, parseSchedule, previewIntervals, pruneSchedule, review, stringifySchedule } from '../core/study/cards';
 import { nonce } from '../extension/webviewShell';
 import { highlight, renderMath } from '../extension/richLoader';
-import type { WorkspaceIndex } from '../workspace/index';
+import type { StudyIndex } from './studyIndex';
 import { collectCards, openAt, readData, requireFolder, todayIso, writeData } from './workspace';
 
 const FILE = 'srs.json';
@@ -23,7 +22,7 @@ export class ReviewPanel implements vscode.Disposable {
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly index: WorkspaceIndex,
+    private readonly index: StudyIndex,
   ) {}
 
   async show(course?: string): Promise<void> {
@@ -35,7 +34,7 @@ export class ReviewPanel implements vscode.Disposable {
     const limit = vscode.workspace.getConfiguration('yamd.study').get<number>('newCardsPerDay', 20);
     const queue = buildQueue(cards, this.schedule, today, limit, course);
     if (!queue.due.length && !queue.fresh.length) {
-      void vscode.window.showInformationMessage(cards.length ? `YAMD: No cards are due. ${queue.later} are scheduled for later.` : 'YAMD: No cards found. Add ::card[Question]{a="Answer"} or :cloze[hidden text] to a note.');
+      void vscode.window.showInformationMessage(cards.length ? `YAMD: No cards are due. ${queue.later} are scheduled for later.` : 'YAMD: No cards found. Add a card callout, "> [!card] Question" with the answer on the next lines, to a note.');
       return;
     }
     const items = [...queue.due, ...queue.fresh].map((c) => this.item(c, today));
@@ -66,7 +65,7 @@ export class ReviewPanel implements vscode.Disposable {
       intervals: previewIntervals(this.schedule.cards[c.id], today),
       path: c.path,
       line: c.line,
-      title: stripNoteExt(path.basename(c.path)),
+      title: path.basename(c.path).replace(/\.md$/i, ''),
     };
   }
 

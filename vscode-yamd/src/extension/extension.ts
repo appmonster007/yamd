@@ -23,7 +23,8 @@ import { registerViews } from '../workspace/views';
 import { DashboardPanel } from '../study/dashboard';
 import { ReviewPanel } from '../study/review';
 import { StudyTimer } from '../study/timer';
-import { registerStudyCommands } from '../study/commands';
+import { registerStudy } from '../study/register';
+import { StudyIndex } from '../study/studyIndex';
 
 export function activate(context: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('YAMD');
@@ -32,11 +33,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const preview = new PreviewManager(context.extensionUri, index, db);
   const livePreview = new LivePreview();
   const graph = new GraphPanel(context.extensionUri, index);
-  const reviewPanel = new ReviewPanel(context.extensionUri, index);
-  const dashboard = new DashboardPanel(index);
+  const studyIndex = new StudyIndex();
+  const reviewPanel = new ReviewPanel(context.extensionUri, studyIndex);
+  const dashboard = new DashboardPanel(studyIndex);
   const timer = new StudyTimer();
   const diagnostics = new DiagnosticsProvider(index);
-  context.subscriptions.push(log, index, db, preview, livePreview, graph, diagnostics, reviewPanel, dashboard, timer);
+  context.subscriptions.push(log, index, studyIndex, db, preview, livePreview, graph, diagnostics, reviewPanel, dashboard, timer);
   registerDatabaseFeatures(context, db);
   registerDatabaseWizard(context);
   registerNoteFeatures(context, index);
@@ -46,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerNavigation(context, index);
   registerInsertCommands(context, index);
   registerBlockCommands(context);
-  registerStudyCommands(context, index, reviewPanel, dashboard, timer);
+  registerStudy(context, studyIndex, reviewPanel, dashboard, timer);
   context.subscriptions.push(
     vscode.commands.registerCommand('yamd.validateDocument', async () => {
       const doc = vscode.window.activeTextEditor?.document;

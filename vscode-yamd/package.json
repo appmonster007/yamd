@@ -705,6 +705,11 @@
         "command": "yamd.goToReference",
         "title": "Go to Reference Target",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openAt",
+        "title": "Open Note at Line",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -871,6 +876,10 @@
         {
           "command": "yamd.goToReference",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.openAt",
+          "when": "false"
         }
       ],
       "file/newFile": [
@@ -1218,6 +1227,10 @@
     },
     "views": {
       "yamd": [
+        {
+          "id": "yamd.deadlines",
+          "name": "Deadlines"
+        },
         {
           "id": "yamd.backlinks",
           "name": "Backlinks"
