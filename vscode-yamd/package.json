@@ -710,6 +710,26 @@
         "command": "yamd.openAt",
         "title": "Open Note at Line",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.openInSqlClient",
+        "title": "Open Query Source in SQL Client",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openInSqliteEditor",
+        "title": "Open in SQLite Editor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openInCsvEditor",
+        "title": "Open in CSV Editor",
+        "category": "YAMD"
+      },
+      {
+        "command": "yamd.openDailyNote",
+        "title": "Open Daily Note (Foam)",
+        "category": "YAMD"
       }
     ],
     "menus": {
@@ -1313,5 +1333,14 @@
     "micromark-util-sanitize-uri": "^2.0.1",
     "micromark-util-symbol": "^2.0.1",
     "sql.js": "^1.12.0"
-  }
+  },
+  "extensionPack": [
+    "foam.foam-vscode",
+    "yy0931.vscode-sqlite3-editor",
+    "janisdd.vscode-edit-csv",
+    "yzhang.markdown-all-in-one"
+  ],
+  "extensionDependencies": [
+    "foam.foam-vscode"
+  ]
 }

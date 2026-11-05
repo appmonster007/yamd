@@ -6,6 +6,7 @@ import { registerDatabaseFeatures } from './dbFeatures';
 import { registerDatabaseWizard } from './databaseWizard';
 import { DiagnosticsProvider } from './diagnostics';
 import { registerInsertCommands } from './insertCommands';
+import { registerAliases } from './aliases';
 import { registerBuildCommands } from './buildCommands';
 import { registerExportCommands } from './exportCommands';
 import { registerQueryCommands } from './queryCommands';
@@ -94,6 +95,7 @@ export function activate(context: vscode.ExtensionContext): void {
   registerQueryCommands(context);
   registerBuildCommands(context);
   registerExportCommands(context);
+  registerAliases(context);
 }
 
 export function deactivate(): void {}
