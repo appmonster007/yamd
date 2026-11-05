@@ -18,6 +18,7 @@ export class NodeTree implements vscode.TreeDataProvider<SidebarNode>, vscode.Di
   getTreeItem(n: SidebarNode): vscode.TreeItem {
     const item = new vscode.TreeItem(n.label, n.children?.length ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
     if (n.description) item.description = n.description;
+    if (n.mention) item.contextValue = 'yamd.mention';
     if (n.icon) item.iconPath = new vscode.ThemeIcon(n.icon);
     const command = this.toCommand(n);
     if (command) item.command = command;

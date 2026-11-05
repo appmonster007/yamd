@@ -1,7 +1,8 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { cardNodes, dataFileNodes, outlineNodes, studyNodes, widgetNodes } from '../../core/sidebar/nodes';
+import { cardNodes, dataFileNodes, mentionNodes, outlineNodes, studyNodes, widgetNodes } from '../../core/sidebar/nodes';
 import type { SidebarNode } from '../../core/sidebar/nodes';
+import { wikilinkFor } from '../../core/notes/mentions';
 import { gather } from '../../study/dashboard';
 import { loadSchedule } from '../../study/review';
 import type { StudyIndex } from '../../study/studyIndex';
@@ -35,6 +36,14 @@ export function registerSidebarViews(context: vscode.ExtensionContext, index: St
     return doc ? outlineNodes(linesOf(doc)) : [];
   }, here);
 
+  const mentions = new NodeTree(async () => {
+    const doc = activeMarkdown();
+    if (!doc || doc.uri.scheme !== 'file') return [];
+    await index.whenReady();
+    const notes = index.store.paths().map((p) => ({ path: p, text: index.store.read(p) ?? '' }));
+    return mentionNodes(doc.uri.fsPath, linesOf(doc), notes, baseName);
+  }, (n) => (n.path ? { command: 'yamd.openAt', title: 'Open', arguments: [n.path, n.line ?? 0] } : undefined));
+
   const cards = new NodeTree(
     async () => {
       await index.whenReady();
@@ -57,21 +66,41 @@ export function registerSidebarViews(context: vscode.ExtensionContext, index: St
   const refreshNote = () => {
     widgets.refresh();
     outline.refresh();
+    mentions.refresh(600);
   };
   context.subscriptions.push(
     widgets,
     outline,
+    mentions,
     cards,
     study,
     vscode.window.registerTreeDataProvider('yamd.widgets', widgets),
     vscode.window.registerTreeDataProvider('yamd.outline', outline),
+    vscode.window.registerTreeDataProvider('yamd.mentions', mentions),
     vscode.window.registerTreeDataProvider('yamd.cards', cards),
+    vscode.commands.registerCommand('yamd.linkMention', async (n?: SidebarNode) => {
+      const m = n?.mention;
+      if (!m) return;
+      const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(m.path));
+      const range = new vscode.Range(m.line, m.col, m.line, m.col + m.length);
+      // The note may have changed since the list was made.
+      if (doc.getText(range) !== m.text) {
+        void vscode.window.showInformationMessage('YAMD: That line changed. The list will refresh.');
+        mentions.refresh(0);
+        return;
+      }
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(doc.uri, range, wikilinkFor(m.target, m.text));
+      await vscode.workspace.applyEdit(edit);
+      mentions.refresh(300);
+    }),
     vscode.window.registerTreeDataProvider('yamd.study', study),
     vscode.window.onDidChangeActiveTextEditor(refreshNote),
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document === activeMarkdown()) refreshNote();
     }),
     index.onDidChange(() => {
+      mentions.refresh(800);
       cards.refresh(800);
       study.refresh(800);
     }),

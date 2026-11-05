@@ -80,3 +80,10 @@ Use a copy of `examples/` as the workspace.
 - [ ] The daily reminder appears once per day with cards due or a deadline today.
 - [ ] `Check This Note` lists a missing image and a dangling `[@fig-x]`, and "Fix safe problems" adds a missing blank line.
 - [ ] The Edit CSV / SQLite editor lens above a query block opens the file in the companion (accept the install offer if it is missing).
+
+## Diagrams and sidebar (1.2 additions)
+
+- [ ] Open the Markdown preview of `examples/07-whats-new/diagrams-and-outline.md`: both mermaid blocks are drawn; edit one so it breaks and see the source and error; fix it and see it redrawn.
+- [ ] Switch the colour theme light and dark and reopen the preview: the diagram colours follow.
+- [ ] Export HTML on that note, open it in a browser with no network: the diagrams are drawn.
+- [ ] The Outline view shows headings as a tree and jumps to them. The Unlinked Mentions view lists a typed mention of the note's name, and the link button replaces it with a wikilink.

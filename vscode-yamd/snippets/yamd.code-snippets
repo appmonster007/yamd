@@ -14,6 +14,7 @@
   "Figure": { "prefix": "figure", "description": "An image with a target to refer to", "body": ["![${1:Caption}](${2:image.png})", "", "^fig-${3:name}", "$0"] },
   "Table with target": { "prefix": "tabletarget", "description": "A table with a caption and a target", "body": ["Table: ${1:Caption}", "", "| ${2:A} | ${3:B} |", "| --- | --- |", "|  |  |", "", "^tbl-${4:name}", "$0"] },
   "Equation with target": { "prefix": "equation", "description": "A display equation with a target", "body": ["$$", "${1:E = mc^2}", "$$", "", "^eq-${2:name}", "$0"] },
+  "Mermaid diagram": { "prefix": "mermaid", "description": "A diagram drawn from text", "body": ["```mermaid", "flowchart LR", "  ${1:A} --> ${2:B}", "```", "$0"] },
   "Review: insert": { "prefix": "ins", "description": "Suggest added text", "body": ["<ins>${1:added}</ins>$0"] },
   "Review: delete": { "prefix": "del", "description": "Suggest removed text", "body": ["<del>${1:removed}</del>$0"] }
 }

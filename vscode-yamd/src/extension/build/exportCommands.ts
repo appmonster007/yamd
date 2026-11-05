@@ -65,7 +65,17 @@ async function exportNote(context: vscode.ExtensionContext, kind: Kind): Promise
   // The prose is read as plain Markdown (a newline is a space, as in the editor's preview); widgets were rendered above.
   const parsed = parse(prepared.source, 'gfm');
   const options = { css, render: { highlight, renderMath, softBreaks: 'newline' as const }, readOnly: false, footer: `Exported from ${path.basename(doc.uri.fsPath)} on ${formatDate(new Date(), 'YYYY-MM-DD')}`, titlePage: false, toc: false };
-  const page = finalizeHtml(kind === 'slides' ? slidesHtml(parsed, options) : documentHtml(parsed, options), blocks);
+  let page = finalizeHtml(kind === 'slides' ? slidesHtml(parsed, options) : documentHtml(parsed, options), blocks);
+
+  // A note with a mermaid block carries the diagram script, so the page draws it offline.
+  if (/language-mermaid/.test(page)) {
+    try {
+      const mermaidJs = readFileSync(path.join(context.extensionPath, 'dist', 'mermaid-preview.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
+      page = page.replace('</body>', () => `<script>${mermaidJs}</script></body>`);
+    } catch {
+      /* the diagram stays as readable source */
+    }
+  }
 
   const base = doc.uri.fsPath.replace(/\.[^.]+$/, '');
   const out = vscode.Uri.file(`${base}${kind === 'slides' ? '-slides' : ''}.html`);

@@ -88,6 +88,10 @@ SELECT id, title, owner FROM bugs WHERE status = 'open';
 - **Cross-references**: put `^fig-name`, `^tbl-name` or `^eq-name` after a figure, table or equation and write `[@fig-name]`. **Build** turns it into `[Figure 2](#fig-name)` and keeps the number current.
 - **Citations**: `[@smith2020, p. 4]` with a `.bib` file named in the front matter (`bibliography:` and `citation-style:` apa, ieee, chicago, harvard or mla).
 - **Generated regions**: a table of contents and a bibliography between visible `<!-- yamd:… -->` comments.
+- **Diagrams**: a ```` ```mermaid ```` block is drawn in VS Code's Markdown preview and in HTML and slide exports (the exported page carries the drawing script, so it works offline).
+
+![An exported note with two mermaid diagrams](docs/images/mermaid.png)
+
 - **Review marks**: `<ins>` and `<del>`, with commands to accept or reject at the cursor, in a selection or in the whole note.
 - **Snippets and completion**: type `kanban`, `callout`, `theorem`, `card`, `toc`, `figure` and press Tab. Completion covers widget types, `source=` files, callout types, `[@` keys and `[@fig-` ids.
 - **Insert commands**: Insert Callout, Insert Figure/Table/Equation, Insert Citation, Insert Query, Turn Selection into a Widget, Add Card, Add Event, Add Timeline Item, Add Image to Gallery.
@@ -97,7 +101,7 @@ SELECT id, title, owner FROM bugs WHERE status = 'open';
 - **YAMD: Menu** (and a status-bar item) lists every action by task.
 - **YAMD: New Note** creates a note from a template: empty (with contents and bibliography), article, project board, meeting notes, reading list, weekly plan, or data note. **Create Sample Note** adds a note and a data file to try things on.
 - A 15-step **walkthrough** opens once after install (**YAMD: Open Walkthrough** reopens it).
-- The YAMD sidebar lists the widgets and structure of the open note, flashcards, deadlines and study progress.
+- The YAMD sidebar lists the widgets in the open note, its **Outline** (headings, callouts, figure, table and equation targets), **Unlinked Mentions** (notes that name this one without linking to it, with a button that turns each into a `[[wikilink]]`), flashcards, deadlines and study progress.
 
 ### Audio
 

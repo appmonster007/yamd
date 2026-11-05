@@ -72,7 +72,7 @@ Flashcards are card callouts (`> [!card] Question`, answer in the body) reviewed
 
 ## The YAMD sidebar
 
-The YAMD icon in the activity bar has five views: **Widgets in This Note** (click to open one), **Callouts and References** (numbered theorems, definitions, figure, table and equation targets; click to jump), **Flashcards** (due, new and per-course counts, with a Start Review button), **Deadlines**, and **Study and Data Files** (course progress, notes you haven't touched, study time and the data files your queries use).
+The YAMD icon in the activity bar has six views: **Widgets in This Note** (click to open one), **Outline** (headings as a tree, numbered theorems and definitions, figure, table and equation targets; click to jump), **Unlinked Mentions** (other notes that name this one without linking to it, with a button to turn each into a `[[wikilink]]`), **Flashcards** (due, new and per-course counts, with a Start Review button), **Deadlines**, and **Study and Data Files** (course progress, notes you haven't touched, study time and the data files your queries use).
 
 Backlinks, the note graph and tags come from Foam: **YAMD: Show Backlinks (Foam)**, **Show Note Graph (Foam)** and **Show Tags (Foam)** open them. [examples/06-linked-notes](../examples/06-linked-notes/) has notes to try them on.
 

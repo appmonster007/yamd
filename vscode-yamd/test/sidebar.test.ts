@@ -18,7 +18,9 @@ describe('sidebar views', () => {
   });
 
   test('callouts are numbered and targets listed without repeating a callout', () => {
-    const [callouts, targets] = outlineNodes(L(note));
+    const [headings, callouts, targets] = outlineNodes(L(note));
+    assert.equal(headings?.label, 'Headings');
+    assert.deepEqual(headings?.children?.map((h) => h.label), ['T']);
     assert.equal(callouts?.label, 'Callouts (3)');
     assert.deepEqual(callouts?.children?.map((c) => c.label), ['Theorem 1: Euclid', 'Note: Heads up', 'Card: Q?']);
     assert.equal(callouts?.children?.[0]?.description, '^thm-e');

@@ -14,6 +14,10 @@ YAMD stops being a separate language: notes are plain Markdown, and the extensio
 - Snippets, completion (fence types, files, callouts, citations, references, SQL columns) and hover on `source=`.
 - Insert Callout / Figure, Table or Equation / Citation / Query, Add Card / Event / Timeline Item / Image, Turn Selection into a Widget.
 
+### Diagrams and navigation
+- Mermaid diagrams in the Markdown preview and in HTML and slide exports.
+- An Outline view (headings, callouts, targets) and an Unlinked Mentions view that can turn a mention into a `[[wikilink]]`.
+
 ### Data and media
 - SQL over CSV, JSON and SQLite (read-only), with table, board and chart views, snapshots, Run All Queries and optional refresh on save.
 - Record audio into the note; transcribe it with a tool you choose.

@@ -293,6 +293,39 @@ exports.run = async function run() {
     assert(c.walkthroughs?.some((w) => w.id === 'yamd.start'), 'no walkthrough');
   });
 
+  test('the Markdown preview is extended to draw mermaid blocks', async () => {
+    const c = ext.packageJSON.contributes;
+    assert(c['markdown.markdownItPlugins'] === true, 'markdownItPlugins not contributed');
+    assert((c['markdown.previewScripts'] ?? []).some((p) => p.endsWith('mermaid-preview.js')), 'no preview script');
+    assert(fs.existsSync(path.join(ext.extensionPath, 'dist', 'mermaid-preview.js')), 'script missing from the build');
+    assert(typeof ext.exports?.extendMarkdownIt === 'function', 'extension does not export extendMarkdownIt');
+    const rules = { fence: undefined };
+    const md = { renderer: { rules }, utils: { escapeHtml: (t) => t.replace(/</g, '&lt;') } };
+    ext.exports.extendMarkdownIt(md);
+    const html = rules.fence([{ info: 'mermaid', content: 'A --> B', attrJoin() {} }], 0, {}, {}, { renderAttrs: () => ' class="yamd-mermaid"' });
+    assert(html.includes('class="yamd-mermaid"') && html.includes('A --> B'), html);
+  });
+
+  test('the sidebar has outline and unlinked-mention views', async () => {
+    const views = ext.packageJSON.contributes.views.yamd.map((v) => v.id);
+    assert(views.includes('yamd.outline') && views.includes('yamd.mentions'), views.join(', '));
+    const all = await vscode.commands.getCommands(true);
+    assert(all.includes('yamd.linkMention'), 'yamd.linkMention missing');
+  });
+
+  test('Export HTML of a note with diagrams carries the drawing script; one without does not', async () => {
+    const withDiagram = await open(root, '07-whats-new/diagrams-and-outline.md');
+    await vscode.commands.executeCommand('yamd.exportHtml');
+    const file = withDiagram.doc.uri.fsPath.replace(/\.md$/, '.html');
+    assert(await until(() => fs.existsSync(file)), 'no html written');
+    const html = fs.readFileSync(file, 'utf8');
+    assert(/language-mermaid/.test(html), 'diagram source missing');
+    assert(html.length > 1000000 && /mermaid/i.test(html.slice(-3000000)), 'drawing script not inlined');
+    assert((html.match(/<\/script>/g) ?? []).length === 1, 'script was not closed cleanly');
+    const plain = path.join(root, '05-export', 'export.html');
+    assert(!fs.existsSync(plain) || fs.readFileSync(plain, 'utf8').length < 1000000, 'a note without diagrams got the script');
+  });
+
   const report = [];
   let failed = 0;
   for (const t of results) {

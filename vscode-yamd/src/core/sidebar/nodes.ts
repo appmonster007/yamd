@@ -9,6 +9,10 @@ import type { Card, Schedule } from '../study/cards';
 import { formatMinutes } from '../study/studylog';
 import type { DashboardData } from '../study/dashboard';
 import { scanWidgets } from '../widgets/fences';
+import { fencedLines } from '../build/callouts';
+import { extractFrontMatter } from '../markdown/frontmatter';
+import { findMentions, namesOf } from '../notes/mentions';
+import type { Mention } from '../notes/mentions';
 
 export interface SidebarNode {
   label: string;
@@ -23,6 +27,8 @@ export interface SidebarNode {
   widget?: boolean;
   /** Arguments for the review command (a course name). */
   review?: string;
+  /** An unlinked mention: where it is and what to link it to. */
+  mention?: { path: string; line: number; col: number; length: number; target: string; text: string };
   children?: SidebarNode[];
 }
 
@@ -39,6 +45,51 @@ export function widgetNodes(lines: string[]): SidebarNode[] {
   }));
 }
 
+/** The note's headings as a tree: a heading's children are the deeper headings under it. */
+export function headingNodes(lines: string[]): SidebarNode[] {
+  const fenced = fencedLines(lines);
+  const fm = extractFrontMatter(lines);
+  const roots: SidebarNode[] = [];
+  const stack: { level: number; node: SidebarNode }[] = [];
+  lines.forEach((text, line) => {
+    if (fenced.has(line) || (fm && line <= fm.endLine)) return;
+    const m = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(text);
+    if (!m) return;
+    const level = (m[1] as string).length;
+    const node: SidebarNode = { label: (m[2] as string).replace(/\s*\^[\w-]+$/, ''), description: `h${level}`, icon: 'symbol-string', line };
+    while (stack.length && (stack[stack.length - 1] as { level: number }).level >= level) stack.pop();
+    const parent = stack[stack.length - 1]?.node;
+    if (parent) (parent.children ??= []).push(node);
+    else roots.push(node);
+    stack.push({ level, node });
+  });
+  return roots;
+}
+
+/** Notes that name this one without linking to it, grouped by note. */
+export function mentionNodes(selfPath: string, selfLines: string[], notes: { path: string; text: string }[], name: (path: string) => string): SidebarNode[] {
+  const self = namesOf(selfPath, selfLines);
+  const byNote = new Map<string, Mention[]>();
+  for (const m of findMentions(self, notes, selfPath)) byNote.set(m.path, [...(byNote.get(m.path) ?? []), m]);
+  return [...byNote.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, list]) => ({
+      label: name(path),
+      description: `${list.length} ${list.length === 1 ? 'mention' : 'mentions'}`,
+      icon: 'markdown',
+      path,
+      line: list[0]?.line ?? 0,
+      children: list.map<SidebarNode>((m) => ({
+        label: m.snippet,
+        description: `line ${m.line + 1}`,
+        icon: 'link',
+        path,
+        line: m.line,
+        mention: { path, line: m.line, col: m.col, length: m.length, target: self.target, text: m.text },
+      })),
+    }));
+}
+
 /** The note's callouts and cross-reference targets. */
 export function outlineNodes(lines: string[]): SidebarNode[] {
   const callouts = scanCallouts(lines).map<SidebarNode>((c) => ({
@@ -51,6 +102,8 @@ export function outlineNodes(lines: string[]): SidebarNode[] {
     .filter((t) => !callouts.some((c) => c.line === t.line))
     .map<SidebarNode>((t) => ({ label: t.label, description: `^${t.id}`, icon: t.kind === 'Figure' ? 'file-media' : t.kind === 'Table' ? 'table' : 'symbol-operator', line: t.line }));
   const out: SidebarNode[] = [];
+  const headings = headingNodes(lines);
+  if (headings.length) out.push({ label: 'Headings', icon: 'list-tree', children: headings });
   if (callouts.length) out.push({ label: `Callouts (${callouts.length})`, icon: 'comment', children: callouts });
   if (targets.length) out.push({ label: `Figures, tables and equations (${targets.length})`, icon: 'references', children: targets });
   return out;

@@ -11,7 +11,7 @@ Plain Markdown notes that show every YAMD feature. Open them in VS Code with the
 | [04-study](04-study/) | Lecture notes, flashcards and deadlines |
 | [05-export](05-export/) | HTML, print-to-PDF and slides |
 | [06-linked-notes](06-linked-notes/) | Wikilinks, backlinks, tags and the note graph (through Foam) |
-| [07-whats-new](07-whats-new/) | Menu and templates, snippets and completion, card details and filters, gallery picker, query builder and exports, transcription, study this note and check this note |
+| [07-whats-new](07-whats-new/) | Menu and templates, snippets and completion, card details and filters, gallery picker, query builder and exports, transcription, study this note and check this note, mermaid diagrams, the outline and unlinked mentions |
 
 ## Try it
 

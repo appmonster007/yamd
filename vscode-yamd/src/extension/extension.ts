@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { registerOnboarding } from './onboarding/commands';
 import { registerAudio } from './audio/recorder';
+import { mermaidFence } from '../core/markdown/mermaidFence';
 import { registerTranscribe } from './audio/transcribe';
 import { registerTools } from './writing/tools';
 import { registerRefresh } from './query/refresh';
@@ -21,7 +22,7 @@ import { ReviewPanel } from '../study/review';
 import { StudyIndex } from '../study/studyIndex';
 import { StudyTimer } from '../study/timer';
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): { extendMarkdownIt(md: Parameters<typeof mermaidFence>[0]): unknown } {
   const studyIndex = new StudyIndex();
   const reviewPanel = new ReviewPanel(context.extensionUri, studyIndex);
   const dashboard = new DashboardPanel(studyIndex);
@@ -45,6 +46,9 @@ export function activate(context: vscode.ExtensionContext): void {
   registerRefresh(context);
   registerTools(context);
   registerTranscribe(context);
+
+  // VS Code's Markdown preview asks for this to draw ```mermaid blocks (see media/markdown preview script).
+  return { extendMarkdownIt: (md) => mermaidFence(md) };
 }
 
 export function deactivate(): void {}

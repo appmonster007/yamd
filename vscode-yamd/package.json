@@ -335,6 +335,12 @@
         "command": "yamd.openSource",
         "title": "Open Query Data File in Its Editor",
         "category": "YAMD"
+      },
+      {
+        "command": "yamd.linkMention",
+        "title": "Link This Mention",
+        "category": "YAMD",
+        "icon": "$(link)"
       }
     ],
     "menus": {
@@ -502,6 +508,10 @@
         {
           "command": "yamd.openSource",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "yamd.linkMention",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -538,6 +548,13 @@
           "command": "yamd.recordAudio",
           "when": "editorLangId == markdown",
           "group": "yamd@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "yamd.linkMention",
+          "when": "view == yamd.mentions && viewItem == yamd.mention",
+          "group": "inline"
         }
       ]
     },
@@ -616,7 +633,11 @@
         },
         {
           "id": "yamd.outline",
-          "name": "Callouts and References"
+          "name": "Outline"
+        },
+        {
+          "id": "yamd.mentions",
+          "name": "Unlinked Mentions"
         },
         {
           "id": "yamd.cards",
@@ -639,7 +660,7 @@
       },
       {
         "view": "yamd.outline",
-        "contents": "No callouts or figure, table and equation targets in this note.\nWrite a callout as `> [!theorem] Title`."
+        "contents": "No headings, callouts or figure, table and equation targets in this note.\nWrite a heading as `## Title` or a callout as `> [!theorem] Title`."
       },
       {
         "view": "yamd.cards",
@@ -648,6 +669,10 @@
       {
         "view": "yamd.deadlines",
         "contents": "No deadlines. Add `{due=YYYY-MM-DD}` to a task."
+      },
+      {
+        "view": "yamd.mentions",
+        "contents": "No other note names this one without linking to it, or no saved Markdown note is open."
       }
     ],
     "walkthroughs": [
@@ -837,6 +862,10 @@
         "language": "markdown",
         "path": "./snippets/yamd.code-snippets"
       }
+    ],
+    "markdown.markdownItPlugins": true,
+    "markdown.previewScripts": [
+      "./dist/mermaid-preview.js"
     ]
   },
   "scripts": {
@@ -858,6 +887,7 @@
     "@vscode/vsce": "^4.0.0",
     "commonmark-spec": "^0.31.2",
     "esbuild": "^0.28.2",
+    "mermaid": "^11.4.1",
     "micromark-util-types": "^2.0.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

@@ -41,6 +41,17 @@ const contexts = await Promise.all([
     format: 'iife',
     target: 'es2022',
   }),
+  // Draws mermaid blocks in the Markdown preview and in exported pages.
+  esbuild.context({
+    ...shared,
+    entryPoints: { 'mermaid-preview': 'src/preview/mermaid.ts' },
+    outdir: 'dist',
+    platform: 'browser',
+    format: 'iife',
+    target: 'es2022',
+    minify: true,
+    sourcemap: false,
+  }),
   // Syntax highlighting and math, loaded by the extension when a preview first needs them.
   esbuild.context({
     ...shared,
