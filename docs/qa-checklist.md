@@ -1,89 +1,63 @@
 # QA checklist for YAMD 1.2
 
-`make test-integration` already checks, in a real VS Code: activation, every contributed command, CodeLens above widget blocks, diagnostics and quick fixes, Build (and that a second Build changes nothing), Run Query (and its idempotence), opening a widget and a query panel (one panel per block), accept/reject review commands, Go to Reference Target, and HTML and slide export. What follows is what automation can't do: anything that happens inside a widget panel, and how things look.
+Three automated suites run before this list. What is left below is what automation cannot judge: how things look, anything that needs a human at a real microphone, a quick pick or a Marketplace install.
 
-Use a copy of `examples/` as the workspace.
+| Suite | Command | What it drives |
+|---|---|---|
+| Unit tests (420) | `npm test` | the pure logic in `src/core/**`, every example note, both package manifests |
+| Real VS Code, trusted (33) | `npm run test:integration` | the extension host: activation, commands, CodeLens, diagnostics, Build and Build on save, queries and refresh on save, export (HTML, slides, single Markdown, one widget), transcription with a fake tool, Study This Note, Link This Mention, the walkthrough and sidebar manifests, completion, and VS Code's own Markdown preview through our mermaid plugin |
+| Real VS Code, Restricted Mode (6) | `npm run test:integration:restricted` | the workspace is untrusted (`isTrusted` is false): queries, transcription and recording refuse; an export will not read a file outside the workspace; Build still works |
+| Panel scripts in Chrome (37) | `npm run test:panels` | the real `dist/preview.js` with a stubbed VS Code API: drag and drop, keyboard moves, rename, tick, add, collapse, month navigation, the details form, filter, overdue, enlarge, image picker, gallery reorder; each check was seen to fail when its expectation was wrong |
 
-## Widget panels (`examples/02-widgets`)
+`make test-integration` runs the last three. Use a copy of `examples/` as the workspace for what follows.
 
-- [ ] **Kanban:** open `sprint-12`. Drag a card to another column; the note changes only inside the fence; undo restores it.
-- [ ] Rename a card (double-click its title) and add a card from the box at a column's bottom.
-- [ ] Tick a card's checkbox; the `[ ]` in the note becomes `[x]`.
-- [ ] Edit the note by hand while the panel is open; the panel follows. Delete the block; the panel says it is gone.
-- [ ] Open both boards in `kanban.md`; two panels open, and clicking a lens again reveals the same panel.
-- [ ] **Calendar:** it opens on December 2026 (the next month with an event); ‹ › and Today move between months. Drag an event to another day; only its `due=` changes. Click a date to expand it.
-- [ ] **Timeline:** a month scale sits above the lanes and every bar stays inside its lane. Drag a bar along its lane (start and end move together) and onto another lane.
-- [ ] **Gallery:** drag to reorder; the folder gallery (`all-assets`) shows the images and cannot be reordered.
-- [ ] Images in a gallery load (the panel can read files next to the note).
+## Not covered by any suite
 
-## Query widgets (`examples/03-queries`)
+These are the checks to do by hand. Tick each when done.
 
-- [ ] Table, board and bar and line charts all render. A board card shows the other columns.
-- [ ] Edit `bugs.csv` on disk; open query panels refresh without reopening.
-- [ ] Change a query to `UPDATE bugs SET status='x'`; the panel shows a Q001 message and nothing changes.
-- [ ] Break a column name in a chart; the panel and the Problems panel both explain it.
-- [ ] Open `data/crm.sqlite` queries; joins work.
+### Looks
 
-## Writing tools
+- [ ] Open each board in `examples/02-widgets` and a query in `03-queries` in light and dark themes: nothing overlaps, clips or is unreadable. (The README screenshots are dark-theme renders in headless Chrome, not a VS Code window.)
+- [ ] Table, board and bar and line charts all look right. A board card shows the other columns.
+- [ ] The calendar and timeline: the month scale sits above the lanes and every bar stays inside its lane.
+- [ ] Overdue cards, events and bars are clearly red.
 
-- [ ] **Build** in `01-writing/references.md`: delete a label's number, run Build, it returns.
-- [ ] Turn on `yamd.build.onSave`; saving a changed note rebuilds it. Turn off `yamd.build.linkCitations`; citations stay as `[@key]`.
-- [ ] Callouts: remove the blank line after one; a warning appears with a quick fix.
-- [ ] `YAMD: Go to Reference Target` on an image link opens the image beside the note.
+### Widget panels
 
-## Audio
+- [ ] The panel follows hand edits to the note while it is open, and says so when the block is deleted. Undo (Cmd/Ctrl+Z in the note) reverses a panel edit in one step.
+- [ ] Drag a timeline bar along its lane and onto another lane (the panel scripts check the calendar, kanban and gallery, not this).
+- [ ] The folder gallery (`all-assets`) shows images and cannot be reordered. Images load from next to the note.
+- [ ] Edit `bugs.csv` on disk; open query panels refresh. Change a query to `UPDATE …`; the panel shows a Q001 message and nothing changes. Open `data/crm.sqlite` queries; joins work.
 
-- [ ] **YAMD: Record Audio and Add Link** opens a recorder beside the note. Press Record: macOS asks to let VS Code use the microphone, or the panel says it is blocked and offers "Record in browser instead".
-- [ ] Record a few seconds, pause and resume, stop, play it back, name it and save: a file appears in `audio/` next to the note and a link on its own line where the cursor was.
-- [ ] Type above the cursor's line while recording; the link still lands where recording started.
-- [ ] Try it with the cursor inside a code block (link goes after the block) and in a note that was never saved (it asks to save first).
-- [ ] In the browser fallback, allow the microphone in the browser, save there, and the link appears in the note.
+### Menus, pickers and prompts (anything that opens a quick pick or an input box)
 
-## Export
+- [ ] `YAMD: Menu` and the status-bar item open the same list; each entry runs. Turn the status-bar item off with `yamd.statusBar.enabled`.
+- [ ] `YAMD: New Note` for each template: no leftover placeholders, `Build` is clean. `Create Sample Note` opens a note with its data file.
+- [ ] `Insert Callout`, `Insert Figure, Table or Equation`, `Insert Citation` (including the offer to attach a `.bib`), `Insert Query…` (file, table, columns, filter, view), `Turn Selection into a Widget`, `Add Card`, `Add Event`, `Add Timeline Item`, `Add Image to Gallery`: each asks sensible questions and writes sensible markup.
+- [ ] `Check This Note` lists a missing image, a missing data file and a dangling `[@fig-x]`; "Fix safe problems" adds a missing blank line; picking an entry jumps to its line.
+- [ ] Snippets (`kanban`, `callout`, `mermaid`) and completion (`source="`, `> [!`, `[@`, `[@fig-`) show in a real editor; hovering `source="…"` shows columns.
+- [ ] First install: the welcome toast appears once; `YAMD: Open Walkthrough` shows 14 steps, and each step's buttons run.
+- [ ] The once-a-day reminder appears with cards due or a deadline today, and not twice in a day.
 
-- [ ] Open the exported HTML in a browser: callouts are numbered, `[Figure 1]` links jump to the figure, widgets are static, the query is a table, a hard-wrapped paragraph is one paragraph.
-- [ ] Print to PDF: `yamd:pagebreak` starts a new page.
-- [ ] The slide export steps with the arrow keys.
+### Audio
 
-## Companions and study tools
+- [ ] `Record Audio and Add Link`: macOS asks to let VS Code use the microphone, or the panel says it is blocked and offers "Record in browser instead".
+- [ ] Record a few seconds, pause, resume, stop, play back, name and save: a file appears in `audio/` and a link on its own line where the cursor was, even if you typed above that line while recording. Try a cursor inside a code block (link goes after it) and a note that was never saved (it asks to save first). In the browser fallback, allow the microphone there and the link appears in the note.
+- [ ] `Transcribe Audio` with a real tool in `yamd.audio.transcribeCommand` (for example `whisper-cli`): the callout appears; a second run replaces it. (A fake tool is covered by the suite.)
 
-- [ ] Uninstall a companion (for example Edit CSV), run `YAMD: Open in CSV Editor`, accept the install offer.
-- [ ] `YAMD: New Study Note` creates a note that has no leftover placeholders. Review a few cards; the schedule appears in `.yamd/srs.json`. Deadlines appear in the YAMD sidebar. Start and stop the study timer.
+### Export and preview
 
-## Restricted Mode
+- [ ] The exported HTML in a browser: callouts are numbered, `[Figure 1]` links jump, widgets are static, a hard-wrapped paragraph is one paragraph. Print to PDF: `yamd:pagebreak` starts a new page. The slide export steps with the arrow keys.
+- [ ] Open the Markdown preview (side by side) of `examples/07-whats-new/diagrams-and-outline.md`: both diagrams are drawn; break one and see the source and the error; fix it and see it redrawn; switch light and dark and reopen: colours follow. (The suite checks that VS Code hands the block to our script and that the script draws it in Chrome, not the two together.)
+- [ ] `Export as Single Markdown File` output opens correctly in another viewer with images visible. `Export Widget as HTML` looks like the panel.
 
-- [ ] Open the workspace untrusted: boards render but cannot be edited, and queries on files outside the workspace are refused.
+### Sidebar
 
-## Writing and onboarding (1.2 additions)
+- [ ] The Outline view shows headings as a tree and jumps to them. In `examples/06-linked-notes`, open `people/ada.md`: Unlinked Mentions lists the sentence in `ideas.md`, and the link button turns it into a wikilink.
+- [ ] The Widgets, Flashcards, Deadlines and Study views show sensible content; the study timer starts, pauses and stops; reviewing cards writes `.yamd/srs.json`.
 
-- [ ] First install: the welcome toast appears once; `YAMD: Open Walkthrough` shows 14 steps whose buttons work.
-- [ ] `YAMD: Menu` and the status-bar item open the same list; each entry runs.
-- [ ] `YAMD: New Note` for each template: no leftover placeholders, `Build` is clean.
-- [ ] Snippets (`kanban`, `callout`) and completion (`source="`, `> [!`, `[@`) show in a real editor; hover over `source="…"` shows columns.
-- [ ] Paste an image into a note (VS Code's own paste) and check the link renders in the panel.
+### Companions
 
-## Widgets and data (1.2 additions)
-
-- [ ] The pencil on a kanban card, a calendar agenda event and a timeline item opens the form; saving changes only that card; Escape closes it.
-- [ ] The filter box hides cards by text, `@owner` and `#tag`, and keeps what you typed after an edit.
-- [ ] Overdue cards, events and bars are red.
-- [ ] Gallery: "Choose images…" opens the file dialog; clicking an image enlarges it; Escape closes.
-- [ ] `Insert Query…` walks through file, table, columns, filter and view, then runs it.
-- [ ] `yamd.queries.refreshOnSave` on: saving refreshes an existing snapshot and nothing else.
-
-## Media, study and checks (1.2 additions)
-
-- [ ] `Transcribe Audio` with a real tool set in `yamd.audio.transcribeCommand` writes a Transcript callout under the link; running it again replaces it.
-- [ ] `Export as Single Markdown File` opens correctly elsewhere with images visible.
-- [ ] `Export Widget as HTML` opens in a browser and looks like the panel.
-- [ ] `Study This Note` creates the `cards` region and starts a review; running it twice changes nothing.
-- [ ] The daily reminder appears once per day with cards due or a deadline today.
-- [ ] `Check This Note` lists a missing image and a dangling `[@fig-x]`, and "Fix safe problems" adds a missing blank line.
-- [ ] The Edit CSV / SQLite editor lens above a query block opens the file in the companion (accept the install offer if it is missing).
-
-## Diagrams and sidebar (1.2 additions)
-
-- [ ] Open the Markdown preview of `examples/07-whats-new/diagrams-and-outline.md`: both mermaid blocks are drawn; edit one so it breaks and see the source and error; fix it and see it redrawn.
-- [ ] Switch the colour theme light and dark and reopen the preview: the diagram colours follow.
-- [ ] Export HTML on that note, open it in a browser with no network: the diagrams are drawn.
-- [ ] The Outline view shows headings as a tree and jumps to them. The Unlinked Mentions view lists a typed mention of the note's name, and the link button replaces it with a wikilink.
+- [ ] Uninstall a companion (for example Edit CSV), run `YAMD: Open in CSV Editor` and the Edit CSV lens above a query block, and accept the install offer.
+- [ ] Foam commands open real views: Show Backlinks, Show Note Graph, Show Tags. (Their command names come from Foam's manifest and have never been run.)
+- [ ] Publish the extension, then install `YAMD Studio Pack` in a clean profile: YAMD 1.2.0 and the five companions arrive.

@@ -1,5 +1,6 @@
 // Runs test-integration/suite.cjs inside VS Code's extension host against a copy of the examples.
-// Needs VS Code 1.145+ installed (the `code` CLI is not required). Usage: node scripts/integration.mjs
+// Needs VS Code 1.145+ installed (the `code` CLI is not required).
+// Usage: node scripts/integration.mjs [--untrusted]   (--untrusted opens the workspace in Restricted Mode and runs test-integration/restricted.cjs)
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,6 +21,7 @@ if (!code) {
   process.exit(2);
 }
 
+const untrusted = process.argv.includes('--untrusted');
 const work = mkdtempSync(path.join(tmpdir(), 'yamd-qa-'));
 const workspace = path.join(work, 'examples');
 cpSync(path.resolve(repo, '..', 'examples'), workspace, { recursive: true });
@@ -33,9 +35,9 @@ const run = spawnSync(
   code,
   [
     `--extensionDevelopmentPath=${repo}`,
-    `--extensionTestsPath=${path.join(repo, 'test-integration', 'suite.cjs')}`,
+    `--extensionTestsPath=${path.join(repo, 'test-integration', untrusted ? 'restricted.cjs' : 'suite.cjs')}`,
     `--user-data-dir=${path.join(work, 'user')}`,
-    '--disable-workspace-trust',
+    ...(untrusted ? [] : ['--disable-workspace-trust']),
     '--skip-welcome',
     '--skip-release-notes',
     '--disable-telemetry',

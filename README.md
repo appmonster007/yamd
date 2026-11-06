@@ -258,11 +258,10 @@ In an untrusted workspace, boards render but can't be edited, queries may only r
 
 ## Limits and what is not tested
 
-- The unit tests (398) and the integration suite (22 checks in a real VS Code window) pass. The integration suite covers activation, command registration, CodeLens, diagnostics and quick fixes, Build, queries, opening panels, exports, the sidebar, completion and snippets.
-- Not yet checked by hand in a live window: the panel's microphone permission, drag and reorder, Restricted Mode, build on save, the companion install prompts, the card form, filter box, gallery picker and enlarge, the menu and status-bar item, daily reminder, the single-file and widget exports, and transcription with a real tool. [docs/qa-checklist.md](docs/qa-checklist.md) lists each check.
+- Four automated suites pass: 420 unit tests; 33 checks in a real VS Code (commands, CodeLens, diagnostics, Build and build on save, queries and refresh on save, all exports, transcription with a fake tool, Study This Note, linking a mention, completion, the Markdown preview plugin); 6 checks in a real VS Code in Restricted Mode; and 37 checks of the panel scripts (drag and drop, keys, forms, filter, enlarge) in headless Chrome.
+- Nobody has yet clicked through a live VS Code window by hand. The checks that need a human are listed in [docs/qa-checklist.md](docs/qa-checklist.md): how things look in light and dark themes, the microphone permission, the menus and quick picks (menu, New Note, Insert Query, Check This Note), the daily reminder, a real speech-to-text tool, printing to PDF, drawing diagrams in VS Code's own preview, the companion install prompts, and Foam's views (their command names come from Foam's manifest and have not been run).
 - Transcription needs a speech-to-text tool you install yourself.
 - Pasting an image uses VS Code's own Markdown paste; YAMD doesn't add its own.
-- Foam command names used by the backlinks, graph and tags aliases were taken from Foam's manifest and have not been run.
 
 ## Develop
 
@@ -273,7 +272,7 @@ make deps              # npm install
 make build             # bundle into vscode-yamd/dist/
 make typecheck
 make test              # unit tests
-make test-integration  # drives a real VS Code window
+make test-integration  # a real VS Code (trusted and Restricted Mode) plus the panel scripts in Chrome
 make package           # build a .vsix
 ```
 

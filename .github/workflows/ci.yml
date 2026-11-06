@@ -21,6 +21,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run test:panels
       - run: npx vsce package --no-dependencies --allow-missing-repository --skip-license
       - uses: actions/upload-artifact@v4
         with:
@@ -45,3 +46,4 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: xvfb-run -a node scripts/integration.mjs
+      - run: xvfb-run -a node scripts/integration.mjs --untrusted

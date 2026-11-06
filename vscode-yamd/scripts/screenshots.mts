@@ -1,7 +1,7 @@
 // Renders the extension's real widget HTML and webview script in headless Chrome and saves PNGs to docs/images.
 // These are renders of the panel content with VS Code Dark Modern colours, not captures of a VS Code window.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import initSqlJs from 'sql.js';
@@ -20,7 +20,7 @@ const out = path.resolve(root, '..', 'docs', 'images');
 const tmp = path.resolve(process.env['TMPDIR'] ?? '/tmp', 'yamd-shots');
 mkdirSync(out, { recursive: true });
 mkdirSync(tmp, { recursive: true });
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const CHROME = [process.env['CHROME'], '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((c) => c && existsSync(c)) ?? (console.error('Chrome not found. Set CHROME to its executable.'), process.exit(2));
 const css = readFileSync(path.join(root, 'media', 'preview.css'), 'utf8');
 const script = readFileSync(path.join(root, 'dist', 'preview.js'), 'utf8');
 const TODAY = '2026-11-06';

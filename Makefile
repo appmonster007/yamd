@@ -42,7 +42,7 @@ test: deps
 	cd $(EXT_DIR) && npm test
 
 test-integration: build
-	cd $(EXT_DIR) && npm run test:integration
+	cd $(EXT_DIR) && npm run test:integration && npm run test:integration:restricted && npm run test:panels
 
 package: deps
 	cd $(EXT_DIR) && npm run package

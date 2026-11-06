@@ -349,6 +349,109 @@ exports.run = async function run() {
     assert(all.includes('yamd.openWalkthrough') && all.includes('yamd.menu') && all.includes('yamd.openSource'), 'commands missing');
   });
 
+  const scratch = (name, text) => {
+    const file = path.join(root, name);
+    fs.writeFileSync(file, text);
+    return file;
+  };
+  const cfg = (section, key, value) => vscode.workspace.getConfiguration(section).update(key, value, vscode.ConfigurationTarget.Global);
+  const openFile = async (file) => {
+    const doc = await vscode.workspace.openTextDocument(file);
+    const editor = await vscode.window.showTextDocument(doc);
+    return { doc, editor };
+  };
+
+  test('yamd.build.onSave: saving builds the note, and saving again changes nothing', async () => {
+    const file = scratch('__onsave.md', '# T\n\n![A](a.png)\n\n^fig-a\n\nSee [@fig-a].\n');
+    await cfg('yamd.build', 'onSave', true);
+    try {
+      const { doc, editor } = await openFile(file);
+      await editor.edit((b) => b.insert(new vscode.Position(0, 0), '\n'));
+      await doc.save();
+      assert(/\[Figure 1\]\(#fig-a\)/.test(fs.readFileSync(file, 'utf8')), `not built on save: ${fs.readFileSync(file, 'utf8')}`);
+      const once = fs.readFileSync(file, 'utf8');
+      await editor.edit((b) => b.insert(new vscode.Position(0, 0), '\n'));
+      await doc.save();
+      assert(fs.readFileSync(file, 'utf8').trim() === ('\n' + once).trim() || fs.readFileSync(file, 'utf8').includes('[Figure 1](#fig-a)'), 'second save broke the note');
+    } finally {
+      await cfg('yamd.build', 'onSave', undefined);
+    }
+  });
+
+  test('yamd.queries.refreshOnSave refreshes an existing snapshot and does not add one elsewhere', async () => {
+    const file = scratch('__refresh.md', '```sql\n-- id="a" source="03-queries/bugs.csv" view="table"\nSELECT id FROM bugs ORDER BY id;\n```\n\n<!-- yamd:query:a -->\nstale\n<!-- /yamd:query:a -->\n\n```sql\n-- id="b" source="03-queries/bugs.csv" view="table"\nSELECT id FROM bugs;\n```\n');
+    await cfg('yamd.queries', 'refreshOnSave', true);
+    try {
+      const { doc, editor } = await openFile(file);
+      await editor.edit((b) => b.insert(new vscode.Position(0, 0), '\n'));
+      await doc.save();
+      const text = fs.readFileSync(file, 'utf8');
+      assert(!/stale/.test(text), 'the snapshot was not refreshed');
+      assert(/<!-- yamd:query:a -->/.test(text) && !/yamd:query:b/.test(text), 'wrong snapshots: ' + text);
+    } finally {
+      await cfg('yamd.queries', 'refreshOnSave', undefined);
+    }
+  });
+
+  test('Transcribe Audio runs the configured tool and writes a Transcript callout, replacing it the second time', async () => {
+    const tool = path.join(root, '__fake-transcribe.sh');
+    fs.writeFileSync(tool, '#!/bin/sh\necho "[00:00:00.000 --> 00:00:02.000]  Hello from the tool. Second sentence here."\n');
+    fs.chmodSync(tool, 0o755);
+    const note = scratch('__transcribe.md', '# Meeting\n\n[Rec](01-writing/audio/note-2026-11-05-0930.wav)\n\nAfter.\n');
+    await cfg('yamd.audio', 'transcribeCommand', `${tool} {file}`);
+    try {
+      const { doc, editor } = await openFile(note);
+      editor.selection = new vscode.Selection(2, 0, 2, 0);
+      const settled = await Promise.race([vscode.commands.executeCommand('yamd.transcribeAudio').then(() => 'done'), sleep(6000).then(() => 'still running')]);
+      await until(() => doc.getText().includes('[!note] Transcript'), 4000);
+      if (!doc.getText().includes('[!note] Transcript')) throw new Error(`command ${settled}; setting=${JSON.stringify(vscode.workspace.getConfiguration('yamd.audio').get('transcribeCommand'))}; trusted=${vscode.workspace.isTrusted}; active=${vscode.window.activeTextEditor?.document.uri.fsPath}; text=${JSON.stringify(doc.getText())}`);
+      assert(doc.getText().includes('> Hello from the tool.') && doc.getText().includes('> Second sentence here.'), doc.getText());
+      await vscode.commands.executeCommand('yamd.transcribeAudio');
+      await sleep(800);
+      assert((doc.getText().match(/\[!note\] Transcript/g) ?? []).length === 1, 'the transcript was duplicated');
+      assert(doc.getText().includes('After.'), 'text after the link was lost');
+    } finally {
+      await cfg('yamd.audio', 'transcribeCommand', undefined);
+    }
+  });
+
+  test('Export as Single Markdown File inlines images and keeps query results; Export Widget writes a read-only page', async () => {
+    const note = scratch('__export.md', '# E\n\n![Team](assets/team.svg)\n\n```kanban board\n## Todo\n- [ ] One {owner=ada}\n```\n\n```sql\n-- id="q" source="03-queries/bugs.csv" view="table"\nSELECT id, title FROM bugs ORDER BY id LIMIT 2;\n```\n');
+    const { doc } = await openFile(note);
+    await vscode.commands.executeCommand('yamd.exportMarkdown');
+    const md = note.replace(/\.md$/, '.export.md');
+    assert(await until(() => fs.existsSync(md)), 'no export.md written');
+    const text = fs.readFileSync(md, 'utf8');
+    assert(text.includes('data:image/svg+xml;base64,'), 'image not inlined');
+    assert(/<!-- yamd:query:q -->/.test(text) && /Header overlaps logo/.test(text), 'query result missing');
+    await vscode.commands.executeCommand('yamd.exportWidget', doc.uri, 4);
+    const html = note.replace(/\.md$/, '-board.html');
+    assert(await until(() => fs.existsSync(html)), 'no widget page written');
+    const page = fs.readFileSync(html, 'utf8');
+    assert(/kanban/.test(page) && /Read-only copy/.test(page) && !/class="card-edit"/.test(page), 'the widget page is not a static copy');
+  });
+
+  test('Study This Note writes cards from callouts once, and the review panel can open', async () => {
+    const note = scratch('__study.md', '---\ncourse: X\n---\n\n# S\n\n> [!definition] Prime\n> A number with two divisors.\n\n> [!question] Why?\n> Because.\n');
+    const { doc } = await openFile(note);
+    await vscode.commands.executeCommand('yamd.studyThisNote');
+    await until(() => doc.getText().includes('yamd:cards'));
+    const first = doc.getText();
+    assert(/> \[!card\] Definition: Prime/.test(first) && /> \[!card\] Why\?/.test(first), first);
+    await vscode.commands.executeCommand('yamd.studyThisNote');
+    await sleep(500);
+    assert(doc.getText() === first, 'a second run changed the note');
+    const cards = (first.match(/\[!card\]/g) ?? []).length;
+    assert(cards === 2, `${cards} cards`);
+  });
+
+  test("VS Code's own Markdown preview draws mermaid through our plugin", async () => {
+    const html = await vscode.commands.executeCommand('markdown.api.render', '# T\n\n```mermaid\nflowchart LR\n  A --> B\n```\n\n```js\nlet x;\n```\n');
+    assert(typeof html === 'string', 'markdown.api.render returned nothing');
+    assert(/<pre[^>]*yamd-mermaid[^>]*><code>flowchart LR/.test(html), `mermaid block not handed to the script: ${html}`);
+    assert(!/yamd-mermaid[^]*yamd-mermaid/.test(html), 'a plain code block was treated as mermaid');
+  });
+
   const report = [];
   let failed = 0;
   for (const t of results) {
