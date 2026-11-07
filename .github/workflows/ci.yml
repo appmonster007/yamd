@@ -49,9 +49,11 @@ jobs:
         run: |
           npm i --no-save @vscode/test-electron
           echo "VSCODE_EXECUTABLE=$(node -e "require('@vscode/test-electron').downloadAndUnzipVSCode().then(console.log)" | tail -1)" >> "$GITHUB_ENV"
-      - name: Install the Foam dependency
+      - name: Install the companion extensions
         run: |
           cli="$(dirname "$VSCODE_EXECUTABLE")/bin/code"
-          "$cli" --install-extension foam.foam-vscode
+          for ext in foam.foam-vscode yy0931.vscode-sqlite3-editor janisdd.vscode-edit-csv mechatroner.rainbow-csv yzhang.markdown-all-in-one; do
+            "$cli" --install-extension "$ext"
+          done
       - run: xvfb-run -a node scripts/integration.mjs
       - run: xvfb-run -a node scripts/integration.mjs --untrusted
