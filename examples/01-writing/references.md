@@ -46,6 +46,16 @@ Logical clocks order events without a shared clock [(Lamport, 1978)](#ref-lampor
 
 Switch off the links with the `yamd.build.linkCitations` setting; the reference list is built either way.
 
+**Try it:**
+1. Add a figure above the first one with `^fig-new` after it, and write `[@fig-new]` in a sentence.
+2. Run **YAMD: Build**. Labels renumber and the link appears. Run it again; nothing changes.
+3. Type `[@` to pick a key from `refs.bib`, or run **YAMD: Insert Citation…**.
+4. Write `[@fig-missing]` and run **YAMD: Check This Note**. It reports a reference with no target.
+5. **Insert Figure, Table or Equation…** writes an item and its target for you.
+6. Cite with a locator or several keys: `[@dean2008, p. 107]`, `[@lamport1978; @knuth1997]`. Build keeps the labels right.
+7. Change `citation-style` in the front matter to `ieee`, `chicago`, `harvard` or `mla`, then Build. Labels and the list restyle.
+8. Set `yamd.build.linkCitations` to off to build only the list, without links.
+
 ## References
 
 <!-- yamd:bibliography -->

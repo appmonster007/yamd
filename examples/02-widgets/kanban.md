@@ -43,3 +43,15 @@ A note can hold several boards. Give each its own id so you can open the right o
 ```
 
 Without the extension, both boards are code blocks showing readable headings and task lists.
+
+## Try it
+
+1. Click **Open kanban: sprint-12** above the first block. The board opens beside the note.
+2. Drag a card to another column, or within a column to reorder it.
+3. Double-click a title to rename it. Tick a card's checkbox to mark it done.
+4. Use the **+** at the bottom of a column (or **YAMD: Add Card**) to add a card.
+5. Click the pencil on **Fix login on Safari** to edit due date, owner, tags and notes.
+6. Type `@ada` or `#tag` in the filter box. Past-due cards that aren't done show in red.
+7. Collapse a column with its arrow. Press Ctrl/Cmd+Z in the note to undo any edit.
+8. Run **YAMD: Open Widget** to pick any block in the note from a list, or **Open Kanban** for boards only.
+9. Select task lines in any note and run **Turn Selection into a Widget…**. Or type `kanban` and press Tab.

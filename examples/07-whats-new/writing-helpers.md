@@ -33,7 +33,10 @@ Each writes the markup, with a free id, at the cursor:
 | Insert Query… | a query block from a short form (file, columns, filter, view) |
 | Turn Selection into a Widget… | selected task items become a board, calendar or timeline |
 
-Try it: select the three tasks below and run **Turn Selection into a Widget…**.
+Try it:
+1. Select the three tasks below and run **Turn Selection into a Widget…**. Pick board, calendar or timeline.
+2. Below them, type `kanban`, `theorem` or `toc` and press Tab.
+3. Type ` ```ka` for widget completion, or `> [!` for callout types.
 
 - [ ] Draft the outline
 - [ ] Review with the team

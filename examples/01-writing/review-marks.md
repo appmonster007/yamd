@@ -17,3 +17,10 @@ Accepting keeps added text and drops removed text; rejecting does the opposite. 
 ```html
 <ins>this stays</ins> and <del>so does this</del>
 ```
+
+## Try it
+
+1. Put the cursor inside the `<ins>Wednesday</ins>` change and run **YAMD: Accept Change at Cursor**. The `<del>` goes and the text stays.
+2. Run **YAMD: Reject Change at Cursor** on another change. The addition goes instead.
+3. Type `ins` or `del` and press Tab for a snippet.
+4. Select several changes and run Accept or Reject once. **Accept All Changes** resolves the whole note.

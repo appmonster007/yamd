@@ -51,6 +51,11 @@ Duplicate headings get GitHub-style anchors (`#another-subsection`, `#another-su
 
 The second one is linked as `another-subsection-1`.
 
+**Try it:**
+1. Add a `## Section three` heading anywhere, then run **YAMD: Build**. It appears in the contents.
+2. Change `depth=3` to `depth=2` and Build again; the subsections go.
+3. Turn on `yamd.build.onSave` to run Build on every save.
+
 ## Query snapshots
 
 **YAMD: Run Query** writes a snapshot between `yamd:query:ID` markers under a query block (see the queries folder). Running it again with unchanged rows changes nothing.

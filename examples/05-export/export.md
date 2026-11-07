@@ -47,6 +47,13 @@ SELECT owner, count(*) AS bugs FROM bugs GROUP BY owner ORDER BY owner;
 
 A `---` line above starts a new slide in the slide export.
 
+**Try it:**
+1. Run **YAMD: Export HTML** and open `export.html`: callouts, links, the board and the table are all static.
+2. Run **YAMD: Export PDF** and print the page. It breaks at the page-break marker.
+3. Run **YAMD: Export Slides** and step through with the arrow keys.
+4. Run **YAMD: Export as Single Markdown File**, which inlines images and query results.
+5. Put the cursor in the board and run **YAMD: Export Widget as HTML** for just that block.
+
 ## References
 
 <!-- yamd:bibliography -->

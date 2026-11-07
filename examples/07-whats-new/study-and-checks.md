@@ -45,3 +45,9 @@ course: Examples
 | N004 | a citation key missing from the bibliography file |
 
 This note is clean, so the command reports nothing.
+
+## Try it
+
+1. Run **YAMD: Study This Note**. The cards region is rewritten and a review starts.
+2. Delete the blank line under a callout, then run **YAMD: Check This Note**. Pick the item to jump to it, then accept the fix.
+3. Add `[@fig-nothing]` and run Check again: it reports a missing target.

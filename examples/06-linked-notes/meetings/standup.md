@@ -15,3 +15,5 @@ Attendees: [[people/ada]]. Notes on [[ideas#Active]]. Back to [[home]].
 ## Done
 - [x] Review the billing API
 ```
+
+Open the board above with **Open kanban: standup-actions**; boards work in linked notes too.

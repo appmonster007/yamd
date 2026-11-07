@@ -18,3 +18,9 @@ Put the cursor on the link's line (or choose from a list) and run the command. R
 > Welcome to the stand-up.
 > Ada finished the sign-up flow.
 > Alan is load testing the API.
+
+## Try it
+
+1. Install a speech-to-text tool and set `yamd.audio.transcribeCommand` with `{file}` in it.
+2. Put the cursor on the recording link and run **YAMD: Transcribe Audio**.
+3. Run it again to replace the transcript.

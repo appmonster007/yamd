@@ -29,3 +29,10 @@ Cards can use any Markdown in the answer, including math ($e^{i\pi} + 1 = 0$) an
 > - Red
 > - Green
 > - Blue
+
+## Try it
+
+1. Run **YAMD: Review Cards**. Read a question, reveal the answer, then rate how well you knew it.
+2. Reviewed cards come back later (SM-2). Open `.yamd/srs.json` to see the schedule.
+3. Add a card with `card` and Tab, or **Insert Callout…** and pick *card*.
+4. Edit an answer: the schedule stays. Edit a question without a `^id`: it starts again.

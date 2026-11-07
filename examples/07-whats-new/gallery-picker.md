@@ -10,3 +10,8 @@ In a gallery panel, **Choose images…** opens the file dialog, copies nothing, 
 - ![The team](../assets/team.svg)
 - ![Architecture](../assets/architecture.svg)
 ```
+
+## Try it
+
+1. Open **team-photos** and press **Choose images…**. Pick an image and confirm its caption.
+2. Click an image to enlarge it; Escape closes it.

@@ -52,6 +52,11 @@ Binary search finds an item in a sorted array by comparing against the middle el
 - [ ] Read chapter 6.2 {due=2026-11-12}
 - [ ] Implement binary search in Python {due=2026-11-14}
 
+**Try it:**
+1. Run **YAMD: New Study Note** to make your own lecture, lab report, exam prep or reading note.
+2. Run **YAMD: Study This Note** to turn the definition, theorem and question into cards, then review them.
+3. Open **YAMD: Open Study Dashboard**. `course` groups notes; an old `reviewed` date marks a stale topic.
+
 ## References
 
 <!-- yamd:bibliography -->

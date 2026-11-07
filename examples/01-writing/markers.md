@@ -62,3 +62,10 @@ The linter warns about an unknown `yamd:` marker, a region that is never closed,
 A comment that is not in the `yamd:` namespace stays yours:
 
 <!-- Remember to check these figures before sending. -->
+
+## Try it
+
+1. In a new note, run **YAMD: Insert Table of Contents**. A `yamd:toc` region appears.
+2. Run **YAMD: Build**. The region fills with links to your headings.
+3. Type `<!-- yamd:` and pick a marker name from the completion list.
+4. Misspell one (`yamd:tok`) and run **YAMD: Check This Note**. It reports an unknown marker.

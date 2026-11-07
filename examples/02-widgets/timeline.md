@@ -18,3 +18,11 @@ A `timeline` block is a calendar stretched into bars: `{start=â€¦}` and `{due=â€
 - [ ] Sign-up redesign {start=2026-02-02 due=2026-02-27}
 - [ ] Usability study {start=2026-03-02 due=2026-03-20}
 ```
+
+## Try it
+
+1. Click **Open timeline: q1-roadmap**.
+2. Drag a bar sideways to reschedule it. Start and due shift together.
+3. Drag a bar onto another lane to change its owner lane.
+4. Read the schedule list under the lanes, and click the pencil on an item to edit it.
+5. Use **YAMD: Add Timeline Item** to add one, or type `timeline` and press Tab.

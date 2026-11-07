@@ -1,0 +1,9 @@
+id,title,area,status,priority,owner,days_open
+1,Board drag drops card in wrong column,widgets,open,high,ada,6
+2,Calendar skips months without events,widgets,open,medium,grace,12
+3,Query header completion misses columns,queries,open,low,alan,3
+4,Build changes unchanged bibliography,build,closed,high,ada,0
+5,Export slides loses mermaid,export,open,medium,grace,9
+6,Recorder fails without microphone,audio,open,high,alan,15
+7,Check This Note misses N004,checks,closed,medium,ada,0
+8,Study timer log not written,study,open,low,grace,4

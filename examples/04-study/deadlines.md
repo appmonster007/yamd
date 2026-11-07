@@ -32,3 +32,10 @@ Tasks inside a `kanban`, `calendar` or `timeline` block count too:
 ```
 
 The study timer (**YAMD: Start Study Timer**) logs focused time per course to `.yamd/study-log.json`, and the dashboard (**YAMD: Open Study Dashboard**) shows progress, streaks and stale topics.
+
+## Try it
+
+1. Open the **Deadlines** view in the YAMD sidebar. Overdue, today, this week and later are separate groups.
+2. Click a deadline to jump to its line.
+3. Tick a task here and it leaves the list.
+4. Run **YAMD: Start Study Timer**, work for a bit, stop it, then run **YAMD: Open Study Dashboard** for time per course, progress and streaks.

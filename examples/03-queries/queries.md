@@ -69,6 +69,17 @@ ORDER BY d.amount DESC;
 SELECT name, company, value, stage FROM contacts;
 ```
 
+## Try it
+
+1. Click the link above **open-bugs** to open it. Edit `bugs.csv` (the **Edit CSV** link) and save. The table refreshes.
+2. Run **YAMD: Run Query** with the cursor in a block. A snapshot appears under it. **Run All Queries in This Note** does every block.
+3. Change `view` to `board` and add `group="owner"`, or to `chart` with `type`, `x` and `y`. Press Ctrl+Space in the header for `view`, `group`, `x` and `y` values.
+4. Hover `source="bugs.csv"` to see its tables and columns. Completion inside the SQL offers column names.
+5. Run **YAMD: Insert Query…** to build a block from a short form.
+6. Click **Open in SQLite editor** above an `open-deals` block (or run **YAMD: Open Query Data File in Its Editor**) to edit data; **YAMD: Open Query Source in SQL Client** opens it in a SQL extension.
+7. Set `yamd.queries.refreshOnSave` so snapshots refresh when you save.
+8. Try `DROP TABLE bugs;` in a block: it is refused. Run **YAMD: Check This Note** to see query problems (Q001–Q004) listed.
+
 ## What is not allowed
 
 Only one `SELECT` runs. Statements such as `UPDATE`, `DROP` or `PRAGMA`, and several statements in one block, are refused with a message in the widget.

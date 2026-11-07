@@ -11,3 +11,10 @@ Three ways to find your way around without remembering command names.
 - **YAMD: Open Walkthrough** is a 14-step tour. It also opens once after install. **YAMD: Create Sample Note** writes a small note and a data file to try everything on.
 
 Try it: run **YAMD: New Note**, choose *Project board*, and open the board the note contains.
+
+## Try it
+
+1. Run **YAMD: Menu**. Pick **Widgets** and open one.
+2. Run **YAMD: New Note** and choose *Project board*.
+3. Run **YAMD: Create Sample Note** for a note and data file to explore.
+4. Run **YAMD: Open Walkthrough**.

@@ -15,3 +15,12 @@ Every top-level task item in a `calendar` block is an event, placed by its `{due
 ```
 
 An item without a due date can't be placed on a day, so it isn't shown.
+
+## Try it
+
+1. Click **Open calendar: december**. The month with the earliest event opens.
+2. Drag **Team sync** to another day. Only its `due=` changes in the note.
+3. Click a date to narrow the event list to that day; use the week option to narrow to a week.
+4. Switch months with the arrows.
+5. Click the pencil on an event for due date, owner, tags and notes.
+6. Use **YAMD: Add Event** to add an event, or type `calendar` and press Tab for a snippet.

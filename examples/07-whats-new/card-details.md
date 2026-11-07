@@ -31,3 +31,9 @@ Anything not done and past its date shows **in red** (the dates here are in the 
 - [ ] Copy the tables #urgent {start=2025-01-02 due=2025-01-12 owner=alan}
 - [x] Plan the cutover {start=2025-01-01 due=2025-01-03 owner=grace}
 ```
+
+## Try it
+
+1. Open **support**, click the pencil on the urgent card, change the owner, and Save.
+2. Type `#urgent` in the filter box, then `@grace`, then both.
+3. Open **releases** and **migration**; their past dates show in red.

@@ -1,25 +1,24 @@
-# YAMD 1.2 examples
 
-Plain Markdown notes that show every YAMD feature. Open them in VS Code with the YAMD extension installed; each one also reads fine on GitHub, where a widget is just a code block.
 
-| Folder | What it shows |
-|---|---|
-| [getting-started.md](getting-started.md) | A tour: one of everything |
-| [01-writing](01-writing/) | Callouts and study blocks, figures and citations, Build and the table of contents, review marks, attributes and page breaks, audio recording, and a one-page guide to every marker |
-| [02-widgets](02-widgets/) | Kanban, calendar, timeline and gallery blocks |
-| [03-queries](03-queries/) | Read-only SQL over CSV, JSON and SQLite as a table, board or chart |
-| [04-study](04-study/) | Lecture notes, flashcards and deadlines |
-| [05-export](05-export/) | HTML, print-to-PDF and slides |
-| [06-linked-notes](06-linked-notes/) | Wikilinks, backlinks, tags, the note graph (through Foam), and unlinked mentions |
-| [07-whats-new](07-whats-new/) | Menu and templates, snippets and completion, card details and filters, gallery picker, query builder and exports, transcription, study this note and check this note, mermaid diagrams, the outline and unlinked mentions |
+## Feature checklist
 
-## Try it
+Tick these off as you go. Every item has a step-by-step **Try it** in the linked note.
 
-1. Open [02-widgets/kanban.md](02-widgets/kanban.md). A link above each widget block reads **Open kanban: sprint-12**. Click it to open the board beside the note, then drag a card, rename it or add one. The note changes as you go, and undo works.
-2. Open [03-queries/queries.md](03-queries/queries.md) and open a query. Change `bugs.csv` and the view refreshes. **YAMD: Run Query** writes a Markdown snapshot of the result under the block.
-3. Open [01-writing/references.md](01-writing/references.md) and run **YAMD: Build**. References become links, citations link to the bibliography, and the table of contents fills in. Run it again and nothing changes.
-4. Run **YAMD: Export HTML** on any note.
-5. Open [07-whats-new/card-details.md](07-whats-new/card-details.md), open a board and click the pencil on a card; open [07-whats-new/diagrams-and-outline.md](07-whats-new/diagrams-and-outline.md) with **Markdown: Open Preview to the Side** to see the diagrams.
-6. Open [06-linked-notes/people/ada.md](06-linked-notes/people/ada.md) and look at the **Unlinked Mentions** view.
-
-The data and images these notes use are in `03-queries/` and `assets/`.
+- [ ] Boards, events, bars, galleries: [kanban](02-widgets/kanban.md), [calendar](02-widgets/calendar.md), [timeline](02-widgets/timeline.md), [gallery](02-widgets/gallery.md)
+- [ ] Card form, filter box, overdue colouring: [card-details](07-whats-new/card-details.md)
+- [ ] Table, board and chart queries; snapshots; edit data; SQL client: [queries](03-queries/queries.md)
+- [ ] Insert Query, Run All, Export Widget: [data-and-sharing](07-whats-new/data-and-sharing.md)
+- [ ] Callouts and study blocks: [callouts](01-writing/callouts.md)
+- [ ] Figures, tables, equations, citations, styles: [references](01-writing/references.md)
+- [ ] Table of contents and Build: [toc-and-build](01-writing/toc-and-build.md)
+- [ ] Every `yamd:` marker: [markers](01-writing/markers.md)
+- [ ] Attributes and page breaks: [attributes-and-export](01-writing/attributes-and-export.md)
+- [ ] Review marks: [review-marks](01-writing/review-marks.md)
+- [ ] Record and transcribe audio: [audio](01-writing/audio.md), [audio-transcript](07-whats-new/audio-transcript.md)
+- [ ] Snippets, completion, insert commands, Turn Selection into a Widget: [writing-helpers](07-whats-new/writing-helpers.md)
+- [ ] Mermaid, Outline, Unlinked Mentions: [diagrams-and-outline](07-whats-new/diagrams-and-outline.md)
+- [ ] Flashcards, deadlines, timer, dashboard, Study This Note: [flashcards](04-study/flashcards.md), [deadlines](04-study/deadlines.md), [lecture](04-study/lecture.md), [study-and-checks](07-whats-new/study-and-checks.md)
+- [ ] Check This Note and the Problems panel: [study-and-checks](07-whats-new/study-and-checks.md)
+- [ ] Export HTML, PDF, slides, single Markdown: [export](05-export/export.md)
+- [ ] Wikilinks, backlinks, graph, tags: [linked notes](06-linked-notes/home.md)
+- [ ] Menu, templates, walkthrough, sample note: [getting-started-tools](07-whats-new/getting-started-tools.md)

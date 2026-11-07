@@ -19,3 +19,10 @@ An example of what it leaves behind:
 If VS Code won't give its recorder panel the microphone, the panel offers **Record in browser instead**: the same recorder opens in your browser (a local page that only your machine can reach) and the file still lands next to the note.
 
 Notes: the file is saved as recorded (WebM with Opus audio), which plays in VS Code and Chromium-based browsers; a link works in GitHub and in an exported page, which an embedded player would not. The workspace must be trusted, and a new note must be saved first.
+
+## Try it
+
+1. Save the note, put the cursor on a blank line, and run **YAMD: Record Audio and Add Link**.
+2. Allow the microphone, press **Record**, speak, press **Stop**.
+3. Press **Save and add link**. A file lands in `audio/` and a link appears at the cursor.
+4. For text, see [transcribing a recording](../07-whats-new/audio-transcript.md).

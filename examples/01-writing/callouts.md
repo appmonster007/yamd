@@ -59,3 +59,11 @@ Body text can use any Markdown: lists, links, math, code.
 > ```
 
 Refer to a numbered block by its id with `[@def-prime]`; Build writes the link: [Definition 1](#def-prime), [Theorem 1](#thm-euclid) and [Lemma 1](#lem-divisor).
+
+## Try it
+
+1. Run **YAMD: Insert Callout…**, pick *theorem* and a title. The block and a free `^thm-…` id are written at the cursor.
+2. Or type `theorem` and press Tab for a snippet.
+3. Type `> [!` to pick a type from the completion list.
+4. Delete the blank line under any callout. The Problems panel flags it and offers a quick fix.
+5. Run **YAMD: Study This Note** to turn the definitions and theorems above into flashcards.
