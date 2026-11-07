@@ -49,5 +49,9 @@ jobs:
         run: |
           npm i --no-save @vscode/test-electron
           echo "VSCODE_EXECUTABLE=$(node -e "require('@vscode/test-electron').downloadAndUnzipVSCode().then(console.log)" | tail -1)" >> "$GITHUB_ENV"
+      - name: Install the Foam dependency
+        run: |
+          cli="$(dirname "$VSCODE_EXECUTABLE")/bin/code"
+          "$cli" --install-extension foam.foam-vscode
       - run: xvfb-run -a node scripts/integration.mjs
       - run: xvfb-run -a node scripts/integration.mjs --untrusted
