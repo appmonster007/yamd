@@ -15,6 +15,7 @@ import type { ReviewPanel } from './review';
 import { loadSchedule } from './review';
 import type { StudyIndex } from './studyIndex';
 import type { StudyTimer } from './timer';
+import { TimerView } from './timerView';
 import { collectCards, openAt, requireFolder, todayIso, writeData } from './workspace';
 
 async function newStudyNote(clicked?: vscode.Uri): Promise<void> {
@@ -115,8 +116,11 @@ async function remind(context: vscode.ExtensionContext, index: StudyIndex): Prom
 export function registerStudy(context: vscode.ExtensionContext, index: StudyIndex, review: ReviewPanel, dashboard: DashboardPanel, timer: StudyTimer): void {
   const deadlines = new DeadlinesView(index);
   setTimeout(() => void remind(context, index), 4000);
+  const timerView = new TimerView(timer, () => courses(index));
   context.subscriptions.push(
     deadlines,
+    timerView,
+    vscode.window.registerWebviewViewProvider('yamd.timer', timerView),
     vscode.window.registerTreeDataProvider('yamd.deadlines', deadlines),
     vscode.commands.registerCommand('yamd.openAt', (file: string, line: number) => openAt(file, line)),
     vscode.commands.registerCommand('yamd.reviewCards', (course?: unknown) => review.show(typeof course === 'string' && course ? course : undefined)),

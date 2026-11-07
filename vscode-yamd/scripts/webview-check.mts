@@ -41,7 +41,7 @@ const drag=(el,type,opts={})=>el.dispatchEvent(new DragEvent(type,{bubbles:true,
 (async()=>{try{await show();${body}}catch(e){check('script ran to the end',false,e&&e.stack||e)}const out=document.createElement('pre');out.id='result';out.textContent=JSON.stringify(results);document.body.append(out)})();
 </script></body></html>`,
   );
-  const dom = execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--window-size=1180,1000', '--virtual-time-budget=8000', '--dump-dom', pathToFileURL(file).toString()], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const dom = execFileSync(CHROME, [...(process.env['CI'] ? ['--no-sandbox'] : []), '--headless=new', '--disable-gpu', '--window-size=1180,1000', '--virtual-time-budget=8000', '--dump-dom', pathToFileURL(file).toString()], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const m = /<pre id="result">([\s\S]*?)<\/pre>/.exec(dom);
   if (!m) return [{ name: `${name}: page produced no result`, ok: false, detail: 'no #out' }];
   return JSON.parse((m[1] as string).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')) as { name: string; ok: boolean; detail: string }[];

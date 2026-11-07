@@ -22,7 +22,7 @@ test('the recorder page records and uploads from a browser', { skip: CHROME ? fa
   const server = await startUploadServer(() => recorderHtml({ mode: 'browser' }).replace('</body>', `${autoRun}</body>`));
   const chrome = spawn(
     CHROME as string,
-    ['--headless=new', '--disable-gpu', '--no-first-run', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--user-data-dir=${mkdtempSync(path.join(tmpdir(), 'yamd-chrome-'))}`, server.url],
+    [...(process.env['CI'] ? ['--no-sandbox'] : []), '--headless=new', '--disable-gpu', '--no-first-run', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--user-data-dir=${mkdtempSync(path.join(tmpdir(), 'yamd-chrome-'))}`, server.url],
     { stdio: 'ignore' },
   );
   try {

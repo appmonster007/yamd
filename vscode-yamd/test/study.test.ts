@@ -108,3 +108,32 @@ describe('html export', () => {
   });
 });
 
+
+import { formatClock, nextPhase, normalize } from '../src/core/study/pomodoro';
+
+it('pomodoro settings are clamped and filled', () => {
+  assert.deepEqual(normalize({}), normalize(undefined));
+  const c = normalize({ focus: 0, short: 'x', long: 9999, every: 1, goal: -5 });
+  assert.equal(c.focus, 1);
+  assert.equal(c.short, 5);
+  assert.equal(c.long, 120);
+  assert.equal(c.every, 2);
+  assert.equal(c.goal, 0);
+});
+
+it('pomodoro rounds: a long break after the set number of focus blocks', () => {
+  const cfg = normalize({ every: 3 });
+  let p = nextPhase(cfg, 'focus', 0);
+  assert.deepEqual(p, { phase: 'short', done: 1 });
+  p = nextPhase(cfg, p.phase, p.done);
+  assert.deepEqual(p, { phase: 'focus', done: 1 });
+  p = nextPhase(cfg, 'focus', 2);
+  assert.deepEqual(p, { phase: 'long', done: 3 });
+  assert.deepEqual(nextPhase(cfg, 'long', 3), { phase: 'focus', done: 0 });
+});
+
+it('formatClock rounds up to whole seconds', () => {
+  assert.equal(formatClock(25 * 60_000), '25:00');
+  assert.equal(formatClock(1), '00:01');
+  assert.equal(formatClock(-5), '00:00');
+});

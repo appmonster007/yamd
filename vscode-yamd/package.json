@@ -571,7 +571,46 @@
           "type": "number",
           "default": 25,
           "minimum": 1,
-          "description": "Default study-timer session length in minutes."
+          "description": "Focus length of the study timer in minutes."
+        },
+        "yamd.study.shortBreakMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "Length of a short break in the study timer, in minutes."
+        },
+        "yamd.study.longBreakMinutes": {
+          "type": "number",
+          "default": 15,
+          "minimum": 1,
+          "description": "Length of the long break in the study timer, in minutes."
+        },
+        "yamd.study.sessionsBeforeLongBreak": {
+          "type": "number",
+          "default": 4,
+          "minimum": 2,
+          "description": "Focus blocks to finish before a long break."
+        },
+        "yamd.study.autoStartBreaks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start a break by itself when a focus block ends."
+        },
+        "yamd.study.autoStartFocus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start the next focus block by itself when a break ends."
+        },
+        "yamd.study.timerSound": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play a chime in the sidebar timer when a phase ends. It needs the YAMD sidebar to be showing."
+        },
+        "yamd.study.dailyGoalMinutes": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Daily focus goal in minutes, shown as a bar in the sidebar timer. 0 turns it off."
         },
         "yamd.study.staleAfterDays": {
           "type": "number",
@@ -627,6 +666,11 @@
     },
     "views": {
       "yamd": [
+        {
+          "id": "yamd.timer",
+          "name": "Focus Timer",
+          "type": "webview"
+        },
         {
           "id": "yamd.widgets",
           "name": "Widgets in This Note"
