@@ -45,5 +45,9 @@ jobs:
           cache-dependency-path: vscode-yamd/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Download VS Code
+        run: |
+          npm i --no-save @vscode/test-electron
+          echo "VSCODE_EXECUTABLE=$(node -e "require('@vscode/test-electron').downloadAndUnzipVSCode().then(console.log)" | tail -1)" >> "$GITHUB_ENV"
       - run: xvfb-run -a node scripts/integration.mjs
       - run: xvfb-run -a node scripts/integration.mjs --untrusted

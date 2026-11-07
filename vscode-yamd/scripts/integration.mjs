@@ -38,6 +38,7 @@ const run = spawnSync(
     `--extensionTestsPath=${path.join(repo, 'test-integration', untrusted ? 'restricted.cjs' : 'suite.cjs')}`,
     `--user-data-dir=${path.join(work, 'user')}`,
     ...(untrusted ? [] : ['--disable-workspace-trust']),
+    ...(process.env.CI ? ['--no-sandbox'] : []),
     '--skip-welcome',
     '--skip-release-notes',
     '--disable-telemetry',
