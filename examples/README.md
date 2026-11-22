@@ -22,3 +22,4 @@ Tick these off as you go. Every item has a step-by-step **Try it** in the linked
 - [ ] Export HTML, PDF, slides, single Markdown: [export](05-export/export.md)
 - [ ] Wikilinks, backlinks, graph, tags: [linked notes](06-linked-notes/home.md)
 - [ ] Menu, templates, walkthrough, sample note: [getting-started-tools](07-whats-new/getting-started-tools.md)
+- [ ] One-page syntax summary of everything: [cheatsheet](cheatsheet.md)
