@@ -1,104 +1,105 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import * as path from 'node:path';
-import { describe, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { convertFromMarkdown, lint, parse, render } from '../src/core';
-import { NoteStore } from '../src/core/notes';
+import { before, describe, test } from 'node:test';
+import initSqlJs from 'sql.js';
+import type { SqlJsStatic } from 'sql.js';
+import { bibSettings, buildNote } from '../src/core/build/build';
+import { calloutProblems, scanCallouts } from '../src/core/build/callouts';
+import { collectTargets } from '../src/core/build/refs';
+import { finalizeHtml, prepareExport, renderWidgets } from '../src/core/export/prepare';
+import { documentHtml, slidesHtml } from '../src/core/export/page';
+import { parse, render } from '../src/core/markdown';
+import { parseBibtex } from '../src/core/citations/bibtex';
+import { loadCsv, loadJson, loadSqlite, readOnlyProblem, runQuery, sourceKind } from '../src/core/query/engine';
+import { scanWidgets } from '../src/core/widgets/fences';
+import { lintWidgets } from '../src/core/widgets/widgetLint';
 
-const root = fileURLToPath(new URL('../../examples/', import.meta.url));
+const ROOT = path.resolve(__dirname, '..', '..', 'examples');
 
-function yamdFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-    const full = path.join(dir, e.name);
-    if (e.isDirectory()) return yamdFiles(full);
-    return /\.(yamd|ymd)$/.test(e.name) ? [full] : [];
+function notes(dir: string): string[] {
+  return readdirSync(dir).flatMap((f) => {
+    const p = path.join(dir, f);
+    return statSync(p).isDirectory() ? notes(p) : p.endsWith('.md') ? [p] : [];
   });
 }
 
-const all = yamdFiles(root);
-
-/** Every example note, so wikilinks and embeds resolve across files as in the extension. */
-const posixRoot = root.split(path.sep).join('/').replace(/\/$/, '');
-const notes = new NoteStore([posixRoot], (p) => existsSync(p));
-for (const f of all) notes.set(f.split(path.sep).join('/'), readFileSync(f, 'utf8'));
-const rel = (file: string) => path.relative(root, file).split(path.sep).join('/');
-
-/**
- * Files that only use features the extension supports today.
- * `03-notes/templates/*` is excluded: those files are raw templates, so their `{{@...}}`
- * placeholders are meant to sit unexpanded — Y802 firing there is expected, not a bug.
- */
-const available = all.filter((f) => {
-  const r = rel(f);
-  return (
-    (r.startsWith('01-basics/') ||
-      r.startsWith('02-documents/') ||
-      r.startsWith('06-markdown/') ||
-      (r.startsWith('03-notes/') && r !== '03-notes/queries.yamd' && !r.startsWith('03-notes/templates/')) ||
-      r === '05-kanban/sprint-board.yamd' ||
-      r === '05-kanban/calendar-timeline-gallery.yamd' ||
-      !r.includes('/')) &&
-    r !== '02-documents/diagnostics.yamd'
-  );
+const files = notes(ROOT);
+let SQL: SqlJsStatic;
+before(async () => {
+  SQL = await initSqlJs();
 });
 
-function lintFile(file: string) {
-  const dir = path.dirname(file);
-  // Relative paths resolve from the file's folder, then from the examples root.
-  const fileExists = (p: string) =>
-    p.startsWith('/') ? existsSync(path.join(root, p)) : existsSync(path.resolve(dir, p)) || existsSync(path.resolve(root, p));
-  return lint(parse(readFileSync(file, 'utf8')), { fileExists, notes: { lookup: notes, path: file.split(path.sep).join('/') } });
+function entriesFor(file: string, lines: string[]) {
+  const { file: bib } = bibSettings(lines);
+  return bib ? parseBibtex(readFileSync(path.resolve(path.dirname(file), bib), 'utf8')) : undefined;
 }
 
-test('the examples folder has files for every area', () => {
-  for (const area of ['01-basics', '02-documents', '03-notes', '04-databases', '05-kanban', '06-markdown']) {
-    assert.ok(all.some((f) => rel(f).startsWith(`${area}/`)), `no examples in ${area}`);
-  }
-});
+describe('example notes', () => {
+  test('there are examples', () => {
+    assert.ok(files.length >= 15, `found ${files.length}`);
+  });
 
-describe('every example renders safely', () => {
-  for (const file of all) {
-    test(rel(file), () => {
-      const html = render(parse(readFileSync(file, 'utf8')));
-      assert.doesNotMatch(html, /<script|<iframe|<[a-z][^>]*\son[a-z]+=/i);
+  for (const file of files) {
+    const rel = path.relative(ROOT, file);
+    const text = readFileSync(file, 'utf8');
+    const lines = text.split('\n');
+
+    test(`${rel}: widgets and callouts are well formed`, () => {
+      assert.deepEqual(lintWidgets(lines).map((p) => `${p.code} line ${p.line + 1}: ${p.message}`), []);
+      assert.deepEqual(calloutProblems(lines).map((p) => `${p.code} line ${p.line + 1}: ${p.message}`), []);
+    });
+
+    test(`${rel}: Build leaves it unchanged`, () => {
+      const entries = entriesFor(file, lines);
+      const built = buildNote(lines, entries ? { entries } : {});
+      assert.deepEqual(built.warnings, []);
+      assert.deepEqual(built.lines, lines);
+    });
+
+    test(`${rel}: images and data files exist, queries run`, () => {
+      for (const m of text.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) {
+        if (/^[a-z]+:/i.test(m[1] as string)) continue;
+        assert.ok(existsSync(path.resolve(path.dirname(file), m[1] as string)), `missing image ${m[1]}`);
+      }
+      for (const w of scanWidgets(lines)) {
+        if (w.type === 'gallery' && w.attrs['source']) assert.ok(existsSync(path.resolve(path.dirname(file), w.attrs['source'])), `missing folder ${w.attrs['source']}`);
+        if (w.type !== 'sql') continue;
+        const source = path.resolve(path.dirname(file), w.attrs['source'] as string);
+        assert.ok(existsSync(source), `missing data ${w.attrs['source']}`);
+        const kind = sourceKind(source);
+        const bytes = readFileSync(source);
+        const db = kind === 'csv' ? loadCsv(SQL, source, bytes.toString('utf8')) : kind === 'json' ? loadJson(SQL, source, bytes.toString('utf8')) : loadSqlite(SQL, new Uint8Array(bytes));
+        const body = lines.slice(w.bodyStartLine + 1, w.bodyEndLine + 1).join('\n');
+        assert.equal(readOnlyProblem(db, body), null, `${w.label}: ${body}`);
+        const result = runQuery(db, body);
+        assert.ok(result.rows.length > 0, `${w.label} returns rows`);
+        if (w.attrs['view'] === 'chart') assert.ok(result.columns.includes(w.attrs['x'] as string) && result.columns.includes(w.attrs['y'] as string), `${w.label} chart columns`);
+        if (w.attrs['view'] === 'board') assert.ok(result.columns.includes(w.attrs['group'] as string), `${w.label} board column`);
+        db.close();
+      }
+    });
+
+    test(`${rel}: exports without errors`, () => {
+      const prepared = prepareExport(lines);
+      const doc = parse(prepared.source, 'gfm');
+      const blocks = new Map([...renderWidgets(prepared.widgets), ...prepared.queryBlocks.map((l): [number, string] => [l, '<table></table>'])]);
+      const html = finalizeHtml(documentHtml(doc, { css: '', render: { softBreaks: 'newline' } }), blocks);
+      assert.doesNotMatch(html, /YAMDANCHOR|YAMDQUERY/);
+      assert.ok(slidesHtml(doc, { css: '', render: {} }).includes('slide'));
+      void render;
     });
   }
-});
 
-describe('available examples have no diagnostics', () => {
-  for (const file of available) {
-    test(rel(file), () => {
-      // A GitHub README has no front matter, so it can't set `lang`.
-      const readme = rel(file) === '06-markdown/github-readme.yamd';
-      // The sprint board is over a column limit on purpose.
-      const board = rel(file) === '05-kanban/sprint-board.yamd';
-      const found = lintFile(file)
-        // home.yamd links to a note that doesn't exist yet, to show note creation.
-        .filter((d) => !(readme && d.code === 'Y707') && !(board && d.code === 'Y604'))
-        .filter((d) => !(rel(file) === '03-notes/home.yamd' && d.message.includes('"Weekly Review"')))
-        .map((d) => `${d.code} ${d.message}`);
-      assert.deepEqual(found, []);
-    });
-  }
-});
+  test('every cross-reference target in the examples is unique', () => {
+    for (const file of files) {
+      const ids = collectTargets(readFileSync(file, 'utf8').split('\n')).map((t) => t.id);
+      assert.equal(new Set(ids).size, ids.length, path.relative(ROOT, file));
+    }
+  });
 
-test('the diagnostics example triggers every check', () => {
-  const codes = new Set(lintFile(path.join(root, '02-documents/diagnostics.yamd')).map((d) => d.code));
-  const expected = [
-    'Y101', 'Y201', 'Y210', 'Y301', 'Y401', 'Y501', 'Y601', 'Y603', 'Y604',
-    'Y701', 'Y702', 'Y703', 'Y704', 'Y705', 'Y706', 'Y707', 'Y801', 'Y901',
-  ];
-  assert.deepEqual([...codes].sort(), expected);
-});
-
-test('getting-started renders its title and figures', () => {
-  const html = render(parse(readFileSync(path.join(root, 'getting-started.yamd'), 'utf8')));
-  assert.match(html, /<h1 id="getting-started-with-nimbus"/);
-  assert.match(html, /<a class="xref" href="#fig:arch">Figure 1<\/a>/);
-});
-
-test('the GitHub README needs no conversion', () => {
-  const src = readFileSync(path.join(root, '06-markdown/github-readme.yamd'), 'utf8');
-  assert.equal(convertFromMarkdown(src).text, src);
+  test('the card callouts in the examples are found', () => {
+    const cards = files.flatMap((f) => scanCallouts(readFileSync(f, 'utf8').split('\n')).filter((c) => c.type === 'card'));
+    assert.ok(cards.length >= 6);
+  });
 });

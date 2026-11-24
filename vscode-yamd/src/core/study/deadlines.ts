@@ -2,10 +2,10 @@
  * Courses, deadlines and progress (§6.5). Notes name a `course` and a `due` date in their front
  * matter; tasks and kanban cards carry `{due=…}`. These functions gather and group them.
  */
-import { attrString } from '../attrs';
-import { plainText } from '../inline';
-import { walkBlocks } from '../parser';
-import type { YamdDocument } from '../types';
+import { attrString } from '../markdown/attrs';
+import { plainText } from '../markdown/inline';
+import { walkBlocks } from '../markdown/parser';
+import type { YamdDocument } from '../markdown/types';
 import { addDays, daysBetween } from './cards';
 
 export interface Deadline {
@@ -111,7 +111,7 @@ export interface CourseProgress {
   tasksTotal: number;
 }
 
-export const NO_COURSE = '(no course)';
+const NO_COURSE = '(no course)';
 
 export function courseProgress(notes: NoteProgress[]): CourseProgress[] {
   const map = new Map<string, CourseProgress>();

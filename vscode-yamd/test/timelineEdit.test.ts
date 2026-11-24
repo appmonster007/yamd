@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse } from '../src/core';
-import { buildTimeline, cardSource, hashText } from '../src/core/kanban';
-import { addTimelineCard, moveTimelineCard, renameTimelineCard } from '../src/core/timelineEdit';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse } from '../src/core/markdown';
+import { buildTimeline, cardSource, hashText } from '../src/core/widgets/kanban';
+import { addTimelineCard, moveTimelineCard, renameTimelineCard } from '../src/core/widgets/timelineEdit';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const SRC = `:::timeline {title="Q4"}
 ## Ada

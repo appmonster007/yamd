@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse } from '../src/core';
-import { buildCalendarCards, cardSource, hashText } from '../src/core/kanban';
-import { addCalendarCard, moveCalendarCard, renameCalendarCard } from '../src/core/calendarEdit';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse } from '../src/core/markdown';
+import { buildCalendarCards, cardSource, hashText } from '../src/core/widgets/kanban';
+import { addCalendarCard, moveCalendarCard, renameCalendarCard } from '../src/core/widgets/calendarEdit';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const SRC = `:::calendar {title="October"}
 - [ ] Submit report {due=2026-10-10}

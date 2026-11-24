@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { lint, parse, render } from '../src/core';
-import { buildBoard } from '../src/core/kanban';
-import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/kanbanEdit';
-import { cardSource, hashText } from '../src/core/kanban';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse, render } from '../src/core/markdown';
+import { buildBoard } from '../src/core/widgets/kanban';
+import { addCard, cardTitleSource, moveCard, renameCard, toggleTask } from '../src/core/widgets/kanbanEdit';
+import { cardSource, hashText } from '../src/core/widgets/kanban';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const BOARD = `:::kanban {title="Sprint"}
 ## Todo
@@ -71,11 +71,6 @@ describe('board model', () => {
     assert.match(render(parse(BOARD)), /Body of A\./);
   });
 
-  test('board headings are not in the table of contents', () => {
-    const out = render(parse(`## Intro\n\n::toc\n\n${BOARD}`));
-    assert.doesNotMatch(out, /<a href="#todo"/);
-    assert.match(out, /<a href="#intro"/);
-  });
 });
 
 describe('rendering', () => {
@@ -185,11 +180,6 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.match(html, /data-date="2026-10-14"[^]*?Team sync/);
   });
 
-  test('a calendar card with no {due=...} is not shown, and reports Y606', () => {
-    const src = ':::calendar\n- [ ] Undated\n- [ ] Dated {due=2026-10-10}\n:::';
-    assert.doesNotMatch(render(parse(src), { today: '2026-10-16' }), /Undated/);
-    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
-  });
 
   test('calendar weeks get a week number, and events get a collapsible detail with owner/tags/body', () => {
     const src = ':::calendar\n- [ ] Submit report #finance {due=2026-10-10 owner=ada}\n  Needs the Q3 numbers.\n:::';
@@ -202,7 +192,9 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
   test('calendar renders a below-grid agenda shell for day/week drill-down', () => {
     const src = ':::calendar\n- [ ] Submit report {due=2026-10-10}\n:::';
     const html = render(parse(src), { today: '2026-10-16' });
-    assert.match(html, /<div class="db-agenda" hidden><div class="db-agenda-header"><span class="db-agenda-title"><\/span><button type="button" class="db-agenda-close"[^>]*>Close<\/button><\/div><div class="db-agenda-list"><\/div><\/div>/);
+    // The list under the grid shows the month's events from the start; "Show all" only appears once it is narrowed.
+    assert.match(html, /<div class="db-agenda"><div class="db-agenda-header"><span class="db-agenda-title">Events in October 2026<span class="db-agenda-count">1 event<\/span><\/span><button type="button" class="db-agenda-close"[^>]*hidden>Show all<\/button><\/div>/);
+    assert.match(html, /<section class="db-agenda-day" data-date="2026-10-10"><h4 class="db-agenda-date">Sat 10 Oct<\/h4><div class="db-event overdue expanded"/);
   });
 
   test('calendar and timeline cards render a clickable task-toggle checkbox, same as kanban', () => {
@@ -228,11 +220,6 @@ describe('visual shorthands: calendar, timeline, gallery', () => {
     assert.equal((html.match(/db-timeline-row/g) ?? []).length, 1);
   });
 
-  test('a timeline card with no {start=...} is not shown, and reports Y606', () => {
-    const src = ':::timeline\n- [ ] Undated\n- [ ] Dated {start=2026-10-01}\n:::';
-    assert.doesNotMatch(render(parse(src)), /Undated/);
-    assert.deepEqual(lint(parse(src)).map((d) => d.code).filter((c) => c !== 'Y707'), ['Y606']);
-  });
 
   test(':::gallery turns each image plus its caption into a card', () => {
     const src = ':::gallery {title="Trip photos"}\n![Golden Gate Bridge](ggb.jpg)\nShot at sunset. #landscape\n\n![Yosemite Falls](yosemite.jpg)\nPeak flow in spring.\n:::';

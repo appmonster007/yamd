@@ -1,0 +1,6 @@
+[
+  {"name": "Ada", "role": "Widgets", "level": 5, "city": "London"},
+  {"name": "Grace", "role": "Build", "level": 6, "city": "New York"},
+  {"name": "Alan", "role": "Queries", "level": 4, "city": "Manchester"},
+  {"name": "Edsger", "role": "Checks", "level": 5, "city": "Rotterdam"}
+]

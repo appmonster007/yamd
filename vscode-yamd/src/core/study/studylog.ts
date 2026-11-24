@@ -8,7 +8,7 @@ export interface Session {
   course?: string;
 }
 
-export interface StudyLog {
+interface StudyLog {
   version: 1;
   sessions: Session[];
 }
@@ -79,11 +79,6 @@ export function heatmap(log: StudyLog, today: string, weeks = 26): HeatCell[][] 
       return { date, minutes, level: level(minutes), future: daysBetween(today, date) > 0 };
     }),
   );
-}
-
-/** The line added to the day's note: `- 14:05 · 25 min · CS101`. */
-export function logLine(time: string, minutes: number, course?: string): string {
-  return `- ${time} · ${minutes} min${course ? ` · ${course}` : ''}`;
 }
 
 export function formatMinutes(m: number): string {

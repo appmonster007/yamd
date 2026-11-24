@@ -1,0 +1,36 @@
+{
+  "name": "yamd-pack",
+  "displayName": "YAMD Studio Pack",
+  "description": "YAMD Studio with everything it works with: Foam for linked notes, SQLite and CSV editors for query data, and Markdown tooling. One install for boards, queries, diagrams, study tools and exports in plain Markdown.",
+  "version": "1.2.0",
+  "publisher": "appmonster007",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appmonster007/yamd.git",
+    "directory": "vscode-yamd-pack"
+  },
+  "engines": {
+    "vscode": "^1.145.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "keywords": [
+    "markdown",
+    "yamd",
+    "foam",
+    "sqlite",
+    "csv",
+    "notes"
+  ],
+  "extensionPack": [
+    "appmonster007.vscode-yamd-ext",
+    "foam.foam-vscode",
+    "yy0931.vscode-sqlite3-editor",
+    "janisdd.vscode-edit-csv",
+    "mechatroner.rainbow-csv",
+    "yzhang.markdown-all-in-one"
+  ]
+}

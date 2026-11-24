@@ -1,9 +1,0 @@
-{
-  "name": "YAMD Database",
-  "scopeName": "source.ydb",
-  "patterns": [
-    {
-      "include": "source.yaml"
-    }
-  ]
-}

@@ -1,81 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parse, render } from '../src/core';
-import { derivationTex } from '../src/core/render';
-import { buildQueue, extractCards, parseSchedule, review, stringifySchedule } from '../src/core/study/cards';
-import { buildCheatSheet, collectStudyBlocks } from '../src/core/study/blocks';
+import { parse, render } from '../src/core/markdown';
+import { derivationTex } from '../src/core/markdown/render';
+import { review } from '../src/core/study/cards';
 import { collectDeadlines, courseProgress, groupDeadlines, staleTopics } from '../src/core/study/deadlines';
 import { heatmap, parseLog, streak } from '../src/core/study/studylog';
-import { Bibliography, entryFromCrossref, parseBibtex, parseCitation, parseDoi } from '../src/core/study/bibtex';
+import { Bibliography, parseBibtex, parseCitation } from '../src/core/citations/bibtex';
 
-describe('flashcards', () => {
-  const src = [
-    '---', 'course: CS101', '---', '',
-    ':::card', 'What is a **stack**?', '', '---', '', 'A LIFO structure.', ':::', '',
-    ':::card', 'Capital of France?', '', '---', '', 'Paris', ':::', '',
-    'The :cloze[mitochondria] is the :cloze[powerhouse] of the cell.', '',
-    ':::card', 'No answer here', ':::', '',
-  ].join('\n');
-  const doc = parse(src);
-  const { cards, diagnostics } = extractCards(doc, 'a.yamd');
-
-  it('extracts block, line and cloze cards', () => {
-    assert.equal(cards.length, 4);
-    assert.equal(cards[0]?.front, 'What is a **stack**?');
-    assert.equal(cards[0]?.back, 'A LIFO structure.');
-    assert.equal(cards[1]?.back, 'Paris');
-    assert.equal(cards[2]?.front, 'The **[…]** is the powerhouse of the cell.');
-    assert.equal(cards[3]?.back, 'The mitochondria is the **powerhouse** of the cell.');
-    assert.equal(cards[0]?.course, 'CS101');
-  });
-  it('reports cards without an answer', () => {
-    assert.deepEqual(diagnostics.map((d) => d.code), ['Y605']);
-  });
-  it('schedules with SM-2', () => {
-    const a = review(undefined, 'good', '2026-01-01');
-    assert.equal(a.due, '2026-01-02');
-    const b = review(a, 'good', '2026-01-02');
-    assert.equal(b.interval, 6);
-    const c = review(b, 'good', '2026-01-08');
-    assert.ok(c.interval > 6);
-    const d = review(c, 'again', '2026-02-01');
-    assert.equal(d.due, '2026-02-01');
-    assert.equal(d.lapses, 1);
-  });
-  it('builds a queue', () => {
-    const schedule = parseSchedule(stringifySchedule({ version: 1, cards: { [cards[0]!.id]: review(undefined, 'good', '2026-01-01') } }));
-    const q = buildQueue(cards, schedule, '2026-01-05');
-    assert.equal(q.due.length, 1);
-    assert.equal(q.fresh.length, 3);
-    assert.equal(buildQueue(cards, schedule, '2026-01-01').later, 1);
-  });
-  it('renders a card with the answer hidden', () => {
-    const html = render(doc);
-    assert.match(html, /class="card-answer"/);
-    assert.match(html, /<span class="cloze">mitochondria<\/span>/);
-    assert.match(render(doc, { quiz: true }), /cloze-hidden/);
-  });
-});
 
 describe('study blocks', () => {
   const doc = parse(':::definition {#def:x title="Group"}\nA set with an operation.\n:::\n\n:::theorem\nT.\n:::\n\nSee [@def:x].\n\n:::proof\nTrivial.\n:::\n');
-  it('numbers and cross-references', () => {
-    const html = render(doc);
-    assert.match(html, /Definition 1/);
-    assert.match(html, /\(Group\)/);
-    assert.match(html, /Theorem 1/);
-    assert.match(html, /href="#def:x">Definition 1</);
-    assert.match(html, /proof-end/);
-  });
-  it('builds a cheat sheet', () => {
-    const blocks = collectStudyBlocks(doc, 'n/a.yamd');
-    assert.equal(blocks.length, 3);
-    const sheet = buildCheatSheet(blocks, { date: '2026-01-01', link: (p) => p });
-    assert.match(sheet, /## Definitions/);
-    assert.match(sheet, /:::definition \{title="Group"\}/);
-    assert.doesNotMatch(sheet, /Trivial/);
-    assert.equal(parse(sheet).diagnostics.filter((d) => d.code === 'Y601').length, 0);
-  });
   it('lays out a derivation', () => {
     const tex = derivationTex('(a+b)^2 = a^2 + 2ab + b^2 // expand\n= a^2 + b^2 + 2ab // reorder');
     assert.match(tex, /\\begin\{aligned\}/);
@@ -146,51 +80,19 @@ describe('citations', () => {
     apa.cite([{ key: 'k' }, { key: 'lamport1978' }]);
     assert.match(apa.references(), /Knuth, D\., &amp; Other, A\./);
   });
-  it('renders citations and the reference list', () => {
-    const doc = parse('As shown [@lamport1978].\n\n::bibliography\n');
-    const html = render(doc, { bibliography: new Bibliography(bib, 'apa') });
-    assert.match(html, /\(Lamport, 1978\)/);
-    assert.match(html, /<i>CACM<\/i>/);
-  });
-  it('reads lookup results', () => {
-    assert.equal(parseDoi('https://doi.org/10.1145/359545.359563.'), '10.1145/359545.359563');
-    const e = entryFromCrossref({ message: { type: 'journal-article', title: ['T'], author: [{ given: 'Ada', family: 'Lovelace' }], 'container-title': ['J'], issued: { 'date-parts': [[1843]] }, DOI: '10.1/x' } }, new Set(['lovelace1843']));
-    assert.equal(e?.key, 'lovelace1843a');
-    assert.equal(e?.fields['doi'], '10.1/x');
-  });
 });
 
 describe('peer review', () => {
   const src = 'A {++new++} and {--old--} and {~~cat~>dog~~} here {==marked==}{>>why?<<} end.\n';
-  it('lists items', async () => {
-    const { collectReview } = await import('../src/core/study/review');
-    const items = collectReview(parse(src));
-    assert.deepEqual(items.map((i) => i.kind), ['insert', 'delete', 'substitute', 'comment']);
-    assert.equal(items[3]?.comment, 'why?');
-  });
-  it('accepts and rejects', async () => {
-    const { resolveReview } = await import('../src/core/study/review');
-    assert.equal(resolveReview(parse(src), 'accept'), 'A new and  and dog here marked end.\n');
-    assert.equal(resolveReview(parse(src), 'reject'), 'A  and old and cat here marked end.\n');
-  });
 });
 
 describe('docx export', () => {
-  it('writes a valid package', async () => {
-    const { buildDocx } = await import('../src/core/study/docx');
-    const doc = parse('# Title\n\nHello **bold** [link](https://example.com).\n\n- a\n- [x] b\n\n> quoted\n\n| h |\n| - |\n| c |\n\n```py\nprint(1)\n```\n\n:::definition {title="X"}\nBody\n:::\n');
-    const bytes = buildDocx(doc, { title: 'T', author: 'A', date: '2026-01-01', titlePage: true });
-    assert.equal(String.fromCharCode(bytes[0]!, bytes[1]!), 'PK');
-    const text = Buffer.from(bytes).toString('latin1');
-    for (const name of ['word/document.xml', '[Content_Types].xml', 'word/styles.xml']) assert.ok(text.includes(name), name);
-    assert.ok(text.includes('<w:b/>') && text.includes('Heading1') && text.includes('rIdLink1'));
-  });
 });
 
 describe('html export', () => {
   const doc = parse('---\ntitle: Notes\nauthor: Ada\ncourse: CS\n---\n\n# Notes\n\n## One\n\nText\n\n---\n\nMore\n\n## Two\n\n- x\n');
   it('builds a document with a title page and contents', async () => {
-    const { documentHtml } = await import('../src/core/study/export');
+    const { documentHtml } = await import('../src/core/export/page');
     const html = documentHtml(doc, { css: '', render: {}, titlePage: true, toc: true });
     assert.match(html, /export-title/);
     assert.match(html, /<h1>Notes<\/h1><p>Ada<\/p><p>CS<\/p>/);
@@ -198,7 +100,7 @@ describe('html export', () => {
     assert.doesNotMatch(html, /<script/);
   });
   it('splits slides', async () => {
-    const { slidesHtml, splitSlides } = await import('../src/core/study/export');
+    const { slidesHtml, splitSlides } = await import('../src/core/export/page');
     assert.equal(splitSlides(doc.blocks).length, 4);
     const html = slidesHtml(doc, { css: '', render: {} });
     assert.equal((html.match(/class="slide"/g) ?? []).length, 3);
@@ -206,33 +108,32 @@ describe('html export', () => {
   });
 });
 
-describe('importers', async () => {
-  const imp = await import('../src/core/study/importers');
-  it('converts Obsidian callouts and image embeds', () => {
-    const out = imp.obsidianToYamd('> [!warning] Careful\n> Do not **panic**.\n\n![[diagram one.png|300]]\n\nSee [[Other note]] and ![[Other note#Intro]].\n');
-    assert.match(out, /^:::warning \{title="Careful"\}\nDo not \*\*panic\*\*\.\n:::/);
-    assert.match(out, /!\[diagram one\]\(diagram%20one\.png\)\{width=300\}/);
-    assert.match(out, /\[\[Other note\]\] and !\[\[Other note#Intro\]\]/);
-    assert.equal(parse(out).diagnostics.filter((d) => d.code === 'Y601').length, 0);
-  });
-  it('cleans Notion names and links', () => {
-    assert.equal(imp.cleanNotionName('Lecture 1 0123456789abcdef0123456789abcdef.md'), 'Lecture 1.md');
-    const out = imp.notionToYamd('See [Week 2](Week%202%20fedcba9876543210fedcba9876543210.md) and [web](https://x.org).\n');
-    assert.equal(out, 'See [Week 2](<Week 2.yamd>) and [web](https://x.org).\n');
-  });
-  it('turns CSV into a database', () => {
-    const ydb = imp.csvToYdb('Name,Points,Due\n"Essay, draft",10,2026-03-01\nQuiz,5,\n', 'Work');
-    assert.match(ydb, /yamdb: 0\.1/);
-    assert.match(ydb, /Points: number/);
-    assert.match(ydb, /Due: date/);
-    assert.match(ydb, /Name: Essay, draft/);
-  });
-  it('converts HTML', () => {
-    const html = '<html lang="en"><head><title>Week 3</title></head><body><h1>Week 3</h1><p>Some <b>bold</b> and <span style="font-style:italic">italic</span> with a <a href="https://e.org">link</a>.</p><ul><li>one<ul><li>nested</li></ul></li><li>two</li></ul><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table><pre>x = 1</pre></body></html>';
-    const out = imp.htmlToYamd(html, 'x');
-    assert.match(out, /^---\ntitle: Week 3\nlang: en\n---\n\n# Week 3\n\nSome \*\*bold\*\* and \*italic\* with a \[link\]\(https:\/\/e\.org\)\./);
-    assert.match(out, /- one\n   - nested\n- two/);
-    assert.match(out, /\| A \| B \|\n\| --- \| --- \|\n\| 1 \| 2 \|/);
-    assert.match(out, /```\nx = 1\n```/);
-  });
+
+import { formatClock, nextPhase, normalize } from '../src/core/study/pomodoro';
+
+it('pomodoro settings are clamped and filled', () => {
+  assert.deepEqual(normalize({}), normalize(undefined));
+  const c = normalize({ focus: 0, short: 'x', long: 9999, every: 1, goal: -5 });
+  assert.equal(c.focus, 1);
+  assert.equal(c.short, 5);
+  assert.equal(c.long, 120);
+  assert.equal(c.every, 2);
+  assert.equal(c.goal, 0);
+});
+
+it('pomodoro rounds: a long break after the set number of focus blocks', () => {
+  const cfg = normalize({ every: 3 });
+  let p = nextPhase(cfg, 'focus', 0);
+  assert.deepEqual(p, { phase: 'short', done: 1 });
+  p = nextPhase(cfg, p.phase, p.done);
+  assert.deepEqual(p, { phase: 'focus', done: 1 });
+  p = nextPhase(cfg, 'focus', 2);
+  assert.deepEqual(p, { phase: 'long', done: 3 });
+  assert.deepEqual(nextPhase(cfg, 'long', 3), { phase: 'focus', done: 0 });
+});
+
+it('formatClock rounds up to whole seconds', () => {
+  assert.equal(formatClock(25 * 60_000), '25:00');
+  assert.equal(formatClock(1), '00:01');
+  assert.equal(formatClock(-5), '00:00');
 });

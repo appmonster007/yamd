@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review marks</title>
+<style>
+/* The widget styles are written for VS Code's theme variables, which a standalone page doesn't have. */
+:root {
+  --vscode-editor-foreground: #1f2328; --vscode-editor-background: #ffffff; --vscode-textLink-foreground: #0969da;
+  --vscode-textLink-activeForeground: #0550ae; --vscode-descriptionForeground: #656d76; --vscode-focusBorder: #0969da;
+  --vscode-panel-border: #d0d7de; --vscode-input-foreground: #1f2328; --vscode-input-background: #ffffff;
+  --vscode-textCodeBlock-background: #f6f8fa; --vscode-button-foreground: #ffffff;
+  --yamd-fg: #1f2328; --yamd-bg: #fff; --yamd-muted: #656d76; --yamd-border: #d0d7de; --yamd-code-bg: #f6f8fa; --yamd-link: #0969da; --yamd-note: #0969da; --yamd-tip: #1a7f37; --yamd-warning: #9a6700; --yamd-danger: #cf222e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vscode-editor-foreground: #e6edf3; --vscode-editor-background: #0d1117; --vscode-textLink-foreground: #58a6ff;
+    --vscode-textLink-activeForeground: #79c0ff; --vscode-descriptionForeground: #8b949e; --vscode-focusBorder: #58a6ff;
+    --vscode-panel-border: #30363d; --vscode-input-foreground: #e6edf3; --vscode-input-background: #0d1117;
+    --vscode-textCodeBlock-background: #161b22; --vscode-button-foreground: #0d1117;
+  }
+}
+body { background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+/*
+ * Preview styles. Colors come from the active VS Code theme through --vscode-* variables, and the
+ * webview's body classes (vscode-light, vscode-dark, vscode-high-contrast) pick syntax colors.
+ */
+
+:root {
+  --yamd-fg: var(--vscode-editor-foreground);
+  --yamd-bg: var(--vscode-editor-background);
+  --yamd-accent: var(--vscode-textLink-foreground);
+  --yamd-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --yamd-muted: var(--vscode-descriptionForeground);
+  /* Code blocks, table headers and other recessed surfaces. */
+  --yamd-surface: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.12));
+  /* A faint tint for hover states and grouped areas. */
+  --yamd-tint: color-mix(in srgb, var(--yamd-fg) 5%, transparent);
+  --yamd-note: var(--vscode-editorInfo-foreground, #3794ff);
+  --yamd-tip: var(--vscode-testing-iconPassed, #388a34);
+  --yamd-warning: var(--vscode-editorWarning-foreground, #bf8803);
+  --yamd-danger: var(--vscode-editorError-foreground, #e51400);
+  --yamd-radius: 6px;
+  --yamd-mono: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, monospace);
+  --yamd-text-width: 880px;
+}
+
+body.vscode-high-contrast,
+body.vscode-high-contrast-light {
+  --yamd-border: var(--vscode-contrastBorder, currentColor);
+  --yamd-tint: transparent;
+}
+
+/* ---- Base ---- */
+
+body {
+  background: var(--yamd-bg);
+  color: var(--yamd-fg);
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 0 28px 64px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.yamd-body {
+  max-width: var(--yamd-text-width);
+  margin: 0 auto;
+  overflow-wrap: break-word;
+}
+
+.yamd-body > :first-child { margin-top: 24px; }
+
+p,
+ul,
+ol,
+dl,
+table,
+pre,
+blockquote,
+details,
+figure { margin: 0 0 1em; }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+  font-weight: 600;
+}
+h1 { font-size: 2em; margin-top: 0.8em; padding-bottom: 0.3em; border-bottom: 1px solid var(--yamd-border); }
+h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--yamd-border); }
+h3 { font-size: 1.25em; }
+h4 { font-size: 1em; }
+h5 { font-size: 0.875em; }
+h6 { font-size: 0.85em; color: var(--yamd-muted); }
+/* Clicking a contents entry shouldn't hide the heading under the top edge. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+[id] { scroll-margin-top: 16px; }
+
+a { color: var(--yamd-accent); text-decoration: none; }
+a:hover { color: var(--vscode-textLink-activeForeground, var(--yamd-accent)); text-decoration: underline; }
+a.wikilink { text-decoration: underline dotted; text-underline-offset: 3px; }
+:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+hr { border: 0; border-top: 1px solid var(--yamd-border); margin: 2em 0; }
+
+strong { font-weight: 600; }
+mark { background: var(--vscode-editor-findMatchHighlightBackground, #ffd33d66); color: inherit; border-radius: 2px; padding: 0 2px; }
+u { text-underline-offset: 3px; }
+.muted { color: var(--yamd-muted); }
+
+input[type="checkbox"] { accent-color: var(--vscode-focusBorder); }
+
+/* ---- Code ---- */
+
+code,
+kbd,
+samp,
+pre { font-family: var(--yamd-mono); font-size: 0.9em; }
+:not(pre) > code {
+  background: var(--yamd-surface);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+}
+pre { margin: 0; padding: 14px 16px; overflow-x: auto; line-height: 1.5; tab-size: 4; }
+pre code { font-size: 1em; background: none; padding: 0; }
+
+kbd {
+  display: inline-block;
+  font-size: 0.85em;
+  line-height: 1.3;
+  padding: 0.1em 0.45em;
+  border: 1px solid var(--yamd-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--yamd-tint);
+}
+
+.code-block {
+  position: relative;
+  background: var(--yamd-surface);
+  border-radius: var(--yamd-radius);
+  margin: 0 0 1em;
+  overflow: hidden;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 30px;
+  padding: 0 12px 0 16px;
+  font-size: 12px;
+  color: var(--yamd-muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--yamd-border) 70%, transparent);
+}
+.code-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--yamd-fg); }
+.code-lang { margin-left: auto; font-family: var(--yamd-mono); text-transform: lowercase; opacity: 0.8; }
+.code-header + pre { padding-top: 12px; }
+/* The copy button sits in the header, or in the corner of blocks without one. */
+.code-copy {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--yamd-muted);
+  background: var(--yamd-surface);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.code-block:hover .code-copy,
+.code-copy:focus-visible { opacity: 1; }
+.code-copy:hover { color: var(--yamd-fg); border-color: var(--yamd-border); }
+.code-copy.copied { color: var(--yamd-tip); opacity: 1; }
+.code-block:has(.code-header) .code-lang { margin-right: 56px; }
+
+/* Syntax colors, after VS Code's default themes. */
+.hljs-comment,
+.hljs-quote { color: #6a9955; font-style: italic; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-tag,
+.hljs-meta .hljs-keyword { color: #569cd6; }
+.hljs-built_in,
+.hljs-type,
+.hljs-title.class_,
+.hljs-class .hljs-title { color: #4ec9b0; }
+.hljs-string,
+.hljs-regexp,
+.hljs-template-tag,
+.hljs-symbol .hljs-string { color: #ce9178; }
+.hljs-number,
+.hljs-bullet { color: #b5cea8; }
+.hljs-title,
+.hljs-title.function_,
+.hljs-section { color: #dcdcaa; }
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params,
+.hljs-property { color: #9cdcfe; }
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class { color: #d7ba7d; }
+.hljs-meta,
+.hljs-symbol,
+.hljs-link { color: #c586c0; }
+.hljs-addition { color: #b5cea8; background: rgba(155, 185, 85, 0.15); }
+.hljs-deletion { color: #ce9178; background: rgba(255, 0, 0, 0.15); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+
+body.vscode-light .hljs-comment,
+body.vscode-light .hljs-quote { color: #008000; }
+body.vscode-light .hljs-keyword,
+body.vscode-light .hljs-selector-tag,
+body.vscode-light .hljs-literal,
+body.vscode-light .hljs-doctag,
+body.vscode-light .hljs-meta .hljs-keyword { color: #0000ff; }
+body.vscode-light .hljs-tag,
+body.vscode-light .hljs-name { color: #800000; }
+body.vscode-light .hljs-built_in,
+body.vscode-light .hljs-type,
+body.vscode-light .hljs-title.class_,
+body.vscode-light .hljs-class .hljs-title { color: #267f99; }
+body.vscode-light .hljs-string,
+body.vscode-light .hljs-regexp,
+body.vscode-light .hljs-template-tag { color: #a31515; }
+body.vscode-light .hljs-number,
+body.vscode-light .hljs-bullet { color: #098658; }
+body.vscode-light .hljs-title,
+body.vscode-light .hljs-title.function_,
+body.vscode-light .hljs-section { color: #795e26; }
+body.vscode-light .hljs-attr,
+body.vscode-light .hljs-attribute,
+body.vscode-light .hljs-variable,
+body.vscode-light .hljs-template-variable,
+body.vscode-light .hljs-params,
+body.vscode-light .hljs-property { color: #001080; }
+body.vscode-light .hljs-selector-id,
+body.vscode-light .hljs-selector-class { color: #800000; }
+body.vscode-light .hljs-meta,
+body.vscode-light .hljs-symbol,
+body.vscode-light .hljs-link { color: #af00db; }
+body.vscode-light .hljs-addition { color: #098658; background: rgba(155, 185, 85, 0.2); }
+body.vscode-light .hljs-deletion { color: #a31515; background: rgba(255, 0, 0, 0.12); }
+
+/* ---- Blocks ---- */
+
+blockquote {
+  padding: 0 1em;
+  color: var(--yamd-muted);
+  border-left: 3px solid color-mix(in srgb, var(--yamd-muted) 50%, transparent);
+}
+blockquote > :last-child { margin-bottom: 0; }
+
+ul,
+ol { padding-left: 2em; }
+li + li { margin-top: 0.2em; }
+li > ul,
+li > ol { margin: 0.2em 0 0; }
+/* Checkboxes sit where the bullet would be, so mixed lists line up. */
+.task-list > li.task-item { list-style: none; }
+.task-item > input[type="checkbox"],
+.task-item > p > input[type="checkbox"] { margin: 0 0.45em 0 -1.45em; vertical-align: -1px; }
+.task-toggle { cursor: pointer; }
+
+table { border-collapse: collapse; display: block; max-width: 100%; overflow-x: auto; }
+th,
+td { border: 1px solid var(--yamd-border); padding: 6px 13px; vertical-align: top; }
+th { font-weight: 600; background: var(--yamd-surface); text-align: left; }
+tbody tr:hover { background: var(--yamd-tint); }
+caption { caption-side: top; text-align: left; color: var(--yamd-muted); font-size: 0.9em; padding-bottom: 6px; }
+td > p:first-child,
+td > ul:first-child { margin-top: 0; }
+td > :last-child { margin-bottom: 0; }
+
+img { max-width: 100%; border-radius: 4px; }
+.align-left { text-align: left; }
+.align-center { text-align: center; }
+.align-right { text-align: right; }
+img.align-center { display: block; margin: 0 auto; }
+figure { margin: 1.5em 0; text-align: center; }
+figcaption { color: var(--yamd-muted); font-size: 0.9em; margin-top: 8px; }
+.image-missing {
+  display: inline-block;
+  border: 1px dashed var(--yamd-border);
+  color: var(--yamd-muted);
+  padding: 8px 12px;
+  border-radius: var(--yamd-radius);
+  font-size: 0.9em;
+}
+
+/* Callouts: a colored bar, a tinted background and an icon before the title. */
+.callout {
+  --callout: var(--yamd-note);
+  border-left: 3px solid var(--callout);
+  background: color-mix(in srgb, var(--callout) 8%, transparent);
+  border-radius: 0 var(--yamd-radius) var(--yamd-radius) 0;
+  padding: 10px 16px;
+  margin: 0 0 1em;
+}
+.callout > :last-child { margin-bottom: 0; }
+.callout-tip { --callout: var(--yamd-tip); }
+.callout-warning { --callout: var(--yamd-warning); }
+.callout-danger { --callout: var(--yamd-danger); }
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin: 0 0 0.4em;
+  color: var(--callout);
+}
+.callout-title::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--callout-icon) center / contain no-repeat;
+  mask: var(--callout-icon) center / contain no-repeat;
+}
+.callout { --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 10.5h-1.5V7h1.5v4.5zM8 5.75A.9.9 0 1 1 8 3.95a.9.9 0 0 1 0 1.8z'/%3E%3C/svg%3E"); }
+.callout-tip { --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V12h4v-1.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5zM6 13h4v.5a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 6 13.5V13z'/%3E%3C/svg%3E"); }
+.callout-warning { --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8.9 1.6a1 1 0 0 0-1.8 0L.6 13.5A1 1 0 0 0 1.5 15h13a1 1 0 0 0 .9-1.5L8.9 1.6zM8.75 12h-1.5v-1.5h1.5V12zm0-3h-1.5V5.5h1.5V9z'/%3E%3C/svg%3E"); }
+.callout-danger { --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5.1 1h5.8L15 5.1v5.8L10.9 15H5.1L1 10.9V5.1L5.1 1zm2.15 3.5v5h1.5v-5h-1.5zm0 6.5v1.5h1.5V11h-1.5z'/%3E%3C/svg%3E"); }
+
+details {
+  border: 1px solid var(--yamd-border);
+  border-radius: var(--yamd-radius);
+  padding: 8px 16px;
+}
+details > summary { cursor: pointer; font-weight: 600; margin: -8px -16px; padding: 8px 16px; border-radius: var(--yamd-radius); }
+details > summary:hover { background: var(--yamd-tint); }
+details[open] > summary { margin-bottom: 8px; border-bottom: 1px solid var(--yamd-border); border-radius: var(--yamd-radius) var(--yamd-radius) 0 0; }
+details > :last-child { margin-bottom: 0; }
+
+/* Math: rendered with KaTeX when available, otherwise shown as source. */
+.math-block { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 1em 0; overflow-x: auto; }
+.math-display { flex: 1; min-width: 0; overflow-x: auto; }
+.math-display .katex-display { margin: 0.4em 0; }
+.katex { font-size: 1.1em; }
+code.math { font-style: italic; }
+
+.footnotes { font-size: 0.9em; color: var(--yamd-muted); margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yamd-border); }
+.footnote-ref a { font-size: 0.8em; }
+
+.xref-missing,
+.var-missing,
+.placeholder { color: var(--yamd-muted); }
+.xref-missing,
+.var-missing { text-decoration: wavy underline var(--yamd-warning); }
+/* A template placeholder outside insertion is an info-level note (Y802), not an error, so it gets
+   a quieter dotted underline instead of var-missing's warning-colored wavy one. */
+.placeholder { text-decoration: dotted underline var(--yamd-muted); }
+
+.pagebreak { border-top: 2px dashed var(--yamd-border); margin: 2em 0; }
+@media print {
+  .pagebreak { border: 0; break-after: page; }
+  .code-copy,
+.kanban-add,
+.gallery-add { display: none !important; }
+}
+
+.unsafe-link { text-decoration: line-through; color: var(--yamd-muted); }
+
+/* ---- Tags ---- */
+
+.tag {
+  display: inline-block;
+  padding: 0 0.5em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  line-height: 1.6;
+  background: color-mix(in srgb, var(--yamd-accent) 14%, transparent);
+  color: var(--yamd-accent);
+}
+/* Headings inside an embed belong to the other note: keep them small. */
+h2,
+h3) { font-size: 1.15em; border: 0; padding: 0; margin: 0.6em 0 0.4em; }
+h2,
+h3):first-child { margin-top: 0; }
+[id^="^"]:target { background: color-mix(in srgb, var(--yamd-warning) 15%, transparent); border-radius: 4px; }
+
+/* ---- Shared controls (kanban and databases) ---- */
+
+.kanban-add-input {
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  border-radius: 4px;
+}
+
+/* ---- Kanban boards ---- */
+
+/* Boards may be wider than the text: they start at the text column and can scroll to the right edge. */
+.kanban {
+  margin: 0 0 1.5em;
+}
+.kanban-title { font-weight: 600; font-size: 1.05em; margin-bottom: 10px; }
+/* Columns share the width and wrap onto further rows in a narrow panel, so none is cut off behind a scrollbar. */
+.kanban-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding-bottom: 10px;
+}
+.kanban-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--yamd-tint);
+  border: 1px solid var(--yamd-border);
+}
+.kanban-column.over-limit { border-color: color-mix(in srgb, var(--yamd-warning) 70%, transparent); }
+.kanban-column.complete .kanban-column-title::after { content: " ✓"; color: var(--yamd-tip); }
+.kanban-column-header { display: flex; align-items: center; gap: 6px; padding: 2px 2px 4px; font-weight: 600; font-size: 13px; }
+.kanban-column-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kanban-count {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  min-width: 18px;
+  text-align: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--vscode-badge-foreground, var(--yamd-fg));
+  background: var(--vscode-badge-background, var(--yamd-surface));
+}
+.kanban-count.over { color: var(--yamd-bg); background: var(--yamd-warning); }
+.kanban-collapse {
+  border: 0;
+  background: none;
+  color: var(--yamd-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.12s;
+}
+.kanban-collapse:hover { color: var(--yamd-fg); }
+.kanban-column-description { color: var(--yamd-muted); font-size: 0.9em; padding: 0 2px; }
+.kanban-column-description > :first-child { margin-top: 0; }
+.kanban-column-description > :last-child { margin-bottom: 0; }
+.kanban-cards { display: flex; flex-direction: column; gap: 6px; min-height: 28px; }
+.kanban-card {
+  padding: 8px 10px;
+  border-radius: var(--yamd-radius);
+  background: var(--yamd-bg);
+  border: 1px solid var(--yamd-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.kanban[data-interactive] .kanban-card { cursor: grab; }
+.kanban[data-interactive] .kanban-card:hover { border-color: color-mix(in srgb, var(--yamd-accent) 45%, var(--yamd-border)); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14); }
+.kanban-card:focus-visible,
+.kanban-card:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.kanban-card.dragging { opacity: 0.4; }
+.kanban-card.done .kanban-card-text { color: var(--yamd-muted); text-decoration: line-through; }
+.kanban-card.overdue { border-left: 3px solid var(--yamd-danger); }
+.kanban-card-title { display: flex; gap: 8px; align-items: baseline; line-height: 1.45; }
+.kanban-card-title input[type="checkbox"] { margin: 0; flex: none; position: relative; top: 1px; }
+.kanban-card-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.kanban-title-input {
+  width: 100%;
+  font: inherit;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-focusBorder);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.kanban-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 6px; font-size: 12px; }
+.kanban-card-meta .tag { font-size: 11px; }
+.kanban-due {
+  padding: 0 6px;
+  border-radius: 4px;
+  line-height: 18px;
+  color: var(--yamd-muted);
+  background: var(--yamd-tint);
+  font-variant-numeric: tabular-nums;
+}
+.kanban-due.overdue { color: var(--yamd-danger); background: color-mix(in srgb, var(--yamd-danger) 12%, transparent); font-weight: 600; }
+.kanban-owner { color: var(--yamd-muted); }
+.kanban-card-body { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--yamd-muted); }
+.kanban-card-body > :first-child { margin-top: 0; }
+.kanban-card-body > :last-child { margin-bottom: 0; }
+.kanban-card-body p { margin-bottom: 0.4em; }
+.kanban-card-body ul { padding-left: 1.4em; margin-bottom: 0; }
+.kanban-drop-indicator { height: 2px; border-radius: 2px; background: var(--vscode-focusBorder); margin: -4px 0; }
+/* "Add card" looks like a quiet button until it's focused. */
+.kanban-add-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  color: var(--vscode-input-foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.kanban-add-input::placeholder { color: var(--yamd-muted); }
+.kanban-add-input:hover { background: var(--yamd-tint); }
+.kanban-add-input:focus { cursor: text; background: var(--vscode-input-background); border-color: var(--vscode-focusBorder); outline: none; }
+.kanban-column.collapsed { opacity: 0.8; }
+.kanban-column.collapsed .kanban-cards,
+.kanban-column.collapsed .kanban-add,
+.kanban-column.collapsed .kanban-column-description { display: none; }
+.kanban-column.collapsed .kanban-column-header { flex-direction: column; gap: 10px; }
+.kanban-column.collapsed .kanban-column-title { writing-mode: vertical-rl; white-space: nowrap; }
+.kanban-column.collapsed .kanban-collapse { transform: rotate(-90deg); }
+.db-empty,
+.db-more { color: var(--yamd-muted); font-size: 0.9em; }
+.db-more { margin-top: 6px; }
+
+.db-table { display: table; width: 100%; margin: 0; font-size: 13px; }
+.db-table th { white-space: nowrap; padding: 5px 10px; font-size: 12px; color: var(--yamd-muted); }
+.db-table td { padding: 5px 10px; }
+[data-type="created_time"],
+[data-type="updated_time"],
+[data-type="number"],
+[data-type="select"],
+[data-type="status"],
+[data-type="person"],
+[data-type="checkbox"],
+[data-type="multi_select"]) { white-space: nowrap; }
+
+.db-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.db-card {
+  border: 1px solid var(--yamd-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--yamd-bg);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.db-card:hover { border-color: color-mix(in srgb, var(--yamd-accent) 45%, var(--yamd-border)); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14); }
+.db-card-body { padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.kanban-gallery[data-interactive] .db-card { cursor: grab; }
+.db-card:focus-visible,
+.db-card:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-card.dragging { opacity: 0.4; }
+.gallery-add { display: flex; gap: 6px; margin-top: 12px; }
+.gallery-add-image,
+.gallery-add-caption {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--yamd-border);
+  border-radius: 4px;
+}
+.gallery-add-image:focus,
+.gallery-add-caption:focus { border-color: var(--vscode-focusBorder); outline: none; }
+
+.db-calendar-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.db-month-title { font-weight: 600; min-width: 9em; text-align: center; }
+.db-calendar-weekdays,
+.db-week { display: grid; grid-template-columns: 2.2em repeat(7, minmax(0, 1fr)); gap: 4px; }
+.db-week + .db-week { margin-top: 4px; }
+.db-weekday { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--yamd-muted); text-align: center; padding-bottom: 2px; }
+.db-week-number {
+  align-self: start;
+  margin-top: 2px;
+  padding: 0;
+  font-size: 11px;
+  color: var(--yamd-muted);
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+.db-week-number:not(.empty):hover,
+.db-week-number:not(.empty):focus-visible { color: var(--yamd-accent); cursor: pointer; }
+.db-day { min-height: 72px; padding: 4px 6px; border: 1px solid var(--yamd-border); border-radius: var(--yamd-radius); font-size: 12px; }
+.db-day.empty { border-color: transparent; }
+.db-day.today { border-color: var(--vscode-focusBorder); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+.db-day.today .db-day-number { color: var(--vscode-focusBorder); font-weight: 700; }
+.db-day-number {
+  padding: 0;
+  color: var(--yamd-muted);
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  font: inherit;
+}
+.db-day-number:hover,
+.db-day-number:focus-visible { color: var(--yamd-accent); cursor: pointer; }
+.db-event {
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--yamd-accent) 18%, transparent);
+}
+.db-calendar .db-event:not(.expanded) .db-event-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-event-summary:hover { cursor: pointer; }
+.db-event-detail { display: none; margin-top: 4px; font-size: 11.5px; color: var(--yamd-muted); }
+.db-event.expanded .db-event-detail { display: flex; flex-direction: column; gap: 3px; }
+.db-event.expanded { white-space: normal; }
+.db-event-detail p { margin: 0 0 4px; }
+.db-event-detail .kanban-card-meta { margin-top: 0; }
+.db-event input[type="checkbox"],
+.db-timeline-bar input[type="checkbox"] { vertical-align: middle; margin: 0 2px 0 0; }
+.kanban-calendar[data-interactive] .db-event { cursor: grab; }
+.db-event:focus-visible,
+.db-event:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-event.dragging { opacity: 0.4; }
+.db-day.drop-target { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+.kanban-calendar .kanban-add { margin-top: 3px; }
+.db-agenda { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--yamd-border); }
+.db-agenda-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.db-agenda-title { font-weight: 600; font-size: 13px; }
+.db-agenda-close {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--yamd-muted);
+  background: transparent;
+  border: 1px solid var(--yamd-border);
+  border-radius: var(--yamd-radius);
+}
+.db-agenda-close:hover,
+.db-agenda-close:focus-visible { color: var(--yamd-fg); cursor: pointer; }
+.db-agenda-list { display: flex; flex-direction: column; gap: 6px; }
+.db-agenda-list .db-event { margin-top: 0; padding: 6px 8px; white-space: normal; }
+.db-agenda-list .db-event-summary { font-weight: 600; }
+.db-agenda-list .db-event-detail { font-size: 12.5px; }
+.kanban-calendar .kanban-add-input { padding: 1px 6px; font-size: 12px; }
+
+/* Database boards scroll inside their view instead of using the full preview width. */
+.kanban.db-board { margin: 0; padding: 0; }
+.db-board .kanban-card-meta { gap: 4px 8px; }
+
+.db-error {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 8px 12px;
+  border-radius: var(--yamd-radius);
+  border: 1px solid color-mix(in srgb, var(--yamd-danger) 50%, transparent);
+  color: var(--yamd-fg);
+  background: color-mix(in srgb, var(--yamd-danger) 8%, transparent);
+  font-size: 0.9em;
+}
+.db-error-code { font-family: var(--yamd-mono); font-weight: 600; color: var(--yamd-danger); }
+.db-error-code { flex: none; font-size: 12px; }
+.db-result { margin: 0; }
+
+/* ---- Timeline ---- */
+.db-timeline { display: flex; flex-direction: column; gap: 6px; }
+.db-timeline.db-empty { color: var(--yamd-muted); font-size: 0.9em; }
+.db-timeline-row { display: flex; align-items: center; gap: 10px; }
+.db-timeline-label { flex: 0 0 120px; font-size: 0.85em; color: var(--yamd-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-timeline-track { position: relative; flex: 1; height: 24px; background: var(--yamd-surface); border-radius: var(--yamd-radius); }
+.db-timeline-bar {
+  box-sizing: border-box;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--yamd-accent);
+  color: var(--vscode-button-foreground, #fff);
+  font-size: 11px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kanban-timeline[data-interactive] .db-timeline-bar { cursor: grab; }
+.db-timeline-bar:focus-visible,
+.db-timeline-bar:focus { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-timeline-bar.dragging { opacity: 0.4; }
+.db-timeline-row.drop-target .db-timeline-track { background: var(--yamd-tint); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
+/* Follows the cursor during a drag so the drop date is visible before releasing. */
+.db-timeline-cursor {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--vscode-focusBorder);
+  pointer-events: none;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+.db-timeline-cursor-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  background: var(--vscode-focusBorder);
+  color: var(--vscode-button-foreground, #fff);
+}
+.kanban-timeline .kanban-add { flex: 0 0 140px; }
+.kanban-timeline .kanban-add-input { padding: 1px 6px; font-size: 12px; }
+.kanban-timeline > .kanban-add { margin-top: 6px; }
+
+/* ---- Study blocks, flashcards and quiz mode ---- */
+.study {
+  --study: var(--yamd-note);
+  border-left: 3px solid var(--study);
+  padding: 0.4rem 1rem;
+  margin: 1rem 0;
+  background: color-mix(in srgb, var(--study) 6%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+.study > :last-child { margin-bottom: 0; }
+.study-definition { --study: var(--yamd-note); }
+.study-theorem,
+.study-lemma { --study: var(--yamd-danger); }
+.study-example { --study: var(--yamd-tip); }
+.study-question { --study: var(--yamd-warning); }
+.study-summary { --study: var(--yamd-tip); border-left-style: double; border-left-width: 6px; }
+.study-proof,
+.study-remark { --study: var(--yamd-muted); background: none; }
+.study-proof { font-style: normal; }
+.study-title { margin: 0 0 0.3rem; font-weight: 600; }
+.study-label { color: var(--study); }
+.study-name { font-weight: 400; }
+.study-theorem > :not(.study-title),
+.study-lemma > :not(.study-title) { font-style: italic; }
+.proof-end { float: right; }
+.derivation .math-display { overflow-x: auto; }
+.card {
+  border: 1px solid var(--yamd-border);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  margin: 1rem 0;
+}
+.card-front > :last-child,
+.card-answer > :last-child { margin-bottom: 0; }
+.card-answer { margin-top: 0.5rem; border-top: 1px dashed var(--yamd-border); padding-top: 0.4rem; }
+.card-answer summary { cursor: pointer; color: var(--yamd-link); }
+.references { padding-left: 1.5rem; }
+ul.references { list-style: none; padding-left: 0; }
+ul.references li { padding-left: 2rem; text-indent: -2rem; margin: 0.4rem 0; }
+
+/* Query views: a board's card details and a chart's frame. */
+.kanban-card-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin-top: 0.25rem; font-size: 0.8rem; color: var(--yamd-muted); }
+.kanban-prop-name { opacity: 0.7; margin-right: 0.2em; }
+.db-chart { margin: 0.5rem 0; }
+.db-chart svg { display: block; width: 100%; height: auto; }
+
+/* Timeline month scale. */
+.db-timeline-axis { display: flex; align-items: flex-end; gap: 10px; }
+.db-timeline-scale { position: relative; flex: 1; height: 16px; border-bottom: 1px solid var(--yamd-border); font-size: 0.75em; color: var(--yamd-muted); }
+.db-timeline-tick { position: absolute; bottom: 2px; padding-left: 4px; border-left: 1px solid var(--yamd-border); white-space: nowrap; line-height: 12px; }
+.db-timeline-today { position: absolute; bottom: -1px; width: 2px; height: 8px; margin-left: -1px; background: var(--yamd-warning); }
+
+/* Calendar month buttons and gallery captions. */
+.db-month-nav { padding: 2px 10px; border: 1px solid var(--yamd-border); border-radius: var(--yamd-radius); background: var(--yamd-surface); color: inherit; font: inherit; cursor: pointer; }
+.db-month-nav:hover { background: var(--yamd-tint); }
+.db-calendar + .db-calendar { margin-top: 1.5rem; }
+.db-card-caption { margin: 0; font-size: 0.85em; color: var(--yamd-muted); }
+.db-chart svg { max-width: 640px; }
+
+/* The list under a calendar or timeline: full titles and details, which the grid and the bars are too small for. */
+.db-calendar { container-type: inline-size; }
+.db-agenda-title { display: flex; align-items: baseline; gap: 0.6em; }
+.db-agenda-count { font-weight: 400; font-size: 0.85em; color: var(--yamd-muted); }
+.db-agenda-day { display: grid; grid-template-columns: 5.5em 1fr; gap: 4px 10px; align-items: start; padding: 6px 0; border-top: 1px solid var(--yamd-border); }
+.db-agenda-day:first-child { border-top: 0; }
+.db-agenda-date { margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--yamd-muted); }
+.db-agenda-day > .db-event { grid-column: 2; margin-top: 0; }
+.db-agenda-list .db-event-summary { display: flex; align-items: center; gap: 6px; font-weight: 600; white-space: normal; }
+.db-agenda-list .db-event.expanded .db-event-detail { display: flex; }
+.db-event.done .db-event-summary { opacity: 0.65; }
+.db-agenda-list .db-event.done .db-event-summary > :not(input) { text-decoration: line-through; }
+.db-event.selected,
+.db-timeline-item.selected { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.db-agenda-add { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--yamd-border); }
+.db-agenda-add .kanban-add-input { flex: 1; min-width: 0; }
+.db-agenda-add input, .db-agenda-add button { padding: 3px 8px; font: inherit; font-size: 12px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--yamd-border); border-radius: var(--yamd-radius); }
+.db-agenda-add button { cursor: pointer; background: var(--yamd-surface); color: inherit; }
+/* Day cells: hide the add boxes until hovered, and give the title the room a checkbox used to take. */
+.db-day .kanban-add { display: none; }
+.db-day:hover .kanban-add, .db-day:focus-within .kanban-add { display: block; }
+.db-day .db-event { overflow: hidden; }
+@container (max-width: 720px) {
+  .db-day .db-event input[type="checkbox"] { display: none; }
+  .db-calendar .db-event:not(.expanded) .db-event-summary { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 11px; line-height: 1.25; }
+  .db-agenda-day { grid-template-columns: 1fr; }
+  .db-agenda-day > .db-event { grid-column: 1; }
+}
+.db-day .db-event.done { text-decoration: line-through; }
+
+.db-timeline-details { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--yamd-border); display: flex; flex-direction: column; gap: 6px; }
+.db-timeline-item { padding: 6px 8px; border-radius: var(--yamd-radius); background: color-mix(in srgb, var(--yamd-accent) 10%, transparent); }
+.db-timeline-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.db-timeline-dates { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--yamd-muted); white-space: nowrap; }
+.db-timeline-item-title { font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.db-timeline-lane { margin-left: auto; font-size: 11px; color: var(--yamd-muted); }
+.db-timeline-item.done .db-timeline-item-title { opacity: 0.65; text-decoration: line-through; }
+.db-timeline-item-detail { margin-top: 4px; font-size: 12.5px; color: var(--yamd-muted); }
+.db-timeline-item-detail p { margin: 0 0 4px; }
+
+/* The scale and the lanes' tracks must be the same width, or a bar and the month under it drift apart.
+   A lane's add box takes a fixed width, and the scale reserves the same. */
+.db-timeline-row .kanban-add { flex: 0 0 96px; width: 96px; margin: 0; }
+.db-timeline-row .kanban-add-input { width: 100%; box-sizing: border-box; }
+.db-timeline.has-add .db-timeline-axis::after { content: ""; flex: 0 0 96px; }
+.db-timeline-scale { min-width: 0; }
+.db-timeline-track { min-width: 0; }
+
+/* Card details form, filter bar, overdue items */
+.card-edit { margin-left: auto; padding: 0 4px; border: 0; background: transparent; color: var(--yamd-muted); cursor: pointer; opacity: 0; font-size: 12px; line-height: 1; }
+.kanban-card:hover .card-edit, .db-event:hover .card-edit, .db-timeline-item:hover .card-edit, .card-edit:focus-visible { opacity: 1; }
+.kanban-card-title { display: flex; align-items: baseline; gap: 4px; }
+.db-event-summary, .db-timeline-item-head { display: flex; align-items: baseline; gap: 4px; }
+.details-form { position: relative; z-index: 5; display: grid; gap: 8px; max-width: 28rem; margin: 8px 0; padding: 12px; border: 1px solid var(--yamd-border); border-radius: 6px; background: var(--vscode-editor-background); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.details-title { font-weight: 600; }
+.details-field { display: grid; gap: 2px; font-size: 12px; color: var(--yamd-muted); }
+.details-field input, .details-field textarea { font: inherit; padding: 4px 6px; border: 1px solid var(--yamd-border); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); }
+.details-actions { display: flex; gap: 8px; }
+.details-actions button { padding: 4px 12px; border: 1px solid var(--yamd-border); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background, #0969da); color: var(--vscode-button-foreground); }
+.details-actions button.secondary { background: transparent; color: inherit; }
+.board-filter { display: block; width: 100%; max-width: 20rem; margin: 0 0 8px; padding: 4px 8px; font: inherit; border: 1px solid var(--yamd-border); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); }
+.filtered-out { display: none !important; }
+.db-event.overdue { border-left: 3px solid var(--yamd-danger); color: var(--yamd-danger); }
+.db-timeline-bar.overdue { box-shadow: inset 0 0 0 2px var(--yamd-danger); }
+.db-timeline-item.overdue .db-timeline-dates { color: var(--yamd-danger); font-weight: 600; }
+.db-card img { cursor: zoom-in; }
+.lightbox { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; background: rgba(0, 0, 0, .82); cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain; }
+.lightbox-caption { color: #fff; font-size: 14px; }
+.gallery-add .gallery-pick { cursor: pointer; }
+
+body.export { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.export-title { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; }
+.export-title h1 { font-size: 2.4rem; margin-bottom: 0.5rem; border: 0; }
+.export-title p { margin: 0.2rem 0; color: var(--yamd-muted, #666); }
+.export-toc { page-break-after: always; }
+.export-toc ol { list-style: none; padding-left: 0; }
+.export-toc li.l2 { padding-left: 1.2rem; } .export-toc li.l3 { padding-left: 2.4rem; }
+.export-toc a { text-decoration: none; color: inherit; }
+.export-banner { border: 1px solid #aaa; padding: 0.4rem 0.8rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #555; }
+@page { margin: 2cm; @bottom-center { content: counter(page); font-size: 9pt; color: #666; } }
+@media print { .export-banner { display: none; } body.export { padding: 0; max-width: none; } a { color: inherit; } pre, blockquote, table, .study, .callout { break-inside: avoid; } h1, h2, h3 { break-after: avoid; } }
+</style></head>
+<body class="export"><main><h1 id="review-marks" data-line="4">Review marks</h1>
+<p data-line="6">Suggest changes with plain HTML that renders in any Markdown viewer: <code>&lt;ins&gt;</code> for text you add and <code>&lt;del&gt;</code> for text you remove. Use <code>&lt;mark&gt;</code> to highlight and an HTML comment for a note to the author.</p>
+<p data-line="8">The meeting is on <del>Tuesday</del><ins>Wednesday</ins> at <ins>10:30</ins>.</p>
+<p data-line="10">Please check this <mark>figure</mark>. </p>
+<p data-line="12">Put the cursor on a change and run <strong>YAMD: Accept Change at Cursor</strong> or <strong>YAMD: Reject Change at Cursor</strong>. Select several and run the command to resolve all of them in the selection. <strong>YAMD: Accept All Changes</strong> and <strong>YAMD: Reject All Changes</strong> resolve the whole note.</p>
+<p data-line="14">Accepting keeps added text and drops removed text; rejecting does the opposite. Marks inside code are left alone:</p>
+<div class="code-block" data-line="16"><div class="code-header"><span class="code-lang">html</span></div><pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">ins</span>&gt;</span>this stays<span class="hljs-tag">&lt;/<span class="hljs-name">ins</span>&gt;</span> and <span class="hljs-tag">&lt;<span class="hljs-name">del</span>&gt;</span>so does this<span class="hljs-tag">&lt;/<span class="hljs-name">del</span>&gt;</span>
+</code></pre></div></main>
+<footer class="export-footer">Exported from review-marks.md on 2026-11-06</footer></body></html>

@@ -1,0 +1,7 @@
+id,title,owner,status,days_open
+1,Header overlaps logo,Sam,open,12
+2,Slow image load,Priya,open,30
+3,Typo in footer,Sam,closed,2
+4,Broken search,Priya,open,7
+5,Dark mode flicker,Lee,open,3
+6,Missing alt text,Lee,closed,9

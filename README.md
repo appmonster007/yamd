@@ -1,35 +1,148 @@
-# YAMD — Yet Another Markdown
+# YAMD — Markdown with widgets
 
-YAMD is a plain-text markup format that keeps Markdown's simplicity and fixes its pain points — ambiguous line breaks, no standard front matter, no tracked changes, no built-in citations, lossy conversion to Word or HTML, and more. It's a strict superset of GitHub Flavored Markdown: existing Markdown renders exactly as it does on GitHub, except that a newline is always a line break and YAMD's own syntax is recognized.
+YAMD is a VS Code extension that adds **boards, calendars, timelines, galleries and SQL query views** to plain Markdown notes, plus **callouts, cross-references, citations, a generated table of contents and bibliography, exports, voice notes and study tools**.
 
-This repository holds the format's specification and a full-featured VS Code extension.
+Notes stay ordinary `.md` files. Without the extension a widget is just a fenced code block, so nothing breaks on GitHub or in another editor.
 
-```yamd
----
-title: Why YAMD?
-tags: [format, markdown]
-lang: en
----
+````markdown
+```kanban sprint-12
+## Todo
+- [ ] Write the release notes {due=2026-12-14 owner=ada}
 
-# Why YAMD?
-
-Markdown is great until you need {++tracked changes++}, a `due: 2026-11-01`
-in the front matter, or $E = mc^2$ without a plugin. YAMD adds exactly
-the things people keep bolting onto Markdown — and nothing else.
-
-::toc{depth=2}
+## Done
+- [x] Kick-off meeting
 ```
+````
 
-## What's in the box
+![A kanban board opened beside a note](docs/images/kanban.png)
 
-- **[yamd-spec.md](yamd-spec.md)** — the format specification: block and inline syntax, directives, attributes, review markup, security and accessibility rules, and the full list of differences from GFM.
-- **[vscode-yamd/](vscode-yamd/)** — the VS Code extension: syntax highlighting, a live preview with KaTeX math and syntax-highlighted code, diagnostics, linked notes (wikilinks, backlinks, a graph view), databases (`.ydb` and SQLite) with table/list/gallery/calendar/board views, kanban boards, and a full set of tools for students and academic writing (flashcards with spaced repetition, course deadlines, citations, export to HTML/PDF/Word/Slides, and more). See [vscode-yamd/README.md](vscode-yamd/README.md) for the complete feature list.
-- **[examples/](examples/)** — a worked example for every feature, organized by topic. Start with [examples/getting-started.yamd](examples/getting-started.yamd).
-- **[openspec/](openspec/)** — the spec-driven change proposals the format and extension were built from, each with a proposal, a task list and the resulting spec deltas.
+In VS Code, a link above the block opens it as a draggable board beside the note. Every edit you make there rewrites only that block in the note, and undo works.
 
-## Installing the extension
+> The images in this README are renders of the extension's real panel HTML, styles and script in headless Chrome with VS Code's Dark Modern colours. They are not captures of a VS Code window.
 
-YAMD isn't on the VS Code Marketplace yet, so install it by building the `.vsix` from source. You'll need [Node.js](https://nodejs.org) 20+, [VS Code](https://code.visualstudio.com) with its `code` command on PATH, and `make` (preinstalled on macOS and Linux).
+## Contents
+
+- [What you can do](#what-you-can-do)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [The note format](#the-note-format)
+- [Commands](#commands)
+- [Settings](#settings)
+- [Companion extensions](#companion-extensions)
+- [Examples](#examples)
+- [Limits and what is not tested](#limits-and-what-is-not-tested)
+- [Develop](#develop)
+- [What changed from 0.1](#what-changed-from-01)
+
+## What you can do
+
+### Widgets
+
+Five block types, each opened from the link above it or from the Command Palette (`Open Kanban`, `Open Calendar`, `Open Timeline`, `Open Gallery`, `Open Query`, or `Open Widget` for any).
+
+| Type | Made from | You can |
+|---|---|---|
+| `kanban` | `##` headings as columns, task items as cards | drag between columns, rename, tick, add, collapse |
+| `calendar` | task items with `{due=YYYY-MM-DD}` | move to another day, switch months, narrow the list by day or week |
+| `timeline` | headings as lanes, items with `{start=…}` and `{due=…}` | drag a bar, read the schedule under the lanes |
+| `gallery` | `- ![caption](image.png)` items, or `source="folder/"` | reorder, add with an image picker, click to enlarge |
+| `sql` | a query over a CSV, JSON or SQLite file | view as a table, a board or a bar chart |
+
+![A calendar with its event list below](docs/images/calendar.png)
+
+![A timeline with lanes and a schedule](docs/images/timeline.png)
+
+**Card details.** The pencil on a card, event or timeline item opens a form for due date, owner, tags and notes. Saving rewrites only that card's lines; if the card changed in the note meanwhile, the edit is refused.
+
+![The card details form](docs/images/kanban-details.png)
+
+**Filter and overdue.** Every board has a filter box that takes text, `@owner` and `#tag`. Anything not done and past its date is shown in red.
+
+![Filtering a board by owner](docs/images/kanban-filter.png)
+
+**Gallery.** *Choose images…* opens a file picker; clicking an image enlarges it.
+
+![An enlarged gallery image](docs/images/gallery-enlarged.png)
+
+### Queries
+
+Read-only SQL over data files, with the result as a table, a board (`group="column"`) or a chart (`x` and `y`). Queries run on a copy and the file is never changed. **Run Query** writes a Markdown snapshot under the block so the note reads without the extension.
+
+````markdown
+```sql
+-- id="open-bugs" source="bugs.csv" view="table"
+SELECT id, title, owner FROM bugs WHERE status = 'open';
+```
+````
+
+![A query as a table, a chart and a board](docs/images/queries.png)
+
+- **Insert Query…** builds the block from a short form: file, table, columns, filter, view.
+- **Run All Queries in This Note** refreshes every snapshot; `yamd.queries.refreshOnSave` does it on save for snapshots that already exist.
+- Each query block has an **Edit CSV / Open in SQLite editor / Open data** lens that opens its data file in the matching companion (JSON opens as text). The same is in the palette as **Open Query Data File in Its Editor**.
+- Hover a `source="…"` file to see its tables and columns; completion offers the column names inside the SQL.
+
+### Writing
+
+- **Callouts**: `> [!note]`, `tip`, `warning`, `danger`, and numbered study blocks `definition`, `theorem`, `lemma`, `proof`, `example`, `question`, `remark`, `summary`, `derivation`.
+- **Cross-references**: put `^fig-name`, `^tbl-name` or `^eq-name` after a figure, table or equation and write `[@fig-name]`. **Build** turns it into `[Figure 2](#fig-name)` and keeps the number current.
+- **Citations**: `[@smith2020, p. 4]` with a `.bib` file named in the front matter (`bibliography:` and `citation-style:` apa, ieee, chicago, harvard or mla).
+- **Generated regions**: a table of contents and a bibliography between visible `<!-- yamd:… -->` comments.
+- **Diagrams**: a ```` ```mermaid ```` block is drawn in VS Code's Markdown preview and in HTML and slide exports (the exported page carries the drawing script, so it works offline).
+
+![An exported note with two mermaid diagrams](docs/images/mermaid.png)
+
+- **Review marks**: `<ins>` and `<del>`, with commands to accept or reject at the cursor, in a selection or in the whole note.
+- **Snippets and completion**: type `kanban`, `callout`, `theorem`, `card`, `toc`, `figure` and press Tab. Completion covers widget types, `source=` files, callout types, `[@` keys and `[@fig-` ids.
+- **Insert commands**: Insert Callout, Insert Figure/Table/Equation, Insert Citation, Insert Query, Turn Selection into a Widget, Add Card, Add Event, Add Timeline Item, Add Image to Gallery.
+
+### Getting started and navigation
+
+- **YAMD: Menu** (and a status-bar item) lists every action by task.
+- **YAMD: New Note** creates a note from a template: empty (with contents and bibliography), article, project board, meeting notes, reading list, weekly plan, or data note. **Create Sample Note** adds a note and a data file to try things on.
+- A 14-step **walkthrough** opens once after install (**YAMD: Open Walkthrough** reopens it).
+- The YAMD sidebar lists the widgets in the open note, its **Outline** (headings, callouts, figure, table and equation targets), **Unlinked Mentions** (notes that name this one without linking to it, with a button that turns each into a `[[wikilink]]`), flashcards, deadlines and study progress.
+
+### Audio
+
+**Record Audio and Add Link** records in a panel beside the note (or in your browser if VS Code blocks the microphone there), saves the file next to the note and links it at the cursor. **Transcribe Audio** runs a speech-to-text tool you choose and writes the text under the link as a `Transcript` callout. YAMD sends nothing anywhere; it only runs your command.
+
+### Study
+
+- Flashcards are callouts: `> [!card] Question?` with the answer in the body, reviewed with SM-2 spaced repetition (the schedule is `.yamd/srs.json`).
+- **Study This Note** turns a note's definitions, theorems, lemmas and questions into cards in a generated `cards` region.
+- Tasks with `{due=…}` become deadlines; a once-a-day reminder lists cards due and deadlines today or overdue.
+- A dashboard, a study timer, and **New Study Note** templates (lecture, lab report, exam prep, reading note).
+
+### Export and sharing
+
+| Command | Result |
+|---|---|
+| Export HTML | a page with numbered callouts, anchors, static widgets and query tables (print it for PDF) |
+| Export Slides | a deck that steps with the arrow keys |
+| Export as Single Markdown File | `name.export.md` with Build applied, images inlined and query results as tables |
+| Export Widget as HTML | one board or query as a read-only page |
+
+![An exported note](docs/images/export.png)
+
+### Checks
+
+**Check This Note** gathers every problem into one list, jumps to the line you pick, and fixes the safe ones. The same checks show in the Problems panel as you type.
+
+| Code | Problem |
+|---|---|
+| W001–W007 | duplicate or invalid widget ids, unclosed blocks, incomplete query headers |
+| C001–C002 | callout problems, such as a missing blank line after one |
+| M001–M003 | unknown, unclosed or stray `yamd:` markers |
+| Q001–Q004 | query problems |
+| N001 | an image that does not exist |
+| N002 | a data file or gallery folder that does not exist |
+| N003 | a `[@fig-…]` reference with no target |
+| N004 | a citation key missing from the bibliography file |
+
+## Install
+
+YAMD isn't on the VS Code Marketplace yet, so build the `.vsix` from source. You need [Node.js](https://nodejs.org) 20+, [VS Code](https://code.visualstudio.com) 1.145 or later with its `code` command on PATH, and `make`.
 
 ```bash
 git clone https://github.com/appmonster007/yamd.git
@@ -37,40 +150,147 @@ cd yamd
 make install
 ```
 
-`make install` builds the extension, runs the test suite, packages a `.vsix` and installs it into VS Code in one step. Reload or restart VS Code afterwards to activate it.
+`make install` builds, tests, packages a `.vsix` and installs it (`make install-fast` skips the tests). Installing also brings in the [companion extensions](#companion-extensions). Reload VS Code afterwards. `make help` lists every target, and `make uninstall` removes it.
 
-If `code` isn't on PATH, run **Shell Command: Install 'code' command in PATH** from VS Code's Command Palette and try again — or build the `.vsix` with `make package` and install it by hand from the Extensions view (`...` menu → **Install from VSIX...** → `vscode-yamd/vscode-yamd-<version>.vsix`).
+## Quick start
 
-If the test suite fails on a wall-clock performance benchmark under system load (not a real regression), use `make install-fast` instead — it typechecks and builds but skips tests.
+1. Run **YAMD: Create Sample Note** (Command Palette), or open [examples/getting-started.md](examples/getting-started.md).
+2. Click **Open kanban: …** above a board. Drag a card, then press undo in the note.
+3. Run **YAMD: Insert Query…**, pick a CSV, and look at the result.
+4. Run **YAMD: Build** on a note with `[@fig-…]` references and a `<!-- yamd:toc -->` region.
+5. Run **YAMD: Menu** to see everything else.
 
-Run `make help` for every available target (`build`, `typecheck`, `test`, `package`, `package-fast`, `install`, `install-fast`, `uninstall`, `dev`, `clean`).
+## The note format
 
-### Try it out
+Everything is plain Markdown.
 
-1. Open any file in `examples/` in VS Code — start with [examples/getting-started.yamd](examples/getting-started.yamd).
-2. Run **YAMD: Open Preview to the Side** (Cmd+K V / Ctrl+K V) to see it rendered.
-3. Browse `examples/` by topic — basics, documents, linked notes, databases, kanban, moving from Markdown, and study features — or read `yamd-spec.md` for the full reference.
+**Widgets** are fenced blocks. The info string is `type id` (a single bare word is the id) or `type id=name`:
 
-### Working on the extension itself
-
-To iterate on the extension's source without reinstalling each time, open `vscode-yamd/` in VS Code and press F5 — this launches an Extension Development Host window with your changes loaded and the repository root as its workspace.
-
-```bash
-make deps       # npm install
-make build      # compile into vscode-yamd/dist/
-make typecheck
-make test
+````markdown
+```calendar releases
+- [ ] Beta release {due=2026-12-20 owner=ada}
 ```
 
-(Each target also works as a plain `npm` script inside `vscode-yamd/` — see [vscode-yamd/README.md](vscode-yamd/README.md#development).)
+```timeline roadmap
+## Platform
+- [ ] Migrate auth {start=2026-01-19 due=2026-03-13}
+```
 
-## Status
+```gallery photos
+- ![The team](team.png)
+```
+````
 
-YAMD is under active development. The format and the extension both already implement the features described in `yamd-spec.md` and `vscode-yamd/README.md`; some advanced interactions (PDF math/image fidelity, runnable code blocks, mobile capture) are tracked as open proposals in `openspec/changes/`.
+Cards are list items. `{key=value}` attributes (`due`, `start`, `owner`, anything else you add), `#tags` and indented body lines belong to the card. Ids are lowercase letters, digits and `-`, and unique within a note.
+
+**Queries** are `sql` blocks whose first line is a comment of attributes: `id`, `source`, `view` (`table`, `board` with `group`, or `chart` with `x`, `y` and `type`).
+
+**Markers** are the only comments YAMD reads. Each is on a line of its own and starts with `yamd:`:
+
+````markdown
+<!-- yamd:toc depth=3 -->
+<!-- /yamd:toc -->
+
+<!-- yamd:bibliography -->
+<!-- /yamd:bibliography -->
+
+<!-- yamd:pagebreak -->
+````
+
+Generated regions (`toc`, `bibliography`, `cards`, `query:ID`) are rewritten by Build, Study This Note and Run Query, and a second run changes nothing. Any other comment is yours and is never touched. [examples/01-writing/markers.md](examples/01-writing/markers.md) is a one-page guide.
+
+## Commands
+
+All commands are in the Command Palette under **YAMD**, and **YAMD: Menu** groups them by task.
+
+| Area | Commands |
+|---|---|
+| Start | Menu, New Note, Create Sample Note, Open Walkthrough, Open YAMD Settings |
+| Widgets | Open Widget, Open Kanban / Calendar / Timeline / Gallery / Query, Insert Widget, Name Block, Add Card, Add Event, Add Timeline Item, Add Image to Gallery, Turn Selection into a Widget |
+| Writing | Insert Callout, Insert Figure Table or Equation, Insert Citation, Go to Reference Target, Build, Accept / Reject Changes |
+| Data | Insert Query, Run Query, Run All Queries in This Note, Open Query Data File in Its Editor, Open Query Source in SQL Client, Open in SQLite Editor, Open in CSV Editor, Query CSV with RBQL |
+| Audio | Record Audio and Add Link, Transcribe Audio |
+| Study | Study This Note, Review Cards, Open Dashboard, Start / Pause / Stop Study Timer, New Study Note, Prune Cards |
+| Share | Export HTML, Export PDF (print page), Export Slides, Export as Single Markdown File, Export Widget as HTML |
+| Check | Check This Note |
+| Linked notes | Show Backlinks, Show Note Graph, Show Tags, Open Daily Note (through Foam) |
+
+## Settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| `yamd.build.onSave` | off | Run Build whenever a Markdown note is saved |
+| `yamd.build.linkCitations` | on | Turn `[@key]` into a link to its bibliography entry |
+| `yamd.queries.refreshOnSave` | off | On save, refresh snapshots under query blocks that already have one |
+| `yamd.audio.folder` | `audio` | Folder next to the note for recordings (must stay inside the note's folder) |
+| `yamd.audio.transcribeCommand` | empty | Speech-to-text command; `{file}` is the recording, for example `whisper-cli -m ~/models/ggml-base.en.bin -nt -f {file}` |
+| `yamd.statusBar.enabled` | on | The YAMD status-bar button |
+| `yamd.study.newCardsPerDay` | 20 | New cards per review session |
+| `yamd.study.pomodoroMinutes` | 25 | Default study-timer length |
+| `yamd.study.staleAfterDays` | 14 | Days before a topic counts as stale in the dashboard |
+| `yamd.study.reminders` | on | The once-a-day reminder |
+
+## Companion extensions
+
+Installing YAMD installs these with it. [Foam](https://marketplace.visualstudio.com/items?itemName=foam.foam-vscode) is required (backlinks, graph, tags and wikilinks); the others are optional.
+
+- Foam: wikilinks, backlinks, the note graph, tags, daily notes
+- SQLite3 Editor: edit `.sqlite` files that queries read
+- Edit CSV and Rainbow CSV: edit and query CSV files
+- Markdown All in One: list continuation, shortcuts
+
+In an untrusted workspace, boards render but can't be edited, queries may only read files inside the workspace, and the commands that run tools or write generated content ask you to trust it first.
+
+## Examples
+
+[examples/](examples/) has a working note for every feature, with the data and images they use. Each one is checked by the test suite for well-formed widgets, a clean and repeatable Build, and queries that run.
+
+| Folder | What it shows |
+|---|---|
+| [getting-started.md](examples/getting-started.md) | A tour: one of everything |
+| [01-writing](examples/01-writing/) | Callouts, figures and citations, Build, review marks, attributes, audio, markers |
+| [02-widgets](examples/02-widgets/) | Kanban, calendar, timeline and gallery |
+| [03-queries](examples/03-queries/) | SQL over CSV, JSON and SQLite |
+| [04-study](examples/04-study/) | Lecture notes, flashcards, deadlines |
+| [05-export](examples/05-export/) | HTML, PDF and slides |
+| [06-linked-notes](examples/06-linked-notes/) | Wikilinks, backlinks, tags, graph |
+| [07-whats-new](examples/07-whats-new/) | Menu and templates, snippets, card details and filters, gallery picker, query builder, exports, transcription, study this note, check this note |
+
+## Limits and what is not tested
+
+- Four automated suites pass: 420 unit tests; 33 checks in a real VS Code (commands, CodeLens, diagnostics, Build and build on save, queries and refresh on save, all exports, transcription with a fake tool, Study This Note, linking a mention, completion, the Markdown preview plugin); 6 checks in a real VS Code in Restricted Mode; and 37 checks of the panel scripts (drag and drop, keys, forms, filter, enlarge) in headless Chrome.
+- Nobody has yet clicked through a live VS Code window by hand. The checks that need a human are listed in [docs/qa-checklist.md](docs/qa-checklist.md): how things look in light and dark themes, the microphone permission, the menus and quick picks (menu, New Note, Insert Query, Check This Note), the daily reminder, a real speech-to-text tool, printing to PDF, drawing diagrams in VS Code's own preview, the companion install prompts, and Foam's views (their command names come from Foam's manifest and have not been run).
+- Transcription needs a speech-to-text tool you install yourself.
+- Pasting an image uses VS Code's own Markdown paste; YAMD doesn't add its own.
+
+## Develop
+
+Open `vscode-yamd/` in VS Code and press F5 to start an Extension Development Host. The code layout is in [CONTRIBUTING.md](CONTRIBUTING.md): pure logic in `src/core/**` (never imports `vscode`), a thin extension layer in `src/extension/**` and `src/study/**`, and the panel scripts in `src/webview/**`.
+
+```bash
+make deps              # npm install
+make build             # bundle into vscode-yamd/dist/
+make typecheck
+make test              # unit tests
+make test-integration  # a real VS Code (trusted and Restricted Mode) plus the panel scripts in Chrome
+make package           # build a .vsix
+```
+
+To regenerate the screenshots (needs Google Chrome and a built `dist/`):
+
+```bash
+cd vscode-yamd && npm run build && node --import tsx scripts/screenshots.mts
+```
+
+CI (`.github/workflows/ci.yml`) runs typecheck, tests, build and packaging on every push; the integration job is allowed to fail until it has run on a hosted runner. Release notes are in [CHANGELOG.md](CHANGELOG.md), and the specification and decision log are in [yamd-1.2.0-spec.md](yamd-1.2.0-spec.md) with the [plan](yamd-1.2.0-plan.md).
+
+## What changed from 0.1
+
+YAMD is no longer a separate language: there are no `.yamd` files, custom preview or editor, `.ydb` databases, document variables or DOCX export. Use Foam for wikilinks and the graph, and the companion SQLite and CSV extensions for editing data. The 0.1 specification is archived in [docs/0.1/](docs/0.1/).
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for how the project is organized, how changes are proposed and reviewed, and how to run the tests. Please also read the [Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

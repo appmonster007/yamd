@@ -1,0 +1,59 @@
+name: CI
+on:
+  push:
+    branches: [main, 'yamd-*']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode-yamd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode-yamd/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:panels
+      - run: npx vsce package --no-dependencies --allow-missing-repository --skip-license
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: vscode-yamd/*.vsix
+
+  integration:
+    # Starts a real VS Code window; allowed to fail until it has run on a hosted runner.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: test
+    defaults:
+      run:
+        working-directory: vscode-yamd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode-yamd/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Download VS Code
+        run: |
+          npm i --no-save @vscode/test-electron
+          echo "VSCODE_EXECUTABLE=$(node -e "require('@vscode/test-electron').downloadAndUnzipVSCode().then(console.log)" | tail -1)" >> "$GITHUB_ENV"
+      - name: Install the companion extensions
+        run: |
+          cli="$(dirname "$VSCODE_EXECUTABLE")/bin/code"
+          for ext in foam.foam-vscode yy0931.vscode-sqlite3-editor janisdd.vscode-edit-csv mechatroner.rainbow-csv yzhang.markdown-all-in-one; do
+            "$cli" --install-extension "$ext"
+          done
+      - run: xvfb-run -a node scripts/integration.mjs
+      - run: xvfb-run -a node scripts/integration.mjs --untrusted

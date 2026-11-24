@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { parse } from '../src/core';
-import { buildGallery, cardSource, hashText } from '../src/core/kanban';
-import { addGalleryCard, moveGalleryCard } from '../src/core/galleryEdit';
-import type { ContainerBlock } from '../src/core';
-import type { LineEdit } from '../src/core/kanbanEdit';
+import { parse } from '../src/core/markdown';
+import { buildGallery, cardSource, hashText } from '../src/core/widgets/kanban';
+import { addGalleryCard, moveGalleryCard } from '../src/core/widgets/galleryEdit';
+import type { ContainerBlock } from '../src/core/markdown';
+import type { LineEdit } from '../src/core/widgets/kanbanEdit';
 
 const SRC = `:::gallery {title="Trip photos"}
 ![Golden Gate Bridge](ggb.jpg)
@@ -52,12 +52,12 @@ describe('gallery edits', () => {
   test('adds the first card right after an empty gallery opens', () => {
     const empty = ':::gallery\n:::';
     const out = apply(empty, addGalleryCard(empty, 0, 'first.jpg', 'First photo'));
-    assert.equal(out, ':::gallery\n\n![First photo](first.jpg)\nFirst photo\n:::');
+    assert.equal(out, ':::gallery\n- ![First photo](first.jpg)\n:::');
   });
 
   test('an image with no caption gets a generic alt text', () => {
     const empty = ':::gallery\n:::';
     const out = apply(empty, addGalleryCard(empty, 0, 'bare.jpg', ''));
-    assert.equal(out, ':::gallery\n\n![Image](bare.jpg)\n:::');
+    assert.equal(out, ':::gallery\n- ![Image](bare.jpg)\n:::');
   });
 });

@@ -6,10 +6,11 @@
 # Run `make help` for the full list of targets.
 
 EXT_DIR  := vscode-yamd
+PACK_DIR := vscode-yamd-pack
 VSIX     := $(shell node -p "require('./$(EXT_DIR)/package.json').name + '-' + require('./$(EXT_DIR)/package.json').version + '.vsix'")
 CODE     := $(shell command -v code 2>/dev/null || command -v code-insiders 2>/dev/null)
 
-.PHONY: help deps build typecheck test package package-fast install install-fast uninstall clean dev
+.PHONY: help deps build typecheck test test-integration package package-fast package-pack release install install-fast uninstall clean dev
 
 help:
 	@echo "YAMD — available targets:"
@@ -17,8 +18,11 @@ help:
 	@echo "  make build         compile the extension into $(EXT_DIR)/dist/"
 	@echo "  make typecheck     run the TypeScript compiler with no output"
 	@echo "  make test          run the test suite"
+	@echo "  make test-integration  run the checks inside a real VS Code (needs VS Code 1.145+ installed)"
 	@echo "  make package       typecheck, test, and build $(EXT_DIR)/$(VSIX)"
 	@echo "  make package-fast  typecheck and build $(EXT_DIR)/$(VSIX), skipping tests"
+	@echo "  make package-pack  build $(PACK_DIR)/ (the extension pack .vsix)"
+	@echo "  make release       tests, then both .vsix files to publish"
 	@echo "  make install       package (with tests) and install into VS Code"
 	@echo "  make install-fast  package-fast (no tests) and install into VS Code"
 	@echo "  make uninstall     remove the extension from VS Code"
@@ -37,13 +41,25 @@ typecheck: deps
 test: deps
 	cd $(EXT_DIR) && npm test
 
+test-integration: build
+	cd $(EXT_DIR) && npm run test:integration && npm run test:integration:restricted && npm run test:panels
+
 package: deps
 	cd $(EXT_DIR) && npm run package
 
 # Skips the test suite (including a wall-clock perf benchmark that can fail
 # under system load on some machines without indicating a real regression).
 package-fast: deps
-	cd $(EXT_DIR) && npm run typecheck && npm run build && npx vsce package --no-dependencies --skip-license
+	cd $(EXT_DIR) && npm run typecheck && npm run build && npx vsce package --no-dependencies
+
+# The extension pack: YAMD plus the companions it works with, as one install. It has no code.
+package-pack: deps
+	cd $(PACK_DIR) && ../$(EXT_DIR)/node_modules/.bin/vsce package --no-dependencies
+
+# Everything to publish: tests, the extension .vsix and the pack .vsix.
+release: package package-pack
+	@echo "Built:"
+	@ls -1 $(EXT_DIR)/*.vsix $(PACK_DIR)/*.vsix
 
 install: package
 	@if [ -z "$(CODE)" ]; then \

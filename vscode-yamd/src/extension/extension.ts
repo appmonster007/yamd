@@ -1,58 +1,54 @@
 import * as vscode from 'vscode';
-import { registerEditingCommands } from './commands';
-import { DatabaseService } from './databases';
-import { registerDatabaseFeatures } from './dbFeatures';
-import { DiagnosticsProvider } from './diagnostics';
-import { registerMigration } from './migration';
-import { PreviewManager } from './preview';
-import { registerDailyNotes } from '../workspace/daily';
-import { registerNoteFeatures } from '../workspace/features';
-import { GraphPanel } from '../workspace/graph';
-import { WorkspaceIndex } from '../workspace/index';
-import { registerNewNote } from '../workspace/newNote';
-import { registerViews } from '../workspace/views';
+import { registerOnboarding } from './onboarding/commands';
+import { registerAudio } from './audio/recorder';
+import { mermaidFence } from '../core/markdown/mermaidFence';
+import { registerTranscribe } from './audio/transcribe';
+import { registerTools } from './writing/tools';
+import { registerRefresh } from './query/refresh';
+import { registerWritingCommands } from './writing/commands';
+import { registerCompletion } from './writing/completion';
+import { registerAddCommands } from './widgets/add';
+import { registerAliases } from './companions/aliases';
+import { registerBuildCommands } from './build/buildCommands';
+import { registerReviewCommands } from './build/reviewCommands';
+import { registerExportCommands } from './build/exportCommands';
+import { registerQueryCommands } from './query/queryCommands';
+import { registerSidebarViews } from './sidebar/views';
+import { registerWidgetDiagnostics } from './widgets/widgetDiagnostics';
+import { registerWidgetPanels } from './widgets/widgetPanel';
 import { DashboardPanel } from '../study/dashboard';
+import { registerStudy } from '../study/register';
 import { ReviewPanel } from '../study/review';
+import { StudyIndex } from '../study/studyIndex';
 import { StudyTimer } from '../study/timer';
-import { registerStudyCommands } from '../study/commands';
 
-export function activate(context: vscode.ExtensionContext): void {
-  const log = vscode.window.createOutputChannel('YAMD');
-  const index = new WorkspaceIndex(log, context.extensionUri);
-  const db = new DatabaseService(context.extensionUri, index);
-  const preview = new PreviewManager(context.extensionUri, index, db);
-  const graph = new GraphPanel(context.extensionUri, index);
-  const reviewPanel = new ReviewPanel(context.extensionUri, index);
-  const dashboard = new DashboardPanel(index);
+export function activate(context: vscode.ExtensionContext): { extendMarkdownIt(md: Parameters<typeof mermaidFence>[0]): unknown } {
+  const studyIndex = new StudyIndex();
+  const reviewPanel = new ReviewPanel(context.extensionUri, studyIndex);
+  const dashboard = new DashboardPanel(studyIndex);
   const timer = new StudyTimer();
-  context.subscriptions.push(log, index, db, preview, graph, new DiagnosticsProvider(index), reviewPanel, dashboard, timer);
-  registerDatabaseFeatures(context, db);
-  registerNoteFeatures(context, index);
-  registerViews(context, index);
-  registerDailyNotes(context);
-  registerNewNote(context);
-  registerStudyCommands(context, index, reviewPanel, dashboard, timer);
+  context.subscriptions.push(studyIndex, reviewPanel, dashboard, timer);
 
-  const openPreview = (toSide: boolean) => (uri?: vscode.Uri) => {
-    const editor = vscode.window.activeTextEditor;
-    const doc =
-      (uri && vscode.workspace.textDocuments.find((d) => d.uri.toString() === uri.toString())) ?? editor?.document;
-    if (doc?.languageId !== 'yamd') {
-      void vscode.window.showInformationMessage('YAMD: Open a .yamd file to preview it.');
-      return;
-    }
-    preview.show(doc, toSide);
-  };
+  registerWidgetDiagnostics(context);
+  registerWidgetPanels(context);
+  registerQueryCommands(context);
+  registerBuildCommands(context);
+  registerReviewCommands(context);
+  registerExportCommands(context);
+  registerAliases(context);
+  registerStudy(context, studyIndex, reviewPanel, dashboard, timer);
+  registerSidebarViews(context, studyIndex);
+  registerAudio(context);
+  registerOnboarding(context);
+  registerWritingCommands(context);
+  registerCompletion(context);
+  registerAddCommands(context);
+  registerRefresh(context);
+  registerTools(context);
+  registerTranscribe(context);
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('yamd.openPreview', openPreview(false)),
-    vscode.commands.registerCommand('yamd.openPreviewToSide', openPreview(true)),
-    vscode.commands.registerCommand('yamd.openGraph', () => graph.show('global')),
-    vscode.commands.registerCommand('yamd.openLocalGraph', () => graph.show('local')),
-    vscode.commands.registerCommand('yamd.toggleQuizInternal', () => preview.toggleQuiz()),
-  );
-  registerEditingCommands(context);
-  registerMigration(context);
+  // VS Code's Markdown preview asks for this to draw ```mermaid blocks (see media/markdown preview script).
+  return { extendMarkdownIt: (md) => mermaidFence(md) };
 }
 
 export function deactivate(): void {}
